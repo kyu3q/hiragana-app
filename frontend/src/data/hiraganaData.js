@@ -3,11 +3,11 @@ export const hiraganaGroups = [
   {
     name: 'あ行',
     characters: [
-      { char: 'あ', romaji: 'a', image: '🍎 りんご' },
-      { char: 'い', romaji: 'i', image: '🐗 いのしし' },
-      { char: 'う', romaji: 'u', image: '🐮 うし' },
-      { char: 'え', romaji: 'e', image: '🖼️ えいが' },
-      { char: 'お', romaji: 'o', image: '👻 おばけ' }
+      { id: 1, char: 'あ', romaji: 'a', image: '🍎 りんご' },
+      { id: 2, char: 'い', romaji: 'i', image: '🐗 いのしし' },
+      { id: 3, char: 'う', romaji: 'u', image: '🐮 うし' },
+      { id: 4, char: 'え', romaji: 'e', image: '🖼️ えいが' },
+      { id: 5, char: 'お', romaji: 'o', image: '�� おばけ' }
     ]
   },
   {

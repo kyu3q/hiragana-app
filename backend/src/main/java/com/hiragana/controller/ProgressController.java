@@ -3,6 +3,7 @@ package com.hiragana.controller;
 import com.hiragana.model.Progress;
 import com.hiragana.model.User;
 import com.hiragana.model.Character;
+import com.hiragana.model.CharacterType;
 import com.hiragana.service.ProgressService;
 import com.hiragana.service.UserService;
 import com.hiragana.service.CharacterService;
@@ -38,7 +39,7 @@ public class ProgressController {
     @GetMapping("/user/{userId}/type/{type}")
     public ResponseEntity<List<Progress>> getUserProgressByType(
             @PathVariable Long userId,
-            @PathVariable Character.CharacterType type) {
+            @PathVariable CharacterType type) {
         Optional<User> user = userService.getUserById(userId);
         if (user.isPresent()) {
             return ResponseEntity.ok(progressService.getUserProgressByType(user.get(), type));
@@ -53,7 +54,7 @@ public class ProgressController {
             @RequestParam Integer score) {
         Optional<User> user = userService.getUserById(userId);
         Optional<Character> character = characterService.getCharacterByTypeAndCharacter(
-                Character.CharacterType.HIRAGANA, // TODO: 文字タイプの指定方法を検討
+                CharacterType.HIRAGANA, // TODO: 文字タイプの指定方法を検討
                 "あ" // TODO: 文字の指定方法を検討
         );
 

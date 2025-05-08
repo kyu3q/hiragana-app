@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import './WritingGrid.css';
 import WritingPractice from '../WritingPractice/WritingPractice';
-
-const STORAGE_KEY_PREFIX = 'writingGrid_';
+import { characterService } from '../../api/characterService';
 
 const WritingGrid = ({ character, onClose }) => {
-  const storageKey = STORAGE_KEY_PREFIX + character.char;
   const [gridItems, setGridItems] = useState(
     Array(9).fill(null).map(() => ({
       drawing: null,
@@ -15,19 +13,33 @@ const WritingGrid = ({ character, onClose }) => {
     }))
   );
 
-  // 初回マウント時にlocalStorageから復元
+  // 初回マウント時にAPIからデータを取得
   useEffect(() => {
-    const saved = localStorage.getItem(storageKey);
-    if (saved) {
-      const loaded = JSON.parse(saved).map(item => ({ ...item, isEditing: false }));
-      setGridItems(loaded);
-    }
-  }, [storageKey]);
+    const fetchSavedStrokes = async () => {
+      try {
+        const data = await characterService.getStrokeResult(character.id);
+        if (data && data.strokes) {
+          const newGridItems = gridItems.map((item, index) => {
+            if (index < data.strokes.length) {
+              const stroke = data.strokes[index];
+              return {
+                drawing: stroke.points,
+                score: stroke.score || null,
+                comment: stroke.comment || '',
+                isEditing: false
+              };
+            }
+            return item;
+          });
+          setGridItems(newGridItems);
+        }
+      } catch (error) {
+        console.error('なぞり結果の取得に失敗しました:', error);
+      }
+    };
 
-  // gridItemsが変わるたびにlocalStorageへ保存
-  useEffect(() => {
-    localStorage.setItem(storageKey, JSON.stringify(gridItems));
-  }, [gridItems, storageKey]);
+    fetchSavedStrokes();
+  }, [character.id]);
 
   const handleGridItemClick = (index) => {
     const newGridItems = [...gridItems];
@@ -38,7 +50,7 @@ const WritingGrid = ({ character, onClose }) => {
     setGridItems(newGridItems);
   };
 
-  const handleWritingComplete = (index, drawingData, score, comment) => {
+  const handleWritingComplete = async (index, drawingData, score, comment) => {
     const newGridItems = [...gridItems];
     newGridItems[index] = {
       drawing: drawingData,
@@ -47,6 +59,21 @@ const WritingGrid = ({ character, onClose }) => {
       isEditing: false
     };
     setGridItems(newGridItems);
+
+    // APIに保存
+    try {
+      const strokes = newGridItems
+        .filter(item => item.drawing)
+        .map(item => ({
+          points: item.drawing,
+          score: item.score,
+          comment: item.comment
+        }));
+
+      await characterService.saveStrokeResult(character.id, { strokes });
+    } catch (error) {
+      console.error('なぞり結果の保存に失敗しました:', error);
+    }
   };
 
   return (

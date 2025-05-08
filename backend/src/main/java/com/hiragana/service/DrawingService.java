@@ -3,6 +3,7 @@ package com.hiragana.service;
 import com.hiragana.model.Drawing;
 import com.hiragana.model.User;
 import com.hiragana.model.Character;
+import com.hiragana.model.CharacterType;
 import com.hiragana.repository.DrawingRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -24,7 +25,7 @@ public class DrawingService {
         return drawingRepository.findByUserAndCharacter(user, character);
     }
 
-    public List<Drawing> getUserDrawingsByType(User user, Character.CharacterType type) {
+    public List<Drawing> getUserDrawingsByType(User user, CharacterType type) {
         return drawingRepository.findByUserAndCharacter_Type(user, type);
     }
 

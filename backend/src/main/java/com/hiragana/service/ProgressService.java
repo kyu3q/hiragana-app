@@ -3,6 +3,7 @@ package com.hiragana.service;
 import com.hiragana.model.Progress;
 import com.hiragana.model.User;
 import com.hiragana.model.Character;
+import com.hiragana.model.CharacterType;
 import com.hiragana.repository.ProgressRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -22,7 +23,7 @@ public class ProgressService {
         return progressRepository.findByUser(user);
     }
 
-    public List<Progress> getUserProgressByType(User user, Character.CharacterType type) {
+    public List<Progress> getUserProgressByType(User user, CharacterType type) {
         return progressRepository.findByUserAndCharacter_Type(user, type);
     }
 

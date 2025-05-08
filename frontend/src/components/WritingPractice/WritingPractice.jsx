@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './WritingPractice.css';
+import { characterService } from '../../api/characterService';
 
 const WritingPractice = ({ character, onComplete }) => {
   const canvasRef = useRef(null);
@@ -8,6 +9,8 @@ const WritingPractice = ({ character, onComplete }) => {
   const [lastY, setLastY] = useState(0);
   const [strokeColor, setStrokeColor] = useState('#FF6B6B');
   const [strokeWidth, setStrokeWidth] = useState(8);
+  const [currentStroke, setCurrentStroke] = useState([]);
+  const [allStrokes, setAllStrokes] = useState([]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -26,7 +29,48 @@ const WritingPractice = ({ character, onComplete }) => {
     
     // 文字を薄い色で表示
     drawCharacter(ctx);
+
+    // 保存されたなぞり結果を取得
+    const fetchSavedStrokes = async () => {
+      try {
+        const data = await characterService.getStrokeResult(character.id);
+        if (data && data.strokes) {
+          setAllStrokes(data.strokes);
+          drawSavedStrokes(data.strokes);
+        }
+      } catch (error) {
+        console.error('なぞり結果の取得に失敗しました:', error);
+      }
+    };
+
+    fetchSavedStrokes();
   }, [character]);
+
+  // 保存されたなぞり結果を描画
+  const drawSavedStrokes = (strokes) => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    drawGuidelines(ctx);
+    drawCharacter(ctx);
+
+    strokes.forEach(stroke => {
+      if (stroke.points.length > 0) {
+        ctx.beginPath();
+        ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
+        stroke.points.forEach(point => {
+          ctx.lineTo(point.x, point.y);
+        });
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = strokeWidth;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.stroke();
+      }
+    });
+  };
 
   const drawGuidelines = (ctx) => {
     ctx.strokeStyle = '#e0e0e0';
@@ -58,6 +102,7 @@ const WritingPractice = ({ character, onComplete }) => {
     setIsDrawing(true);
     setLastX(x);
     setLastY(y);
+    setCurrentStroke([{ x, y }]);
   };
 
   const draw = (e) => {
@@ -80,10 +125,16 @@ const WritingPractice = ({ character, onComplete }) => {
     
     setLastX(x);
     setLastY(y);
+    setCurrentStroke(prev => [...prev, { x, y }]);
   };
 
   const stopDrawing = () => {
+    if (!isDrawing) return;
     setIsDrawing(false);
+
+    // 現在のストロークをallStrokesに追加
+    setAllStrokes(prev => [...prev, { points: currentStroke }]);
+    setCurrentStroke([]);
   };
 
   const clearCanvas = () => {
@@ -93,6 +144,8 @@ const WritingPractice = ({ character, onComplete }) => {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     drawGuidelines(ctx);
     drawCharacter(ctx);
+    setAllStrokes([]);
+    setCurrentStroke([]);
   };
 
   const evaluateDrawing = () => {
@@ -111,11 +164,22 @@ const WritingPractice = ({ character, onComplete }) => {
     return { score, comment };
   };
 
-  const handleComplete = () => {
-    const canvas = canvasRef.current;
-    const drawingData = canvas.toDataURL();
+  const handleComplete = async () => {
     const { score, comment } = evaluateDrawing();
-    onComplete(drawingData, score, comment);
+    
+    // すべてのストロークを保存
+    try {
+      await characterService.saveStrokeResult(character.id, {
+        strokes: allStrokes,
+        score,
+        comment
+      });
+      
+      // 親コンポーネントに完了を通知
+      onComplete(allStrokes, score, comment);
+    } catch (error) {
+      console.error('なぞり結果の保存に失敗しました:', error);
+    }
   };
 
   // タッチ開始
