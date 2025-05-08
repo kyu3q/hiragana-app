@@ -1,0 +1,54 @@
+.start-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background: linear-gradient(135deg, #e0f7fa 0%, #fffde4 100%);
+}
+
+.start-title {
+  font-size: 2.5rem;
+  color: #ff6b6b;
+  margin-bottom: 40px;
+  font-family: 'M PLUS Rounded 1c', sans-serif;
+  letter-spacing: 0.1em;
+}
+
+.start-buttons {
+  display: flex;
+  gap: 32px;
+}
+
+.start-btn {
+  font-size: 2rem;
+  padding: 36px 48px;
+  border: none;
+  border-radius: 32px;
+  font-family: 'M PLUS Rounded 1c', sans-serif;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.10);
+  transition: transform 0.15s, box-shadow 0.15s;
+  outline: none;
+}
+
+.start-btn.hiragana {
+  background: linear-gradient(135deg, #ffe6fa 0%, #b3e5fc 100%);
+  color: #d72660;
+}
+
+.start-btn.katakana {
+  background: linear-gradient(135deg, #fffde4 0%, #b2f7ef 100%);
+  color: #1b9aaa;
+}
+
+.start-btn.kanji {
+  background: linear-gradient(135deg, #f9fbe7 0%, #ffe082 100%);
+  color: #f57c00;
+}
+
+.start-btn:hover {
+  transform: scale(1.08) rotate(-2deg);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.18);
+} 
