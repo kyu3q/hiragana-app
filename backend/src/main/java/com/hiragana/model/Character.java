@@ -1,9 +1,11 @@
 package com.hiragana.model;
 
 import javax.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
 @Table(name = "characters")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Character {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -18,7 +20,7 @@ public class Character {
     @Column(nullable = false)
     private String image;
 
-    @Column(nullable = false)
+    @Column(name = "group_name", nullable = false)
     private String groupName;
 
     @Enumerated(EnumType.STRING)

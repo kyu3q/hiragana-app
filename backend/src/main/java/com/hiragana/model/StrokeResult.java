@@ -2,9 +2,12 @@ package com.hiragana.model;
 
 import javax.persistence.*;
 import java.util.List;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
 @Table(name = "stroke_results")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class StrokeResult {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -12,10 +15,14 @@ public class StrokeResult {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "character_id", nullable = false)
+    @JsonIgnoreProperties({"strokeResults"})
     private Character character;
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
-    @JoinColumn(name = "stroke_result_id")
+    @Column(nullable = false)
+    private Integer position;
+
+    @OneToMany(mappedBy = "strokeResult", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
     private List<Stroke> strokes;
 
     private Integer score;
@@ -36,6 +43,14 @@ public class StrokeResult {
 
     public void setCharacter(Character character) {
         this.character = character;
+    }
+
+    public Integer getPosition() {
+        return position;
+    }
+
+    public void setPosition(Integer position) {
+        this.position = position;
     }
 
     public List<Stroke> getStrokes() {

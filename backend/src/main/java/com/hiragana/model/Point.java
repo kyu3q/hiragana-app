@@ -1,33 +1,56 @@
 package com.hiragana.model;
 
-import javax.persistence.Embeddable;
+import javax.persistence.*;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 
-@Embeddable
+@Entity
+@Table(name = "stroke_points")
 public class Point {
-    private double x;
-    private double y;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    public Point() {
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "stroke_id", nullable = false)
+    @JsonBackReference
+    private Stroke stroke;
+
+    @Column(nullable = false)
+    private Double x;
+
+    @Column(nullable = false)
+    private Double y;
+
+    // Getters and Setters
+    public Long getId() {
+        return id;
     }
 
-    public Point(double x, double y) {
-        this.x = x;
-        this.y = y;
+    public void setId(Long id) {
+        this.id = id;
     }
 
-    public double getX() {
+    public Stroke getStroke() {
+        return stroke;
+    }
+
+    public void setStroke(Stroke stroke) {
+        this.stroke = stroke;
+    }
+
+    public Double getX() {
         return x;
     }
 
-    public void setX(double x) {
+    public void setX(Double x) {
         this.x = x;
     }
 
-    public double getY() {
+    public Double getY() {
         return y;
     }
 
-    public void setY(double y) {
+    public void setY(Double y) {
         this.y = y;
     }
 } 

@@ -8,13 +8,19 @@ import com.hiragana.repository.StrokeResultRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.ArrayList;
 
 @Service
 @Transactional
 public class CharacterService {
+    private static final Logger logger = LoggerFactory.getLogger(CharacterService.class);
+
     @Autowired
     private CharacterRepository characterRepository;
 
@@ -22,7 +28,18 @@ public class CharacterService {
     private StrokeResultRepository strokeResultRepository;
 
     public List<Character> getAllCharacters() {
-        return characterRepository.findAll();
+        try {
+            logger.debug("Fetching all characters from database");
+            List<Character> characters = characterRepository.findAll();
+            logger.debug("Found {} characters", characters.size());
+            return characters;
+        } catch (DataAccessException e) {
+            logger.error("Database error while fetching all characters", e);
+            throw new RuntimeException("Failed to fetch characters from database", e);
+        } catch (Exception e) {
+            logger.error("Unexpected error while fetching all characters", e);
+            throw new RuntimeException("Unexpected error while fetching characters", e);
+        }
     }
 
     public Optional<Character> getCharacterById(Long id) {
@@ -45,20 +62,13 @@ public class CharacterService {
         return strokeResultRepository.findByCharacter_Id(characterId);
     }
 
-    public StrokeResult saveStrokeResult(Long characterId, StrokeResult strokeResult) {
-        Character character = characterRepository.findById(characterId)
-                .orElseThrow(() -> new RuntimeException("Character not found"));
+    public StrokeResult findByCharacterIdAndPosition(Long characterId, Integer position) {
+        return strokeResultRepository.findByCharacter_IdAndPosition(characterId, position)
+            .orElse(null);
+    }
 
-        Optional<StrokeResult> existingResult = strokeResultRepository.findByCharacter_Id(characterId);
-        if (existingResult.isPresent()) {
-            StrokeResult result = existingResult.get();
-            result.setStrokes(strokeResult.getStrokes());
-            result.setScore(strokeResult.getScore());
-            result.setComment(strokeResult.getComment());
-            return strokeResultRepository.save(result);
-        }
-
-        strokeResult.setCharacter(character);
+    @Transactional
+    public StrokeResult saveStrokeResult(StrokeResult strokeResult) {
         return strokeResultRepository.save(strokeResult);
     }
 

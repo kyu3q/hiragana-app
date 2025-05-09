@@ -4,42 +4,43 @@ import WritingPractice from '../WritingPractice/WritingPractice';
 import { characterService } from '../../api/characterService';
 
 const WritingGrid = ({ character, onClose }) => {
-  const [gridItems, setGridItems] = useState(
-    Array(9).fill(null).map(() => ({
-      drawing: null,
-      score: null,
-      comment: '',
-      isEditing: false
-    }))
-  );
+  const [gridItems, setGridItems] = useState(Array(9).fill(null).map(() => ({
+    strokes: [],
+    score: 0,
+    comment: '',
+    isEditing: false
+  })));
 
-  // 初回マウント時にAPIからデータを取得
   useEffect(() => {
-    const fetchSavedStrokes = async () => {
+    const fetchStrokeResults = async () => {
       try {
-        const data = await characterService.getStrokeResult(character.id);
-        if (data && data.strokes) {
-          const newGridItems = gridItems.map((item, index) => {
-            if (index < data.strokes.length) {
-              const stroke = data.strokes[index];
-              return {
-                drawing: stroke.points,
-                score: stroke.score || null,
-                comment: stroke.comment || '',
-                isEditing: false
-              };
-            }
-            return item;
+        const result = await characterService.getStrokeResult(character.id);
+        if (result && result.strokes) {
+          const newGridItems = Array(9).fill(null).map((_, index) => {
+            const stroke = result.strokes.find(s => s.position === index);
+            return stroke ? {
+              strokes: stroke.points || [],
+              score: stroke.score || 0,
+              comment: stroke.comment || '',
+              isEditing: false
+            } : {
+              strokes: [],
+              score: 0,
+              comment: '',
+              isEditing: false
+            };
           });
           setGridItems(newGridItems);
         }
       } catch (error) {
-        console.error('なぞり結果の取得に失敗しました:', error);
+        console.error('Error fetching stroke results:', error);
       }
     };
 
-    fetchSavedStrokes();
-  }, [character.id]);
+    if (character && character.id) {
+      fetchStrokeResults();
+    }
+  }, [character]);
 
   const handleGridItemClick = (index) => {
     const newGridItems = [...gridItems];
@@ -50,30 +51,106 @@ const WritingGrid = ({ character, onClose }) => {
     setGridItems(newGridItems);
   };
 
-  const handleWritingComplete = async (index, drawingData, score, comment) => {
-    const newGridItems = [...gridItems];
-    newGridItems[index] = {
-      drawing: drawingData,
-      score,
-      comment,
-      isEditing: false
-    };
-    setGridItems(newGridItems);
-
-    // APIに保存
+  const handleWritingComplete = async (strokes, score, comment, position) => {
     try {
-      const strokes = newGridItems
-        .filter(item => item.drawing)
-        .map(item => ({
-          points: item.drawing,
-          score: item.score,
-          comment: item.comment
-        }));
+      if (position === undefined || position === null) {
+        throw new Error('位置情報が設定されていません');
+      }
 
-      await characterService.saveStrokeResult(character.id, { strokes });
+      const updatedGridItems = [...gridItems];
+      const strokesArray = Array.isArray(strokes) ? strokes : [strokes];
+      
+      updatedGridItems[position] = {
+        strokes: strokesArray,
+        score: score || 0,
+        comment: comment || ''
+      };
+      setGridItems(updatedGridItems);
+
+      const strokeData = {
+        position: position,
+        strokes: strokesArray,
+        score: score || 0,
+        comment: comment || ''
+      };
+
+      console.log('Saving stroke data:', strokeData);
+      await characterService.saveStrokeResult(character.id, strokeData);
     } catch (error) {
-      console.error('なぞり結果の保存に失敗しました:', error);
+      console.error('Error saving stroke result:', error);
+      alert(error.message || 'ストローク結果の保存に失敗しました。もう一度お試しください。');
     }
+  };
+
+  const renderGridItem = (item, index) => {
+    if (item.isEditing) {
+      return (
+        <WritingPractice
+          character={character}
+          onComplete={(strokes, score, comment) => 
+            handleWritingComplete(strokes, score, comment, index)
+          }
+          initialStrokes={item.strokes}
+          score={item.score}
+          comment={item.comment}
+        />
+      );
+    }
+
+    return (
+      <div 
+        className="grid-item-content"
+        onClick={() => handleGridItemClick(index)}
+      >
+        {item.strokes.length > 0 ? (
+          <>
+            <div className="preview-canvas-wrapper">
+              <canvas 
+                className="preview-canvas"
+                width="200"
+                height="200"
+                ref={canvas => {
+                  if (canvas && item.strokes) {
+                    const ctx = canvas.getContext('2d');
+                    ctx.clearRect(0, 0, 200, 200);
+                    
+                    // 背景を白に設定
+                    ctx.fillStyle = 'white';
+                    ctx.fillRect(0, 0, 200, 200);
+                    
+                    // ストロークを描画
+                    item.strokes.forEach(stroke => {
+                      if (stroke.points && stroke.points.length > 0) {
+                        ctx.beginPath();
+                        ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
+                        stroke.points.forEach(point => {
+                          ctx.lineTo(point.x, point.y);
+                        });
+                        ctx.strokeStyle = '#FF6B6B';
+                        ctx.lineWidth = 4;
+                        ctx.lineCap = 'round';
+                        ctx.lineJoin = 'round';
+                        ctx.stroke();
+                      }
+                    });
+                  }
+                }}
+              />
+            </div>
+            {item.score > 0 && (
+              <div className="score-display">
+                <div className="score">{item.score}点</div>
+                <div className="comment">{item.comment}</div>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="empty-grid-item">
+            <span>クリックして練習</span>
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -85,52 +162,7 @@ const WritingGrid = ({ character, onClose }) => {
       <div className="writing-grid">
         {gridItems.map((item, index) => (
           <div key={index} className="grid-item">
-            {item.isEditing ? (
-              <WritingPractice
-                character={character}
-                onComplete={(drawingData, score, comment) => 
-                  handleWritingComplete(index, drawingData, score, comment)
-                }
-              />
-            ) : (
-              <div 
-                className="grid-item-content"
-                onClick={() => handleGridItemClick(index)}
-              >
-                {item.drawing ? (
-                  <>
-                    <div className="preview-canvas-wrapper">
-                      <canvas 
-                        className="preview-canvas"
-                        width="200"
-                        height="200"
-                        ref={canvas => {
-                          if (canvas && item.drawing) {
-                            const ctx = canvas.getContext('2d');
-                            ctx.clearRect(0, 0, 200, 200);
-                            const img = new Image();
-                            img.onload = () => {
-                              ctx.drawImage(img, 0, 0, 200, 200);
-                            };
-                            img.src = item.drawing;
-                          }
-                        }}
-                      />
-                    </div>
-                    {item.score !== null && (
-                      <div className="score-display">
-                        <div className="score">{item.score}点</div>
-                        <div className="comment">{item.comment}</div>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <div className="empty-grid-item">
-                    <span>クリックして練習</span>
-                  </div>
-                )}
-              </div>
-            )}
+            {renderGridItem(item, index)}
           </div>
         ))}
       </div>

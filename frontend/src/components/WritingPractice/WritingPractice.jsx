@@ -16,21 +16,17 @@ const WritingPractice = ({ character, onComplete }) => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     
-    // キャンバスのサイズを設定
+    // キャンバスの初期化
     canvas.width = 300;
     canvas.height = 300;
-    
-    // 背景を白に設定
     ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // ガイドラインを描画
+    // ガイドラインと文字の描画
     drawGuidelines(ctx);
-    
-    // 文字を薄い色で表示
     drawCharacter(ctx);
 
-    // 保存されたなぞり結果を取得
+    // 保存されたストロークの取得
     const fetchSavedStrokes = async () => {
       try {
         const data = await characterService.getStrokeResult(character.id);
@@ -46,7 +42,27 @@ const WritingPractice = ({ character, onComplete }) => {
     fetchSavedStrokes();
   }, [character]);
 
-  // 保存されたなぞり結果を描画
+  const drawGuidelines = (ctx) => {
+    ctx.strokeStyle = '#e0e0e0';
+    ctx.lineWidth = 1;
+    
+    // 十字線
+    ctx.beginPath();
+    ctx.moveTo(0, canvasRef.current.height / 2);
+    ctx.lineTo(canvasRef.current.width, canvasRef.current.height / 2);
+    ctx.moveTo(canvasRef.current.width / 2, 0);
+    ctx.lineTo(canvasRef.current.width / 2, canvasRef.current.height);
+    ctx.stroke();
+  };
+
+  const drawCharacter = (ctx) => {
+    ctx.font = '200px "M PLUS Rounded 1c"';
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(character.char, canvasRef.current.width / 2, canvasRef.current.height / 2);
+  };
+
   const drawSavedStrokes = (strokes) => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
@@ -70,27 +86,6 @@ const WritingPractice = ({ character, onComplete }) => {
         ctx.stroke();
       }
     });
-  };
-
-  const drawGuidelines = (ctx) => {
-    ctx.strokeStyle = '#e0e0e0';
-    ctx.lineWidth = 1;
-    
-    // 十字線
-    ctx.beginPath();
-    ctx.moveTo(0, canvasRef.current.height / 2);
-    ctx.lineTo(canvasRef.current.width, canvasRef.current.height / 2);
-    ctx.moveTo(canvasRef.current.width / 2, 0);
-    ctx.lineTo(canvasRef.current.width / 2, canvasRef.current.height);
-    ctx.stroke();
-  };
-
-  const drawCharacter = (ctx) => {
-    ctx.font = '200px "M PLUS Rounded 1c"';
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(character.char, canvasRef.current.width / 2, canvasRef.current.height / 2);
   };
 
   const startDrawing = (e) => {
@@ -131,8 +126,6 @@ const WritingPractice = ({ character, onComplete }) => {
   const stopDrawing = () => {
     if (!isDrawing) return;
     setIsDrawing(false);
-
-    // 現在のストロークをallStrokesに追加
     setAllStrokes(prev => [...prev, { points: currentStroke }]);
     setCurrentStroke([]);
   };
@@ -149,8 +142,6 @@ const WritingPractice = ({ character, onComplete }) => {
   };
 
   const evaluateDrawing = () => {
-    // ここで採点ロジックを実装
-    // 実際の実装では、より複雑な評価アルゴリズムを使用する
     const score = Math.floor(Math.random() * 41) + 60; // 60-100点のランダムなスコア
     const comments = [
       '上手に書けました！',
@@ -160,65 +151,24 @@ const WritingPractice = ({ character, onComplete }) => {
       '書き順に気をつけましょう'
     ];
     const comment = comments[Math.floor(Math.random() * comments.length)];
-    
     return { score, comment };
   };
 
   const handleComplete = async () => {
-    const { score, comment } = evaluateDrawing();
-    
-    // すべてのストロークを保存
     try {
-      await characterService.saveStrokeResult(character.id, {
-        strokes: allStrokes,
-        score,
-        comment
-      });
-      
-      // 親コンポーネントに完了を通知
-      onComplete(allStrokes, score, comment);
+      const { score, comment } = evaluateDrawing();
+      const strokeData = {
+        strokes: allStrokes.map(stroke => ({
+          points: stroke.points,
+          score: score,
+          comment: comment
+        }))
+      };
+      onComplete(strokeData, score, comment);
     } catch (error) {
       console.error('なぞり結果の保存に失敗しました:', error);
+      alert('なぞり結果の保存に失敗しました。もう一度お試しください。');
     }
-  };
-
-  // タッチ開始
-  const startTouch = (e) => {
-    const canvas = canvasRef.current;
-    const rect = canvas.getBoundingClientRect();
-    const touch = e.touches[0];
-    const x = touch.clientX - rect.left;
-    const y = touch.clientY - rect.top;
-    setIsDrawing(true);
-    setLastX(x);
-    setLastY(y);
-  };
-
-  // タッチ移動
-  const moveTouch = (e) => {
-    if (!isDrawing) return;
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    const rect = canvas.getBoundingClientRect();
-    const touch = e.touches[0];
-    const x = touch.clientX - rect.left;
-    const y = touch.clientY - rect.top;
-    ctx.beginPath();
-    ctx.moveTo(lastX, lastY);
-    ctx.lineTo(x, y);
-    ctx.strokeStyle = strokeColor;
-    ctx.lineWidth = strokeWidth;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.stroke();
-    setLastX(x);
-    setLastY(y);
-    e.preventDefault(); // スクロール防止
-  };
-
-  // タッチ終了
-  const endTouch = () => {
-    setIsDrawing(false);
   };
 
   return (
@@ -234,14 +184,11 @@ const WritingPractice = ({ character, onComplete }) => {
           onMouseMove={draw}
           onMouseUp={stopDrawing}
           onMouseOut={stopDrawing}
-          onTouchStart={startTouch}
-          onTouchMove={moveTouch}
-          onTouchEnd={endTouch}
         />
       </div>
       <div className="writing-controls">
-        <button className="clear-button" onClick={clearCanvas}>
-          消す
+        <button className="cancel-button" onClick={clearCanvas}>
+          取り消し
         </button>
         <div className="color-picker">
           <button 
