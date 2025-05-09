@@ -39,6 +39,26 @@ const WritingPractice = ({ character, onComplete }) => {
     fetchSavedStrokes();
   }, [character]);
 
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    // パッシブでないイベントリスナーでpreventDefaultを有効にする
+    const handleTouchStartPassive = (e) => handleTouchStart(e);
+    const handleTouchMovePassive = (e) => handleTouchMove(e);
+    const handleTouchEndPassive = (e) => handleTouchEnd(e);
+
+    canvas.addEventListener('touchstart', handleTouchStartPassive, { passive: false });
+    canvas.addEventListener('touchmove', handleTouchMovePassive, { passive: false });
+    canvas.addEventListener('touchend', handleTouchEndPassive, { passive: false });
+
+    return () => {
+      canvas.removeEventListener('touchstart', handleTouchStartPassive);
+      canvas.removeEventListener('touchmove', handleTouchMovePassive);
+      canvas.removeEventListener('touchend', handleTouchEndPassive);
+    };
+  }, []);
+
   // ガイド文字をcanvasサイズに合わせて描画する共通関数
   const drawGuideCharacter = (ctx, char, size) => {
     ctx.font = `${size * 0.7}px 'M PLUS Rounded 1c', sans-serif`;
@@ -168,6 +188,56 @@ const WritingPractice = ({ character, onComplete }) => {
     }
   };
 
+  const getTouchPos = (touch, canvas) => {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    return {
+      x: (touch.clientX - rect.left) * scaleX,
+      y: (touch.clientY - rect.top) * scaleY
+    };
+  };
+
+  const handleTouchStart = (e) => {
+    e.preventDefault();
+    const canvas = canvasRef.current;
+    const touch = e.touches[0];
+    const { x, y } = getTouchPos(touch, canvas);
+    setIsDrawing(true);
+    setLastX(x);
+    setLastY(y);
+    setCurrentStroke([{ x, y }]);
+  };
+
+  const handleTouchMove = (e) => {
+    if (!isDrawing) return;
+    e.preventDefault();
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    const touch = e.touches[0];
+    const { x, y } = getTouchPos(touch, canvas);
+
+    ctx.beginPath();
+    ctx.moveTo(lastX, lastY);
+    ctx.lineTo(x, y);
+    ctx.strokeStyle = strokeColor;
+    ctx.lineWidth = strokeWidth;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+
+    setLastX(x);
+    setLastY(y);
+    setCurrentStroke(prev => [...prev, { x, y }]);
+  };
+
+  const handleTouchEnd = (e) => {
+    if (!isDrawing) return;
+    setIsDrawing(false);
+    setAllStrokes(prev => [...prev, { points: currentStroke }]);
+    setCurrentStroke([]);
+  };
+
   return (
     <div className="writing-practice">
       <div className="writing-header">
@@ -183,6 +253,9 @@ const WritingPractice = ({ character, onComplete }) => {
           onMouseMove={draw}
           onMouseUp={stopDrawing}
           onMouseOut={stopDrawing}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
         />
       </div>
       <div className="writing-controls">
