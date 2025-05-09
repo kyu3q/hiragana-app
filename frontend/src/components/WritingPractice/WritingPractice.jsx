@@ -15,16 +15,13 @@ const WritingPractice = ({ character, onComplete }) => {
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
-    
+    const size = canvas.width;
     // キャンバスの初期化
-    canvas.width = 300;
-    canvas.height = 300;
     ctx.fillStyle = 'white';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
+    ctx.fillRect(0, 0, size, size);
     // ガイドラインと文字の描画
-    drawGuidelines(ctx);
-    drawCharacter(ctx);
+    drawGuidelines(ctx, size);
+    drawGuideCharacter(ctx, character.char, size);
 
     // 保存されたストロークの取得
     const fetchSavedStrokes = async () => {
@@ -42,35 +39,35 @@ const WritingPractice = ({ character, onComplete }) => {
     fetchSavedStrokes();
   }, [character]);
 
-  const drawGuidelines = (ctx) => {
-    ctx.strokeStyle = '#e0e0e0';
-    ctx.lineWidth = 1;
-    
-    // 十字線
-    ctx.beginPath();
-    ctx.moveTo(0, canvasRef.current.height / 2);
-    ctx.lineTo(canvasRef.current.width, canvasRef.current.height / 2);
-    ctx.moveTo(canvasRef.current.width / 2, 0);
-    ctx.lineTo(canvasRef.current.width / 2, canvasRef.current.height);
-    ctx.stroke();
-  };
-
-  const drawCharacter = (ctx) => {
-    ctx.font = '200px "M PLUS Rounded 1c"';
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+  // ガイド文字をcanvasサイズに合わせて描画する共通関数
+  const drawGuideCharacter = (ctx, char, size) => {
+    ctx.font = `${size * 0.7}px 'M PLUS Rounded 1c', sans-serif`;
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.08)';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(character.char, canvasRef.current.width / 2, canvasRef.current.height / 2);
+    ctx.fillText(char, size / 2, size / 2);
+  };
+
+  const drawGuidelines = (ctx, size) => {
+    ctx.strokeStyle = '#e0e0e0';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, size / 2);
+    ctx.lineTo(size, size / 2);
+    ctx.moveTo(size / 2, 0);
+    ctx.lineTo(size / 2, size);
+    ctx.stroke();
   };
 
   const drawSavedStrokes = (strokes) => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const size = canvas.width;
+    ctx.clearRect(0, 0, size, size);
     ctx.fillStyle = 'white';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    drawGuidelines(ctx);
-    drawCharacter(ctx);
+    ctx.fillRect(0, 0, size, size);
+    drawGuidelines(ctx, size);
+    drawGuideCharacter(ctx, character.char, size);
 
     strokes.forEach(stroke => {
       if (stroke.points.length > 0) {
@@ -102,13 +99,14 @@ const WritingPractice = ({ character, onComplete }) => {
 
   const draw = (e) => {
     if (!isDrawing) return;
-    
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
+
     ctx.beginPath();
     ctx.moveTo(lastX, lastY);
     ctx.lineTo(x, y);
@@ -117,7 +115,7 @@ const WritingPractice = ({ character, onComplete }) => {
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.stroke();
-    
+
     setLastX(x);
     setLastY(y);
     setCurrentStroke(prev => [...prev, { x, y }]);
@@ -133,10 +131,11 @@ const WritingPractice = ({ character, onComplete }) => {
   const clearCanvas = () => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
+    const size = canvas.width;
     ctx.fillStyle = 'white';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    drawGuidelines(ctx);
-    drawCharacter(ctx);
+    ctx.fillRect(0, 0, size, size);
+    drawGuidelines(ctx, size);
+    drawGuideCharacter(ctx, character.char, size);
     setAllStrokes([]);
     setCurrentStroke([]);
   };
@@ -157,14 +156,12 @@ const WritingPractice = ({ character, onComplete }) => {
   const handleComplete = async () => {
     try {
       const { score, comment } = evaluateDrawing();
-      const strokeData = {
-        strokes: allStrokes.map(stroke => ({
-          points: stroke.points,
-          score: score,
-          comment: comment
-        }))
-      };
-      onComplete(strokeData, score, comment);
+      const strokesArray = allStrokes.map(stroke => ({
+        points: stroke.points,
+        score: score,
+        comment: comment
+      }));
+      onComplete(strokesArray, score, comment);
     } catch (error) {
       console.error('なぞり結果の保存に失敗しました:', error);
       alert('なぞり結果の保存に失敗しました。もう一度お試しください。');
@@ -174,12 +171,14 @@ const WritingPractice = ({ character, onComplete }) => {
   return (
     <div className="writing-practice">
       <div className="writing-header">
-        <h2>{character.char}をなぞって書いてみよう</h2>
+        <h2>{character.char}〜</h2>
       </div>
       <div className="writing-canvas-container">
         <canvas
           ref={canvasRef}
           className="writing-canvas"
+          width={300}
+          height={300}
           onMouseDown={startDrawing}
           onMouseMove={draw}
           onMouseUp={stopDrawing}
@@ -188,7 +187,7 @@ const WritingPractice = ({ character, onComplete }) => {
       </div>
       <div className="writing-controls">
         <button className="cancel-button" onClick={clearCanvas}>
-          取り消し
+          取消
         </button>
         <div className="color-picker">
           <button 

@@ -3,6 +3,9 @@ import './WritingGrid.css';
 import WritingPractice from '../WritingPractice/WritingPractice';
 import { characterService } from '../../api/characterService';
 
+const PRACTICE_CANVAS_SIZE = 300; // 練習用キャンバスのサイズ
+const GRID_CANVAS_SIZE = 180;     // グリッド用キャンバスのサイズ
+
 const WritingGrid = ({ character, onClose }) => {
   const [gridItems, setGridItems] = useState(Array(9).fill(null).map(() => ({
     strokes: [],
@@ -82,6 +85,14 @@ const WritingGrid = ({ character, onClose }) => {
     }
   };
 
+  const drawGuideCharacter = (ctx, char, width, height) => {
+    ctx.font = `${width * 0.7}px 'M PLUS Rounded 1c', sans-serif`;
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.08)';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(char, width / 2, height / 2);
+  };
+
   const renderGridItem = (item, index) => {
     if (item.isEditing) {
       return (
@@ -107,27 +118,25 @@ const WritingGrid = ({ character, onClose }) => {
             <div className="preview-canvas-wrapper">
               <canvas 
                 className="preview-canvas"
-                width="200"
-                height="200"
+                width={GRID_CANVAS_SIZE}
+                height={GRID_CANVAS_SIZE}
                 ref={canvas => {
                   if (canvas && item.strokes) {
                     const ctx = canvas.getContext('2d');
-                    ctx.clearRect(0, 0, 200, 200);
-                    
-                    // 背景を白に設定
+                    ctx.clearRect(0, 0, GRID_CANVAS_SIZE, GRID_CANVAS_SIZE);
                     ctx.fillStyle = 'white';
-                    ctx.fillRect(0, 0, 200, 200);
-                    
-                    // ストロークを描画
+                    ctx.fillRect(0, 0, GRID_CANVAS_SIZE, GRID_CANVAS_SIZE);
+                    drawGuideCharacter(ctx, character.char, GRID_CANVAS_SIZE, GRID_CANVAS_SIZE);
+                    const scale = GRID_CANVAS_SIZE / PRACTICE_CANVAS_SIZE;
                     item.strokes.forEach(stroke => {
                       if (stroke.points && stroke.points.length > 0) {
                         ctx.beginPath();
-                        ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
+                        ctx.moveTo(stroke.points[0].x * scale, stroke.points[0].y * scale);
                         stroke.points.forEach(point => {
-                          ctx.lineTo(point.x, point.y);
+                          ctx.lineTo(point.x * scale, point.y * scale);
                         });
                         ctx.strokeStyle = '#FF6B6B';
-                        ctx.lineWidth = 4;
+                        ctx.lineWidth = 4 * scale;
                         ctx.lineCap = 'round';
                         ctx.lineJoin = 'round';
                         ctx.stroke();

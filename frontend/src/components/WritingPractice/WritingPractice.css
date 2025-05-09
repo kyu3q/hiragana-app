@@ -8,8 +8,10 @@
   border-radius: 16px;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
   width: 90%;
-  max-width: 400px;
+  max-width: 350px;
   z-index: 1000;
+  padding-left: 20px;
+  padding-right: 20px;
 }
 
 .writing-header {
@@ -32,12 +34,15 @@
   border-radius: 8px;
   margin-bottom: 16px;
   overflow: hidden;
+  width: 335px;
+  height: 335px;
+  aspect-ratio: 1 / 1;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .writing-canvas {
-  display: block;
-  cursor: crosshair;
-  width: 100%;
+  width: 300px;
   height: 300px;
 }
 
