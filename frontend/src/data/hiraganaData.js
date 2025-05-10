@@ -7,93 +7,93 @@ export const hiraganaGroups = [
       { id: 2, char: 'い', romaji: 'i', image: '🐗 いのしし' },
       { id: 3, char: 'う', romaji: 'u', image: '🐮 うし' },
       { id: 4, char: 'え', romaji: 'e', image: '🖼️ えいが' },
-      { id: 5, char: 'お', romaji: 'o', image: '�� おばけ' }
+      { id: 5, char: 'お', romaji: 'o', image: '👻 おばけ' }
     ]
   },
   {
     name: 'か行',
     characters: [
-      { char: 'か', romaji: 'ka', image: '🦟 か' },
-      { char: 'き', romaji: 'ki', image: '🌳 き' },
-      { char: 'く', romaji: 'ku', image: '🍪 くっき' },
-      { char: 'け', romaji: 'ke', image: '🦊 きつね' },
-      { char: 'こ', romaji: 'ko', image: '👶 こども' }
+      { id: 6, char: 'か', romaji: 'ka', image: '🦟 か' },
+      { id: 7, char: 'き', romaji: 'ki', image: '🌳 き' },
+      { id: 8, char: 'く', romaji: 'ku', image: '🍪 くっき' },
+      { id: 9, char: 'け', romaji: 'ke', image: '🦊 きつね' },
+      { id: 10, char: 'こ', romaji: 'ko', image: '👶 こども' }
     ]
   },
   {
     name: 'さ行',
     characters: [
-      { char: 'さ', romaji: 'sa', image: '🐠 さかな' },
-      { char: 'し', romaji: 'shi', image: '🦌 しか' },
-      { char: 'す', romaji: 'su', image: '🏄 すいえい' },
-      { char: 'せ', romaji: 'se', image: '🌍 せかい' },
-      { char: 'そ', romaji: 'so', image: '🧦 そっくす' }
+      { id: 11, char: 'さ', romaji: 'sa', image: '🐠 さかな' },
+      { id: 12, char: 'し', romaji: 'shi', image: '🦌 しか' },
+      { id: 13, char: 'す', romaji: 'su', image: '🏄 すいえい' },
+      { id: 14, char: 'せ', romaji: 'se', image: '🌍 せかい' },
+      { id: 15, char: 'そ', romaji: 'so', image: '🧦 そっくす' }
     ]
   },
   {
     name: 'た行',
     characters: [
-      { char: 'た', romaji: 'ta', image: '🌾 たんぼ' },
-      { char: 'ち', romaji: 'chi', image: '🩸 ち' },
-      { char: 'つ', romaji: 'tsu', image: '🌙 つき' },
-      { char: 'て', romaji: 'te', image: '👋 て' },
-      { char: 'と', romaji: 'to', image: '🦅 とり' }
+      { id: 16, char: 'た', romaji: 'ta', image: '🌾 たんぼ' },
+      { id: 17, char: 'ち', romaji: 'chi', image: '🩸 ち' },
+      { id: 18, char: 'つ', romaji: 'tsu', image: '🌙 つき' },
+      { id: 19, char: 'て', romaji: 'te', image: '👋 て' },
+      { id: 20, char: 'と', romaji: 'to', image: '🦅 とり' }
     ]
   },
   {
     name: 'な行',
     characters: [
-      { char: 'な', romaji: 'na', image: '🍆 なす' },
-      { char: 'に', romaji: 'ni', image: '🌈 にじ' },
-      { char: 'ぬ', romaji: 'nu', image: '🧵 ぬの' },
-      { char: 'ね', romaji: 'ne', image: '🐭 ねずみ' },
-      { char: 'の', romaji: 'no', image: '🧠 のう' }
+      { id: 21, char: 'な', romaji: 'na', image: '🍆 なす' },
+      { id: 22, char: 'に', romaji: 'ni', image: '🌈 にじ' },
+      { id: 23, char: 'ぬ', romaji: 'nu', image: '🧵 ぬの' },
+      { id: 24, char: 'ね', romaji: 'ne', image: '🐭 ねずみ' },
+      { id: 25, char: 'の', romaji: 'no', image: '🧠 のう' }
     ]
   },
   {
     name: 'は行',
     characters: [
-      { char: 'は', romaji: 'ha', image: '🌸 はな' },
-      { char: 'ひ', romaji: 'hi', image: '🔥 ひ' },
-      { char: 'ふ', romaji: 'fu', image: '🎈 ふうせん' },
-      { char: 'へ', romaji: 'he', image: '🐍 へび' },
-      { char: 'ほ', romaji: 'ho', image: '⭐ ほし' }
+      { id: 26, char: 'は', romaji: 'ha', image: '🌸 はな' },
+      { id: 27, char: 'ひ', romaji: 'hi', image: '🔥 ひ' },
+      { id: 28, char: 'ふ', romaji: 'fu', image: '🎈 ふうせん' },
+      { id: 29, char: 'へ', romaji: 'he', image: '🐍 へび' },
+      { id: 30, char: 'ほ', romaji: 'ho', image: '⭐ ほし' }
     ]
   },
   {
     name: 'ま行',
     characters: [
-      { char: 'ま', romaji: 'ma', image: '👁️ まなこ' },
-      { char: 'み', romaji: 'mi', image: '👂 みみ' },
-      { char: 'む', romaji: 'mu', image: '🐜 むし' },
-      { char: 'め', romaji: 'me', image: '👁️ め' },
-      { char: 'も', romaji: 'mo', image: '☁️ もくもく' }
+      { id: 31, char: 'ま', romaji: 'ma', image: '👁️ まなこ' },
+      { id: 32, char: 'み', romaji: 'mi', image: '👂 みみ' },
+      { id: 33, char: 'む', romaji: 'mu', image: '🐜 むし' },
+      { id: 34, char: 'め', romaji: 'me', image: '👁️ め' },
+      { id: 35, char: 'も', romaji: 'mo', image: '☁️ もくもく' }
     ]
   },
   {
     name: 'や行',
     characters: [
-      { char: 'や', romaji: 'ya', image: '🏠 やね' },
-      { char: 'ゆ', romaji: 'yu', image: '🌅 ゆうやけ' },
-      { char: 'よ', romaji: 'yo', image: '🌃 よる' }
+      { id: 36, char: 'や', romaji: 'ya', image: '🏠 やね' },
+      { id: 37, char: 'ゆ', romaji: 'yu', image: '🌅 ゆうやけ' },
+      { id: 38, char: 'よ', romaji: 'yo', image: '🌃 よる' }
     ]
   },
   {
     name: 'ら行',
     characters: [
-      { char: 'ら', romaji: 'ra', image: '🎺 らっぱ' },
-      { char: 'り', romaji: 'ri', image: '🍐 りんご' },
-      { char: 'る', romaji: 'ru', image: '💎 るび' },
-      { char: 'れ', romaji: 're', image: '🍋 れもん' },
-      { char: 'ろ', romaji: 'ro', image: '🕯️ ろうそく' }
+      { id: 39, char: 'ら', romaji: 'ra', image: '🎺 らっぱ' },
+      { id: 40, char: 'り', romaji: 'ri', image: '🍐 りんご' },
+      { id: 41, char: 'る', romaji: 'ru', image: '💎 るび' },
+      { id: 42, char: 'れ', romaji: 're', image: '🍋 れもん' },
+      { id: 43, char: 'ろ', romaji: 'ro', image: '🕯️ ろうそく' }
     ]
   },
   {
     name: 'わ行',
     characters: [
-      { char: 'わ', romaji: 'wa', image: '🐶 わんわん' },
-      { char: 'を', romaji: 'wo', image: '🌀 をまわり' },
-      { char: 'ん', romaji: 'n', image: '📝 んがくぶ' }
+      { id: 44, char: 'わ', romaji: 'wa', image: '🐶 わんわん' },
+      { id: 45, char: 'を', romaji: 'wo', image: '🌀 をまわり' },
+      { id: 46, char: 'ん', romaji: 'n', image: '📝 んがくぶ' }
     ]
   },
   {

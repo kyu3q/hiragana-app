@@ -97,48 +97,37 @@ public class CharacterController {
     @PostMapping("/{id}/stroke-result")
     public ResponseEntity<?> saveStrokeResult(@PathVariable Long id, @RequestBody StrokeResult strokeResult) {
         try {
-            if (strokeResult == null) {
-                return ResponseEntity.badRequest().body("ストローク結果が設定されていません");
-            }
-            if (strokeResult.getPosition() == null) {
-                return ResponseEntity.badRequest().body("位置情報が設定されていません");
+            if (strokeResult == null || strokeResult.getPosition() == null) {
+                return ResponseEntity.badRequest().body("ストローク結果または位置情報が設定されていません");
             }
 
-            try {
-                Character character = characterService.getCharacterById(id)
-                    .orElseThrow(() -> new RuntimeException("Character not found with id: " + id));
-                strokeResult.setCharacter(character);
+            // 既存のStrokeResultを検索して削除
+            StrokeResult existing = characterService.findByCharacterIdAndPosition(id, strokeResult.getPosition());
+            if (existing != null) {
+                characterService.deleteStrokeResult(existing);
+            }
 
-                // 既存のストローク結果を検索
-                StrokeResult existingResult = characterService.findByCharacterIdAndPosition(id, strokeResult.getPosition());
-                if (existingResult != null) {
-                    // 既存の結果を更新
-                    existingResult.setStrokes(strokeResult.getStrokes());
-                    existingResult.setScore(strokeResult.getScore());
-                    existingResult.setComment(strokeResult.getComment());
-                    strokeResult = existingResult;
-                }
+            // 新しいStrokeResultをセット
+            Character character = characterService.getCharacterById(id)
+                .orElseThrow(() -> new RuntimeException("Character not found with id: " + id));
+            strokeResult.setCharacter(character);
 
-                // ストロークとポイントの関連付けを設定
-                if (strokeResult.getStrokes() != null) {
-                    for (Stroke stroke : strokeResult.getStrokes()) {
-                        stroke.setStrokeResult(strokeResult);
-                        if (stroke.getPoints() != null) {
-                            for (Point point : stroke.getPoints()) {
-                                point.setStroke(stroke);
-                            }
+            // ストロークとポイントの親子関係をセット
+            if (strokeResult.getStrokes() != null) {
+                for (Stroke stroke : strokeResult.getStrokes()) {
+                    stroke.setStrokeResult(strokeResult);
+                    if (stroke.getPoints() != null) {
+                        for (Point point : stroke.getPoints()) {
+                            point.setStroke(stroke);
                         }
                     }
                 }
-
-                StrokeResult savedResult = characterService.saveStrokeResult(strokeResult);
-                return ResponseEntity.ok(savedResult);
-            } catch (RuntimeException e) {
-                logger.error("Character not found with id: {}", id, e);
-                return ResponseEntity.notFound().build();
             }
+
+            StrokeResult savedResult = characterService.saveStrokeResult(strokeResult);
+            return ResponseEntity.ok(savedResult);
+
         } catch (Exception e) {
-            logger.error("Error saving stroke result", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body("ストローク結果の保存に失敗しました: " + e.getMessage());
         }
@@ -218,5 +207,11 @@ public class CharacterController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error proxying request: " + e.getMessage());
         }
+    }
+
+    @GetMapping("/{id}/stroke-results")
+    public ResponseEntity<List<StrokeResult>> getAllStrokeResults(@PathVariable Long id) {
+        List<StrokeResult> results = characterService.getAllStrokeResultsByCharacterId(id);
+        return ResponseEntity.ok(results);
     }
 } 

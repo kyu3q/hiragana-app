@@ -16,8 +16,7 @@ public class Stroke {
     @JsonBackReference
     private StrokeResult strokeResult;
 
-    @ElementCollection
-    @CollectionTable(name = "stroke_points", joinColumns = @JoinColumn(name = "stroke_id"))
+    @OneToMany(mappedBy = "stroke", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Point> points;
 
     private Integer score;

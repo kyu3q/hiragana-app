@@ -17,14 +17,15 @@ const WritingGrid = ({ character, onClose }) => {
   useEffect(() => {
     const fetchStrokeResults = async () => {
       try {
-        const result = await characterService.getStrokeResult(character.id);
-        if (result && result.strokes) {
+        // すべてのなぞり書き結果を取得
+        const results = await characterService.getAllStrokeResults(character.id);
+        if (results && Array.isArray(results)) {
           const newGridItems = Array(9).fill(null).map((_, index) => {
-            const stroke = result.strokes.find(s => s.position === index);
-            return stroke ? {
-              strokes: stroke.points || [],
-              score: stroke.score || 0,
-              comment: stroke.comment || '',
+            const strokeResult = results.find(r => r.position === index);
+            return strokeResult ? {
+              strokes: strokeResult.strokes || [],
+              score: strokeResult.score || 0,
+              comment: strokeResult.comment || '',
               isEditing: false
             } : {
               strokes: [],
@@ -60,24 +61,25 @@ const WritingGrid = ({ character, onClose }) => {
         throw new Error('位置情報が設定されていません');
       }
 
-      const updatedGridItems = [...gridItems];
-      const strokesArray = Array.isArray(strokes) ? strokes : [strokes];
-      
-      updatedGridItems[position] = {
-        strokes: strokesArray,
-        score: score || 0,
-        comment: comment || ''
-      };
+      // 他のグリッドの内容はそのまま維持し、該当グリッドだけ更新
+      const updatedGridItems = gridItems.map((item, idx) =>
+        idx === position
+          ? {
+              strokes: strokes,
+              score: score || 0,
+              comment: comment || '',
+              isEditing: false
+            }
+          : item
+      );
       setGridItems(updatedGridItems);
 
       const strokeData = {
         position: position,
-        strokes: strokesArray,
+        strokes: strokes,
         score: score || 0,
         comment: comment || ''
       };
-
-      console.log('Saving stroke data:', strokeData);
       await characterService.saveStrokeResult(character.id, strokeData);
     } catch (error) {
       console.error('Error saving stroke result:', error);

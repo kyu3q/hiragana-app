@@ -91,5 +91,12 @@ export const characterService = {
             console.error('Error fetching stroke result:', error);
             throw error;
         }
+    },
+
+    // すべてのなぞり結果を取得
+    getAllStrokeResults: async (characterId) => {
+        const response = await fetch(`${API_BASE_URL}/characters/${characterId}/stroke-results`);
+        if (!response.ok) throw new Error('なぞり書き結果の取得に失敗しました');
+        return response.json();
     }
 }; 

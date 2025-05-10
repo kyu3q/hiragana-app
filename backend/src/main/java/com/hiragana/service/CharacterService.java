@@ -86,4 +86,12 @@ public class CharacterService {
     public void deleteCharacter(Long id) {
         characterRepository.deleteById(id);
     }
+
+    public void deleteStrokeResult(StrokeResult strokeResult) {
+        strokeResultRepository.delete(strokeResult);
+    }
+
+    public List<StrokeResult> getAllStrokeResultsByCharacterId(Long characterId) {
+        return strokeResultRepository.findAllByCharacter_Id(characterId);
+    }
 } 

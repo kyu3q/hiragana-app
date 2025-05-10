@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import './WritingPractice.css';
 import { characterService } from '../../api/characterService';
 
-const WritingPractice = ({ character, onComplete }) => {
+const WritingPractice = ({ character, onComplete, initialStrokes }) => {
   const canvasRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [lastX, setLastX] = useState(0);
@@ -38,6 +38,13 @@ const WritingPractice = ({ character, onComplete }) => {
 
     fetchSavedStrokes();
   }, [character]);
+
+  useEffect(() => {
+    if (initialStrokes && initialStrokes.length > 0) {
+      setAllStrokes(initialStrokes);
+      drawSavedStrokes(initialStrokes);
+    }
+  }, [initialStrokes]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
