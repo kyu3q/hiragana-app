@@ -15,7 +15,7 @@ body {
   flex-direction: column;
 }
 
-.header-row {
+.katakana-display .header-row {
   display: flex;
   align-items: center;
   justify-content: flex-start;
@@ -23,7 +23,7 @@ body {
   margin-bottom: 16px;
 }
 
-.stylish-title {
+.katakana-display .stylish-title {
   font-family: 'M PLUS Rounded 1c', 'Noto Sans JP', sans-serif;
   font-size: 3.2rem;
   color: #ff6b6b;
@@ -37,12 +37,12 @@ body {
   -webkit-text-fill-color: transparent;
 }
 
-.mode-toggle-inline {
+.katakana-display .mode-toggle-inline {
   display: flex;
   align-items: center;
 }
 
-.characters-area {
+.katakana-display .characters-area {
   margin-top: 48px;
   display: flex;
   justify-content: center;
@@ -52,7 +52,7 @@ body {
   margin-right: auto;
 }
 
-.characters-grid {
+.katakana-display .characters-grid {
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -60,14 +60,14 @@ body {
   padding-bottom: 8px;
 }
 
-.characters-row {
+.katakana-display .characters-row {
   display: flex;
   gap: 20px;
   justify-content: center;
   width: 100%;
 }
 
-.character-item {
+.katakana-display .character-item {
   width: 140px;
   height: 140px;
   min-width: 140px;
@@ -89,21 +89,21 @@ body {
   transition: transform 0.15s, box-shadow 0.15s;
 }
 
-.character-item:hover {
+.katakana-display .character-item:hover {
   transform: scale(1.07) rotate(-2deg);
   box-shadow: 0 8px 24px rgba(255, 182, 193, 0.25), 0 3px 12px rgba(179, 229, 252, 0.18);
   background: linear-gradient(135deg, #fffde4 0%, #f9c6ff 100%);
   border-color: #f48fb1;
 }
 
-.character-main {
+.katakana-display .character-main {
   font-size: 3.5rem;
   color: #2c3e50;
   font-weight: 900;
   text-shadow: 2px 2px 6px rgba(0,0,0,0.08);
 }
 
-.shinkansen-wrapper {
+.katakana-display .shinkansen-wrapper {
   width: 100%;
   max-width: 972px;
   margin: 0 auto;
@@ -112,7 +112,7 @@ body {
   z-index: 10;
 }
 
-.group-rail-rows {
+.katakana-display .group-rail-rows {
   width: 100%;
   margin: 0;
   justify-content: center;
@@ -121,15 +121,7 @@ body {
   gap: 12px;
 }
 
-.group-tabs-rail {
-  display: flex;
-  align-items: flex-end;
-  position: relative;
-  margin-bottom: 8px;
-  gap: 0;
-}
-
-.rail-connector {
+.katakana-display .rail-connector {
   width: 18px;
   height: 18px;
   background: #888;
@@ -141,7 +133,7 @@ body {
   box-shadow: 0 2px 6px rgba(0,0,0,0.08);
 }
 
-.rail-track {
+.katakana-display .rail-track {
   position: absolute;
   left: 0;
   right: 0;
@@ -152,15 +144,18 @@ body {
   margin: 0 auto;
   background: repeating-linear-gradient(
     to right,
-    #2196f3 0 16px,
-    #b0bec5 16px 24px
+    #42a5f5 0 12px,
+    #fff 12px 18px,
+    #ab47bc 18px 24px,
+    #fff 24px 30px
   );
-  border-radius: 6px;
+  border-radius: 8px;
   z-index: 0;
   pointer-events: none;
+  margin-top: 4px;
 }
 
-.group-rail-btn {
+.katakana-display .group-rail-btn {
   min-width: 120px;
   height: 64px;
   padding: 0;
@@ -180,126 +175,189 @@ body {
   justify-content: center;
 }
 
-.group-rail-btn:first-child {
+.katakana-display .group-rail-btn:first-child {
   border-top-left-radius: 30px;
   border-bottom-left-radius: 30px;
 }
 
-.group-rail-btn:last-child {
+.katakana-display .group-rail-btn:last-child {
   border-top-right-radius: 30px;
   border-bottom-right-radius: 30px;
   border-right: none;
 }
 
-.group-rail-btn.active {
+.katakana-display .group-rail-btn.active {
   background: linear-gradient(90deg, #4a86e8 60%, #6ec6ff 100%);
   color: #fff;
   box-shadow: 0 4px 16px rgba(74,134,232,0.15);
   z-index: 2;
 }
 
-.group-rail-btn:not(:last-child) {
+.katakana-display .group-rail-btn:not(:last-child) {
   margin-right: -2px;
 }
 
-.group-rail-btn:focus {
+.katakana-display .group-rail-btn:focus {
   outline: none;
   box-shadow: 0 0 0 3px #b3e5fc;
 }
 
-.group-rail-btn.hayabusa {
-  background: linear-gradient(90deg, #43e97b 60%, #38f9d7 100%);
-  color: #fff;
-  font-weight: 900;
-  border-top-left-radius: 30px;
-  border-bottom-left-radius: 30px;
-  border-right: 2px solid #fff;
+.katakana-display .group-rail-btn:disabled {
   opacity: 0.7;
   cursor: not-allowed;
 }
 
-.group-rail-btn.komachi {
-  background: linear-gradient(90deg, #ff5858 60%, #f09819 100%);
-  color: #fff;
-  font-weight: 900;
-  border-top-left-radius: 30px;
-  border-bottom-left-radius: 30px;
-  border-right: 2px solid #fff;
-  opacity: 0.7;
-  cursor: not-allowed;
+.katakana-train-row {
+  display: flex;
+  align-items: flex-end;
+  margin-bottom: 16px;
 }
 
-.group-rail-btn:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-.shinkansen-head {
-  min-width: 60px;
-  width: 60px;
-  height: 64px;
-  padding: 0;
-  border: none;
-  margin-right: -2px;
-  background: transparent;
+.katakana-train-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-right: 8px;
   position: relative;
+  width: 108px;
+  height: 76px;
+}
+.train-head-body {
+  width: 108px;
+  height: 76px;
+  background: #ffe082;
+  border-radius: 24px;
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.train-head-body .train-window {
+  position: absolute;
+  top: 8px;
+  left: 14px;
+  width: 56px;
+  height: 56px;
+  background: #e0e0e0;
+  border-radius: 20px;
+  border: 2px solid #fff;
   z-index: 2;
-  pointer-events: none;
-  overflow: visible;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  font-family: 'M PLUS Rounded 1c', sans-serif;
+  font-weight: bold;
+  color: #495057;
+  letter-spacing: 0.08em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 8px;
+  box-shadow: 0 4px 16px rgba(74,134,232,0.08);
 }
-
-.hayabusa-head {
-  background: linear-gradient(160deg, #e6f9f7 0%, #00b4b0 60%, #00897b 100%);
-  clip-path: polygon(0 100%, 100% 100%, 100% 0, 0 40%);
-  border-top-left-radius: 40px 60px;
-  border-bottom-left-radius: 30px 30px;
-  border-right: 2px solid #fff;
-  position: relative;
-  z-index: 1;
-}
-.hayabusa-head::after {
-  content: '';
-  position: absolute;
-  left: 0; right: 0; bottom: 0;
-  height: 18px;
-  background: linear-gradient(0deg, #fff 60%, transparent 100%);
-  border-bottom-left-radius: 30px 30px;
+.train-head-body .train-window span {
+  display: block;
   width: 100%;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.hayabusa-head::before {
-  content: '';
+.train-driver-img {
   position: absolute;
-  left: 0; right: 0; top: 38px;
-  height: 6px;
-  background: #e94e8a;
-  border-radius: 3px;
-  width: 100%;
+  top: 16px;
+  left: 36px;
+  width: 36px;
+  height: 36px;
+  z-index: 3;
 }
-
-.komachi-head {
-  background: linear-gradient(160deg, #fff0f0 0%, #e6002d 60%, #b4001d 100%);
-  clip-path: polygon(0 100%, 100% 100%, 100% 0, 0 40%);
-  border-top-left-radius: 40px 60px;
-  border-bottom-left-radius: 30px 30px;
-  border-right: 2px solid #fff;
-  position: relative;
-  z-index: 1;
-}
-.komachi-head::after {
-  content: '';
+.train-smoke {
   position: absolute;
-  left: 0; right: 0; bottom: 0;
-  height: 18px;
-  background: linear-gradient(0deg, #e0e0e0 60%, transparent 100%);
-  border-bottom-left-radius: 30px 30px;
-  width: 100%;
-}
-.komachi-head::before {
-  content: '';
-  position: absolute;
-  left: 0; right: 0; top: 38px;
-  height: 6px;
+  left: 0;
+  top: -12px;
+  width: 10px;
+  height: 10px;
   background: #fff;
-  border-radius: 3px;
+  border-radius: 50%;
+  box-shadow: 7px 7px 0 0 #fff, 14px 14px 0 0 #fff;
+}
+.train-wheel {
+  width: 12px;
+  height: 12px;
+  background: #90caf9;
+  border-radius: 50%;
+  border: 2px solid #1976d2;
+  position: absolute;
+  bottom: -7px;
+}
+.train-wheel-left {
+  left: 2px;
+}
+.train-wheel-right {
+  right: 2px;
+}
+
+.katakana-train-car {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-right: 8px;
+  position: relative;
+}
+.train-car-body {
+  width: 108px;
+  height: 76px;
+  background: #fffde7;
+  border: 2px solid #ffb300;
+  border-radius: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  position: relative;
+  padding: 0;
+}
+.train-car-body .train-window {
+  position: absolute;
+  top: 8px;
+  left: 14px;
+  width: 56px;
+  height: 56px;
+  background: #e0e0e0;
+  border-radius: 20px;
+  border: 2px solid #fff;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  font-family: 'M PLUS Rounded 1c', sans-serif;
+  font-weight: bold;
+  color: #495057;
+  letter-spacing: 0.08em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 8px;
+  box-shadow: 0 4px 16px rgba(74,134,232,0.08);
+}
+.train-car-body .train-window span {
+  display: block;
   width: 100%;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.katakana-train-car .train-wheel-left {
+  left: 1px;
+}
+.katakana-train-car .train-wheel-right {
+  right: 1px;
+}
+.train-connector {
+  width: 10px;
+  height: 2px;
+  background: #bdbdbd;
+  border-radius: 2px;
+  margin-bottom: 7px;
 } 

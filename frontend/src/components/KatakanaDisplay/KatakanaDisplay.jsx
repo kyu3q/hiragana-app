@@ -320,7 +320,7 @@ const KatakanaDisplay = () => {
   return (
     <div className="katakana-display">
       <div className="header-row">
-        <h1 className="title stylish-title">ひらがなであそぼう！</h1>
+        <h1 className="title stylish-title">カタカナであそぼう！</h1>
         <div className="mode-toggle-inline">
           <button 
             className={`mode-button ${gameMode === 'learn' ? 'active' : ''}`}
@@ -335,25 +335,39 @@ const KatakanaDisplay = () => {
       <div className="shinkansen-wrapper">
         <div className="group-rail-rows">
           {groupRows.map((row, rowIdx) => (
-            <div className="group-tabs-rail" key={rowIdx}>
-              <button
-                className={`group-rail-btn shinkansen-head ${rowIdx === 0 ? 'hayabusa-head' : 'komachi-head'}`}
-                disabled
-                aria-hidden="true"
-              />
+            <div className="katakana-train-row" key={rowIdx}>
+              {/* 先頭車両 */}
+              <div className="katakana-train-head">
+                <div className="train-head-body">
+                  <div className="train-window"></div>
+                  {rowIdx === 0 ? (
+                    <img src="/img/kabutomushi.png" alt="カブトムシ" className="train-driver-img" />
+                  ) : (
+                    <img src="/img/kuwagata.png" alt="クワガタ" className="train-driver-img" />
+                  )}
+                  <div className="train-smoke"></div>
+                </div>
+                <div className="train-wheel train-wheel-left"></div>
+                <div className="train-wheel train-wheel-right"></div>
+              </div>
+              {/* 各車両 */}
               {row.map((group, index) => (
                 <React.Fragment key={group.name}>
-                  <button
-                    className={`group-rail-btn ${currentGroup === katakanaGroups.indexOf(group) ? 'active' : ''}`}
-                    onClick={() => changeGroup(katakanaGroups.indexOf(group))}
-                    disabled={isTransitioning}
-                  >
-                    {group.name}
-                  </button>
-                  {index < row.length - 1 && <span className="rail-connector" />}
+                  {/* 連結器 */}
+                  {index > 0 && <div className="train-connector"></div>}
+                  <div className="katakana-train-car">
+                    <button
+                      className={`train-car-body ${currentGroup === katakanaGroups.indexOf(group) ? 'active' : ''}`}
+                      onClick={() => changeGroup(katakanaGroups.indexOf(group))}
+                      disabled={isTransitioning}
+                    >
+                      <div className="train-window"><span>{group.name}</span></div>
+                    </button>
+                    <div className="train-wheel train-wheel-left"></div>
+                    <div className="train-wheel train-wheel-right"></div>
+                  </div>
                 </React.Fragment>
               ))}
-              <div className="rail-track" />
             </div>
           ))}
         </div>
