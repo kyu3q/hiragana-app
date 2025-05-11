@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import HiraganaDisplay from './components/HiraganaDisplay';
+import KatakanaDisplay from './components/KatakanaDisplay';
 import StartScreen from './components/StartScreen';
 import './App.css';
 
@@ -10,12 +11,14 @@ function App() {
     return <StartScreen onSelect={setSelectedType} />;
   }
 
-  // ひらがな以外の分岐は今後追加予定
-  if (selectedType === 'hiragana') {
-    return <HiraganaDisplay />;
+  switch (selectedType) {
+    case 'hiragana':
+      return <HiraganaDisplay />;
+    case 'katakana':
+      return <KatakanaDisplay />;
+    default:
+      return null;
   }
-
-  return null;
 }
 
 export default App;

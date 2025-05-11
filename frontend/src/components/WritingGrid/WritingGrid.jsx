@@ -6,7 +6,7 @@ import { characterService } from '../../api/characterService';
 const PRACTICE_CANVAS_SIZE = 300; // 練習用キャンバスのサイズ
 const GRID_CANVAS_SIZE = 180;     // グリッド用キャンバスのサイズ
 
-const WritingGrid = ({ character, onClose }) => {
+const WritingGrid = ({ character, onClose, type = 'HIRAGANA' }) => {
   const [gridItems, setGridItems] = useState(Array(9).fill(null).map(() => ({
     strokes: [],
     score: 0,
@@ -106,6 +106,7 @@ const WritingGrid = ({ character, onClose }) => {
           initialStrokes={item.strokes}
           score={item.score}
           comment={item.comment}
+          type={type}
         />
       );
     }

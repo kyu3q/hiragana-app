@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import './WritingPractice.css';
 import { characterService } from '../../api/characterService';
 
-const WritingPractice = ({ character, onComplete, initialStrokes }) => {
+const WritingPractice = ({ character, onComplete, initialStrokes, type = 'HIRAGANA' }) => {
   const canvasRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [lastX, setLastX] = useState(0);
@@ -21,7 +21,7 @@ const WritingPractice = ({ character, onComplete, initialStrokes }) => {
     ctx.fillRect(0, 0, size, size);
     // ガイドラインと文字の描画
     drawGuidelines(ctx, size);
-    drawGuideCharacter(ctx, character.char, size);
+    drawGuideCharacter(ctx, character.char, size, type);
 
     // 保存されたストロークの取得
     const fetchSavedStrokes = async () => {
@@ -67,9 +67,9 @@ const WritingPractice = ({ character, onComplete, initialStrokes }) => {
   }, []);
 
   // ガイド文字をcanvasサイズに合わせて描画する共通関数
-  const drawGuideCharacter = (ctx, char, size) => {
+  const drawGuideCharacter = (ctx, char, size, type) => {
     ctx.font = `${size * 0.7}px 'M PLUS Rounded 1c', sans-serif`;
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.08)';
+    ctx.fillStyle = type === 'KATAKANA' ? 'rgba(0, 0, 128, 0.10)' : 'rgba(0, 0, 0, 0.08)';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(char, size / 2, size / 2);
@@ -94,7 +94,7 @@ const WritingPractice = ({ character, onComplete, initialStrokes }) => {
     ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, size, size);
     drawGuidelines(ctx, size);
-    drawGuideCharacter(ctx, character.char, size);
+    drawGuideCharacter(ctx, character.char, size, type);
 
     strokes.forEach(stroke => {
       if (stroke.points.length > 0) {
@@ -162,7 +162,7 @@ const WritingPractice = ({ character, onComplete, initialStrokes }) => {
     ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, size, size);
     drawGuidelines(ctx, size);
-    drawGuideCharacter(ctx, character.char, size);
+    drawGuideCharacter(ctx, character.char, size, type);
     setAllStrokes([]);
     setCurrentStroke([]);
   };
@@ -248,7 +248,7 @@ const WritingPractice = ({ character, onComplete, initialStrokes }) => {
   return (
     <div className="writing-practice">
       <div className="writing-header">
-        <h2>{character.char}〜</h2>
+        <h2>{character.char}（{type === 'KATAKANA' ? 'カタカナ' : 'ひらがな'}）</h2>
       </div>
       <div className="writing-canvas-container">
         <canvas
