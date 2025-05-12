@@ -1,59 +1,73 @@
+/* 共通ベース */
 .character-item {
   position: relative;
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100px;
-  background: linear-gradient(145deg, #ffcce6, #c7f0ff);
-  border-radius: 15px;
+  width: 140px;
+  height: 140px;
+  border-radius: 22px;
   cursor: pointer;
-  transition: all 0.3s;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-  border: 2px solid rgba(255, 255, 255, 0.5);
-}
-
-.character-item:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
-  border-color: rgba(255, 255, 255, 0.8);
+  transition: all 0.3s cubic-bezier(.4,2,.6,1);
+  overflow: visible;
 }
 
 .character-item:active {
-  transform: scale(0.95);
+  transform: scale(0.97);
+}
+
+.card-kabutomushi {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 32px;
+  height: 32px;
+  z-index: 2;
+  filter: drop-shadow(0 2px 4px rgba(60,40,20,0.18));
+}
+
+.card-leaf {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  z-index: 2;
+  opacity: 0.85;
+}
+
+.card-kuwagata {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 32px;
+  height: 32px;
+  z-index: 2;
+  filter: drop-shadow(0 2px 4px rgba(60,40,20,0.18));
 }
 
 .character-main {
-  font-size: 3.5rem;
-  color: #2c3e50;
+  font-size: 3.2rem;
+  color: #2d3a1a;
   font-weight: 900;
-  text-shadow: 2px 2px 6px rgba(0,0,0,0.08);
+  text-shadow: 1.5px 1.5px 0 #fffbe6, 0 3px 8px rgba(60,60,60,0.10);
+  letter-spacing: 0.04em;
+  filter: drop-shadow(0 1.5px 0 #b7d7a8);
 }
 
 .character-emoji {
   position: absolute;
-  bottom: 5px;
-  right: 5px;
-  font-size: 1.2rem;
+  bottom: 8px;
+  left: 12px;
+  font-size: 1.3rem;
   opacity: 0.7;
 }
 
-/* クイズモードでの正解/不正解の状態 */
+/* クイズモードでの正解/不正解の状態（色はDisplay側で上書き推奨） */
 .character-item.correct {
-  background: linear-gradient(145deg, #a5d6a7, #81c784);
-  border: 2px solid #4CAF50;
-  box-shadow: 0 4px 8px rgba(76, 175, 80, 0.3);
+  /* 背景色・ボーダー色はDisplay側で上書き */
 }
-
 .character-item.wrong {
-  background: linear-gradient(145deg, #ef9a9a, #e57373);
-  border: 2px solid #F44336;
-  box-shadow: 0 4px 8px rgba(244, 67, 54, 0.3);
+  /* 背景色・ボーダー色はDisplay側で上書き */
 }
-
-/* クイズモードでのターゲット文字 */
 .character-item.is-target {
-  background: linear-gradient(145deg, #90caf9, #64b5f6);
-  border: 2px solid #2196F3;
-  box-shadow: 0 4px 8px rgba(33, 150, 243, 0.3);
+  /* 背景色・ボーダー色はDisplay側で上書き */
 } 

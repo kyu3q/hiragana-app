@@ -384,6 +384,7 @@ const KatakanaDisplay = () => {
                   onClick={handleCharacterClick}
                   isTarget={gameMode === 'quiz' && targetChar && char.char === targetChar.char && isCorrect !== null}
                   isCorrect={isCorrect}
+                  className="katakana-character-item"
                 />
               ))}
             </div>

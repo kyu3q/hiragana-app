@@ -370,6 +370,7 @@ const HiraganaDisplay = () => {
                   onClick={handleCharacterClick}
                   isTarget={gameMode === 'quiz' && targetChar && char.char === targetChar.char && isCorrect !== null}
                   isCorrect={isCorrect}
+                  className="hiragana-character-item"
                 />
               ))}
             </div>
