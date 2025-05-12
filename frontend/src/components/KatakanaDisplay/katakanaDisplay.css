@@ -26,13 +26,14 @@ body {
 .katakana-display .stylish-title {
   font-family: 'M PLUS Rounded 1c', 'Noto Sans JP', sans-serif;
   font-size: 3.2rem;
-  color: #ff6b6b;
+  color: #388e3c;
   letter-spacing: 0.18em;
-  text-shadow: 0 4px 24px #ffd6d6, 2px 2px 8px rgba(255, 107, 107, 0.18);
+  text-shadow: 0 4px 24px #b7d7a8, 2px 2px 8px rgba(56, 142, 60, 0.18);
   font-weight: 900;
   margin: 0;
   padding: 0;
-  background: linear-gradient(90deg, #ff6b6b 60%, #ffb86b 100%);
+  background: linear-gradient(90deg, #388e3c 60%, #fff59d 100%);
+  background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -68,17 +69,26 @@ body {
 }
 
 .katakana-character-item {
-  background: linear-gradient(135deg, #e0e7c4 0%, #b7d7a8 60%, #e6ccb2 100%);
-  border: 2.5px solid #a3b18a;
-  box-shadow: 0 6px 18px 0 rgba(60, 60, 60, 0.13), 0 1.5px 8px rgba(120, 180, 90, 0.10);
+  background: linear-gradient(135deg, #e0f2f1 0%, #a5d6a7 60%, #fff59d 100%);
+  border: 2.5px solid #388e3c;
+  box-shadow: 0 6px 18px 0 rgba(56, 142, 60, 0.13), 0 1.5px 8px rgba(255, 235, 59, 0.10);
+  position: relative;
 }
-
+.katakana-character-item::after {
+  content: '🍯';
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  font-size: 1.5rem;
+  opacity: 0.7;
+  pointer-events: none;
+}
 .katakana-character-item:hover {
   transform: translateY(-8px) scale(1.04);
-  box-shadow: 0 16px 32px rgba(60, 60, 60, 0.18), 0 4px 16px rgba(120, 180, 90, 0.18);
-  border-color: #588157;
+  background: linear-gradient(135deg, #b9f6ca 0%, #fffde7 100%);
+  border-color: #fbc02d;
   z-index: 2;
-} 
+}
 
 .katakana-display .character-main {
   font-size: 3.5rem;
@@ -102,7 +112,7 @@ body {
   justify-content: center;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 24px;
 }
 
 .katakana-display .rail-connector {
@@ -171,9 +181,10 @@ body {
 }
 
 .katakana-display .group-rail-btn.active {
-  background: linear-gradient(90deg, #4a86e8 60%, #6ec6ff 100%);
+  background: linear-gradient(90deg, #388e3c 60%, #fff59d 100%);
   color: #fff;
-  box-shadow: 0 4px 16px rgba(74,134,232,0.15);
+  box-shadow: 0 4px 16px rgba(255,235,59,0.15);
+  border-bottom: 4px solid #fbc02d;
   z-index: 2;
 }
 
@@ -192,9 +203,11 @@ body {
 }
 
 .katakana-train-row {
+  position: relative;
+  overflow: visible;
   display: flex;
   align-items: flex-end;
-  margin-bottom: 16px;
+  margin-bottom: 0;
 }
 
 .katakana-train-head {
@@ -208,9 +221,11 @@ body {
 }
 .train-head-body {
   width: 108px;
-  height: 76px;
-  background: #ffe082;
+  height: 66px;
+  background: linear-gradient(135deg, #a5d6a7 0%, #388e3c 80%, #fff59d 100%);
   border-radius: 24px;
+  border: 3px solid #388e3c;
+  box-shadow: 0 4px 16px rgba(56, 142, 60, 0.18), 0 2px 8px #fff59d44;
   position: relative;
   display: flex;
   align-items: flex-end;
@@ -221,10 +236,10 @@ body {
   top: 8px;
   left: 14px;
   width: 56px;
-  height: 56px;
-  background: #e0e0e0;
+  height: 44px;
+  background: linear-gradient(135deg, #fffde7 0%, #fff59d 100%);
   border-radius: 20px;
-  border: 2px solid #fff;
+  border: 2px solid #fbc02d;
   z-index: 2;
   display: flex;
   align-items: center;
@@ -232,7 +247,7 @@ body {
   font-size: 1.1rem;
   font-family: 'M PLUS Rounded 1c', sans-serif;
   font-weight: bold;
-  color: #495057;
+  color: #388e3c;
   letter-spacing: 0.08em;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -261,24 +276,24 @@ body {
   top: -12px;
   width: 10px;
   height: 10px;
-  background: #fff;
+  background: #8d5524;
   border-radius: 50%;
-  box-shadow: 7px 7px 0 0 #fff, 14px 14px 0 0 #fff;
+  box-shadow: 7px 7px 0 0 #8d5524, 14px 14px 0 0 #8d5524;
 }
-.train-wheel {
-  width: 12px;
-  height: 12px;
-  background: #90caf9;
+.train-wheel, .katakana-train-car .train-wheel-left, .katakana-train-car .train-wheel-right {
+  background: #a5d6a7;
+  border: 2px solid #388e3c;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
-  border: 2px solid #1976d2;
   position: absolute;
-  bottom: -7px;
+  bottom: -8px;
 }
 .train-wheel-left {
-  left: 2px;
+  left: 8px;
 }
 .train-wheel-right {
-  right: 2px;
+  right: 8px;
 }
 
 .katakana-train-car {
@@ -290,9 +305,9 @@ body {
 }
 .train-car-body {
   width: 108px;
-  height: 76px;
-  background: #fffde7;
-  border: 2px solid #ffb300;
+  height: 66px;
+  background: linear-gradient(135deg, #e0f2f1 0%, #a5d6a7 60%, #fff59d 100%);
+  border: 2px solid #388e3c;
   border-radius: 24px;
   display: flex;
   align-items: center;
@@ -300,16 +315,17 @@ body {
   font-weight: bold;
   position: relative;
   padding: 0;
+  box-shadow: 0 2px 8px #fff59d33, 0 4px 16px rgba(56, 142, 60, 0.10);
 }
 .train-car-body .train-window {
   position: absolute;
   top: 8px;
   left: 14px;
   width: 56px;
-  height: 56px;
-  background: #e0e0e0;
+  height: 44px;
+  background: linear-gradient(135deg, #fffde7 0%, #fff59d 100%);
   border-radius: 20px;
-  border: 2px solid #fff;
+  border: 2px solid #fbc02d;
   z-index: 2;
   display: flex;
   align-items: center;
@@ -317,7 +333,7 @@ body {
   font-size: 1.1rem;
   font-family: 'M PLUS Rounded 1c', sans-serif;
   font-weight: bold;
-  color: #495057;
+  color: #388e3c;
   letter-spacing: 0.08em;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -333,15 +349,33 @@ body {
   text-overflow: ellipsis;
 }
 .katakana-train-car .train-wheel-left {
-  left: 1px;
+  left: 8px;
 }
 .katakana-train-car .train-wheel-right {
-  right: 1px;
+  right: 8px;
 }
-.train-connector {
-  width: 10px;
-  height: 2px;
-  background: #bdbdbd;
-  border-radius: 2px;
-  margin-bottom: 7px;
+
+.train-rail {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -10px;
+  height: 12px;
+  width: 100%;
+  max-width: 972px;
+  margin: 0 auto;
+  background: repeating-linear-gradient(
+    to right,
+    #8d5524 0 16px,
+    #fbc02d 16px 24px
+  );
+  border-radius: 8px;
+  z-index: 0;
+  pointer-events: none;
+  box-shadow: 0 2px 8px #8d552488;
+}
+
+.train-rail::before,
+.train-rail::after {
+  content: none;
 } 

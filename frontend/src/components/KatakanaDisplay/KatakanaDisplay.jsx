@@ -335,7 +335,8 @@ const KatakanaDisplay = () => {
       <div className="shinkansen-wrapper">
         <div className="group-rail-rows">
           {groupRows.map((row, rowIdx) => (
-            <div className="katakana-train-row" key={rowIdx}>
+            <div className="katakana-train-row" key={rowIdx} style={{position: 'relative'}}>
+              <div className="train-rail"></div>
               {/* 先頭車両 */}
               <div className="katakana-train-head">
                 <div className="train-head-body">
@@ -353,9 +354,7 @@ const KatakanaDisplay = () => {
               {/* 各車両 */}
               {row.map((group, index) => (
                 <React.Fragment key={group.name}>
-                  {/* 連結器 */}
-                  {index > 0 && <div className="train-connector"></div>}
-                  <div className="katakana-train-car">
+                  <div className="katakana-train-car" style={{ position: 'relative' }}>
                     <button
                       className={`train-car-body ${currentGroup === katakanaGroups.indexOf(group) ? 'active' : ''}`}
                       onClick={() => changeGroup(katakanaGroups.indexOf(group))}

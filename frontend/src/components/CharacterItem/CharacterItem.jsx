@@ -25,7 +25,6 @@ const CharacterItem = ({ character, onClick, isTarget, isCorrect, className }) =
     >
       <div className="character-main">{character.char}</div>
       <div className="character-emoji">{randomEmoji}</div>
-      <svg className="card-leaf" width="32" height="32" viewBox="0 0 32 32"><ellipse cx="16" cy="24" rx="10" ry="6" fill="#4caf50" /><path d="M16 24 Q18 18 24 12" stroke="#388e3c" strokeWidth="2" fill="none"/></svg>
     </div>
   );
 };
