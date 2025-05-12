@@ -304,17 +304,21 @@ const WritingPractice = ({ character, onComplete, initialStrokes, type = 'HIRAGA
       }));
       onComplete(strokesArray, score, comment);
 
-      if (score >= evaluationCriteria.CELEBRATION_THRESHOLD) {
-        // 音声を再生
-        if (!hasSoundPlayed) {
+      // 音声を再生
+      if (!hasSoundPlayed) {
           setHasSoundPlayed(true);
-          setTimeout(() => {
-            const audio = new Audio('/music/success.mp3');
-            audio.play();
-          }, 500);
+          if (score >= evaluationCriteria.CELEBRATION_THRESHOLD) {
+            setTimeout(() => {
+              const audio = new Audio('/music/success.mp3');
+              audio.play();
+            }, 500);
+          }else{
+            setTimeout(() => {
+              const audio = new Audio('/music/failure.mp3');
+              audio.play();
+            }, 500);
+          }
         }
-      }
-
     } catch (error) {
       console.error('なぞり結果の保存に失敗しました:', error);
       alert('なぞり結果の保存に失敗しました。もう一度お試しください。');
