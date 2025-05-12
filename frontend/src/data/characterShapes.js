@@ -614,5 +614,5 @@ export const evaluationCriteria = {
   EXCELLENT_THRESHOLD: 90,
   GOOD_THRESHOLD: 70,
   FAIR_THRESHOLD: 50,
-  ANIMATION_THRESHOLD: 60  // アニメーション表示の閾値を60に変更
+  CELEBRATION_THRESHOLD: 60
 }; 

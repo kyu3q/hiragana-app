@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import './WritingPractice.css';
 import { characterService } from '../../api/characterService';
 import { characterShapes, strokeTypes, evaluationCriteria } from '../../data/characterShapes';
-import CelebrationAnimation from './CelebrationAnimation';
 
 const WritingPractice = ({ character, onComplete, initialStrokes, type = 'HIRAGANA' }) => {
   const canvasRef = useRef(null);
@@ -14,7 +13,7 @@ const WritingPractice = ({ character, onComplete, initialStrokes, type = 'HIRAGA
   const [currentStroke, setCurrentStroke] = useState([]);
   const [allStrokes, setAllStrokes] = useState([]);
   const GUIDE_FONT_FAMILY = "'HG教科書体', 'HGKyokashotai', 'Yu Kyokasho', 'YuKyokasho', 'やさしさゴシック手書き', 'YasashisaGothic', 'AnzuMoji', 'あんずもじ', 'Yu Mincho', '游明朝', 'Noto Serif JP', 'M PLUS Rounded 1c', sans-serif";
-  const [showCelebration, setShowCelebration] = useState(false);
+  const [hasSoundPlayed, setHasSoundPlayed] = useState(false);
 
   // 正解データを生成する関数
   const generateCorrectStrokes = (char, canvasSize) => {
@@ -136,11 +135,6 @@ const WritingPractice = ({ character, onComplete, initialStrokes, type = 'HIRAGA
 
     return { score: Math.round(orderScore), comment };
   };
-
-  // アニメーションの表示状態を監視
-  useEffect(() => {
-    console.log('アニメーション表示状態:', showCelebration);
-  }, [showCelebration]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -302,7 +296,7 @@ const WritingPractice = ({ character, onComplete, initialStrokes, type = 'HIRAGA
   const handleComplete = async () => {
     try {
       const { score, comment } = evaluateDrawing();
-      console.log('採点結果:', { score, comment }); // デバッグ用ログ
+      console.log('採点結果:', { score, comment });
       const strokesArray = allStrokes.map(stroke => ({
         points: stroke.points,
         score: score,
@@ -310,17 +304,17 @@ const WritingPractice = ({ character, onComplete, initialStrokes, type = 'HIRAGA
       }));
       onComplete(strokesArray, score, comment);
 
-      // アニメーションの表示判定をここに移動
-      if (score >= evaluationCriteria.ANIMATION_THRESHOLD) {
-        console.log('アニメーションを表示します');
-        setShowCelebration(true);
-        
-        // 3秒後にアニメーションを非表示
-        setTimeout(() => {
-          console.log('アニメーションを非表示にします');
-          setShowCelebration(false);
-        }, 3000);
+      if (score >= evaluationCriteria.CELEBRATION_THRESHOLD) {
+        // 音声を再生
+        if (!hasSoundPlayed) {
+          setHasSoundPlayed(true);
+          setTimeout(() => {
+            const audio = new Audio('/music/success.mp3');
+            audio.play();
+          }, 500);
+        }
       }
+
     } catch (error) {
       console.error('なぞり結果の保存に失敗しました:', error);
       alert('なぞり結果の保存に失敗しました。もう一度お試しください。');
@@ -379,11 +373,6 @@ const WritingPractice = ({ character, onComplete, initialStrokes, type = 'HIRAGA
 
   return (
     <div className="writing-practice">
-      {showCelebration && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 9999 }}>
-          <CelebrationAnimation />
-        </div>
-      )}
       <div className="writing-header">
         <h2>{character.char}（{type === 'KATAKANA' ? 'カタカナ' : 'ひらがな'}）</h2>
       </div>
