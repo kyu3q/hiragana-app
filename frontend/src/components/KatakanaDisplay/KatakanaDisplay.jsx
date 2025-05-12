@@ -404,6 +404,7 @@ const KatakanaDisplay = () => {
         <WritingGrid
           character={selectedCharacter}
           onClose={handleCloseWritingGrid}
+          type="KATAKANA"
         />
       )}
     </div>

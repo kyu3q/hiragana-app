@@ -132,7 +132,7 @@ export const katakanaGroups = [
     ]
   },
   {
-    name: '拗音（1）',
+    name: '拗音１',
     characters: [
       { id: 167, char: 'キャ', romaji: 'kya', image: '🍬 きゃんでぃ' },
       { id: 168, char: 'キュ', romaji: 'kyu', image: '🥒 きゅうり' },
@@ -149,7 +149,7 @@ export const katakanaGroups = [
     ]
   },
   {
-    name: '拗音（2）',
+    name: '拗音２',
     characters: [
       { id: 179, char: 'ギャ', romaji: 'gya', image: '🎭 ぎゃくてん' },
       { id: 180, char: 'ギュ', romaji: 'gyu', image: '🥩 ぎゅうにく' },

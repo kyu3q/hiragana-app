@@ -132,7 +132,7 @@ export const hiraganaGroups = [
     ]
   },
   {
-    name: '拗音（1）',
+    name: '拗音１',
     characters: [
       { id: 72, char: 'きゃ', romaji: 'kya', image: '🍬 きゃんでぃ' },
       { id: 73, char: 'きゅ', romaji: 'kyu', image: '🥒 きゅうり' },
@@ -149,7 +149,7 @@ export const hiraganaGroups = [
     ]
   },
   {
-    name: '拗音（2）',
+    name: '拗音２',
     characters: [
       { id: 84, char: 'ぎゃ', romaji: 'gya', image: '🎭 ぎゃくてん' },
       { id: 85, char: 'ぎゅ', romaji: 'gyu', image: '🥩 ぎゅうにく' },

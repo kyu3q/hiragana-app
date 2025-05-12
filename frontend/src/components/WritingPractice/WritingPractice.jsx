@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './WritingPractice.css';
 import { characterService } from '../../api/characterService';
+import { characterShapes, strokeTypes, evaluationCriteria } from '../../data/characterShapes';
+import CelebrationAnimation from './CelebrationAnimation';
 
 const WritingPractice = ({ character, onComplete, initialStrokes, type = 'HIRAGANA' }) => {
   const canvasRef = useRef(null);
@@ -11,8 +13,134 @@ const WritingPractice = ({ character, onComplete, initialStrokes, type = 'HIRAGA
   const [strokeWidth, setStrokeWidth] = useState(8);
   const [currentStroke, setCurrentStroke] = useState([]);
   const [allStrokes, setAllStrokes] = useState([]);
- // const GUIDE_FONT_FAMILY = "'HG教科書体', 'HGKyokashotai', 'Yu Kyokasho', 'YuKyokasho', 'やさしさゴシック手書き', 'YasashisaGothic', 'AnzuMoji', 'あんずもじ', 'Yu Mincho', '游明朝', 'Noto Serif JP', serif";
-  const GUIDE_FONT_FAMILY = "'M PLUS Rounded 1c', sans-serif";
+  const GUIDE_FONT_FAMILY = "'HG教科書体', 'HGKyokashotai', 'Yu Kyokasho', 'YuKyokasho', 'やさしさゴシック手書き', 'YasashisaGothic', 'AnzuMoji', 'あんずもじ', 'Yu Mincho', '游明朝', 'Noto Serif JP', 'M PLUS Rounded 1c', sans-serif";
+  const [showCelebration, setShowCelebration] = useState(false);
+
+  // 正解データを生成する関数
+  const generateCorrectStrokes = (char, canvasSize) => {
+    const shape = characterShapes[char];
+    if (!shape) return null;
+
+    return shape.strokes.map(stroke => {
+      const points = [];
+      const startX = stroke.start.x * canvasSize;
+      const startY = stroke.start.y * canvasSize;
+      const endX = stroke.end.x * canvasSize;
+      const endY = stroke.end.y * canvasSize;
+
+      // ストロークの種類に応じてポイントを生成
+      switch (stroke.type) {
+        case strokeTypes.VERTICAL:
+        case strokeTypes.HORIZONTAL:
+          points.push({ x: startX, y: startY });
+          points.push({ x: endX, y: endY });
+          break;
+        case strokeTypes.CURVE:
+          // 曲線の場合は中間点を追加
+          const midX = (startX + endX) / 2;
+          const midY = (startY + endY) / 2;
+          points.push({ x: startX, y: startY });
+          points.push({ x: midX, y: midY });
+          points.push({ x: endX, y: endY });
+          break;
+      }
+
+      return { points };
+    });
+  };
+
+  // ストロークの評価関数
+  const evaluateStroke = (userStroke, correctStroke) => {
+    if (!userStroke.points || !correctStroke.points) return 0;
+    
+    // 開始点と終了点の距離を計算
+    const startDiff = Math.sqrt(
+      Math.pow(userStroke.points[0].x - correctStroke.points[0].x, 2) +
+      Math.pow(userStroke.points[0].y - correctStroke.points[0].y, 2)
+    );
+    
+    const endDiff = Math.sqrt(
+      Math.pow(userStroke.points[userStroke.points.length - 1].x - correctStroke.points[correctStroke.points.length - 1].x, 2) +
+      Math.pow(userStroke.points[userStroke.points.length - 1].y - correctStroke.points[correctStroke.points.length - 1].y, 2)
+    );
+    
+    // 距離が大きいほど減点（キャンバスサイズで正規化）
+    const canvasSize = canvasRef.current.width;
+    const normalizedStartDiff = (startDiff / canvasSize) * 100;
+    const normalizedEndDiff = (endDiff / canvasSize) * 100;
+    const positionScore = 100 - (normalizedStartDiff + normalizedEndDiff) / 2;
+    
+    // ストロークの長さの比率を計算
+    const userLength = calculateStrokeLength(userStroke.points);
+    const correctLength = calculateStrokeLength(correctStroke.points);
+    const lengthRatio = Math.min(userLength, correctLength) / Math.max(userLength, correctLength);
+    
+    // 最終スコアを計算（位置と長さの重み付け）
+    return (positionScore * evaluationCriteria.POSITION_WEIGHT + 
+            lengthRatio * 100 * evaluationCriteria.LENGTH_WEIGHT);
+  };
+
+  // ストロークの長さを計算する関数
+  const calculateStrokeLength = (points) => {
+    let length = 0;
+    for (let i = 1; i < points.length; i++) {
+      length += Math.sqrt(
+        Math.pow(points[i].x - points[i-1].x, 2) +
+        Math.pow(points[i].y - points[i-1].y, 2)
+      );
+    }
+    return length;
+  };
+
+  // 書き順の評価関数
+  const evaluateStrokeOrder = (userStrokes, correctStrokes) => {
+    if (userStrokes.length !== correctStrokes.length) return 0;
+    
+    let orderScore = 100;
+    for (let i = 0; i < userStrokes.length; i++) {
+      const userStroke = userStrokes[i];
+      const correctStroke = correctStrokes[i];
+      
+      // 各ストロークの評価
+      const strokeScore = evaluateStroke(userStroke, correctStroke);
+      orderScore = Math.min(orderScore, strokeScore);
+    }
+    
+    return orderScore;
+  };
+
+  // 採点関数
+  const evaluateDrawing = () => {
+    const canvasSize = canvasRef.current.width;
+    const correctStrokes = generateCorrectStrokes(character.char, canvasSize);
+    
+    if (!correctStrokes) {
+      return { score: 0, comment: 'この文字の正解データがありません' };
+    }
+
+    // 書き順の評価
+    const orderScore = evaluateStrokeOrder(allStrokes, correctStrokes);
+    console.log('評価スコア:', orderScore);
+    
+    // コメントの生成
+    let comment = '';
+    if (orderScore >= evaluationCriteria.EXCELLENT_THRESHOLD) {
+      comment = 'とても上手に書けました！';
+    } else if (orderScore >= evaluationCriteria.GOOD_THRESHOLD) {
+      comment = '形がきれいです';
+    } else if (orderScore >= evaluationCriteria.FAIR_THRESHOLD) {
+      comment = 'もう少し練習しましょう';
+    } else {
+      comment = '書き順に気をつけましょう';
+    }
+
+    return { score: Math.round(orderScore), comment };
+  };
+
+  // アニメーションの表示状態を監視
+  useEffect(() => {
+    console.log('アニメーション表示状態:', showCelebration);
+  }, [showCelebration]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -171,28 +299,28 @@ const WritingPractice = ({ character, onComplete, initialStrokes, type = 'HIRAGA
     setCurrentStroke([]);
   };
 
-  const evaluateDrawing = () => {
-    const score = Math.floor(Math.random() * 41) + 60; // 60-100点のランダムなスコア
-    const comments = [
-      '上手に書けました！',
-      'もう少し練習しましょう',
-      '形がきれいです',
-      'バランスが良いです',
-      '書き順に気をつけましょう'
-    ];
-    const comment = comments[Math.floor(Math.random() * comments.length)];
-    return { score, comment };
-  };
-
   const handleComplete = async () => {
     try {
       const { score, comment } = evaluateDrawing();
+      console.log('採点結果:', { score, comment }); // デバッグ用ログ
       const strokesArray = allStrokes.map(stroke => ({
         points: stroke.points,
         score: score,
         comment: comment
       }));
       onComplete(strokesArray, score, comment);
+
+      // アニメーションの表示判定をここに移動
+      if (score >= evaluationCriteria.ANIMATION_THRESHOLD) {
+        console.log('アニメーションを表示します');
+        setShowCelebration(true);
+        
+        // 3秒後にアニメーションを非表示
+        setTimeout(() => {
+          console.log('アニメーションを非表示にします');
+          setShowCelebration(false);
+        }, 3000);
+      }
     } catch (error) {
       console.error('なぞり結果の保存に失敗しました:', error);
       alert('なぞり結果の保存に失敗しました。もう一度お試しください。');
@@ -251,6 +379,11 @@ const WritingPractice = ({ character, onComplete, initialStrokes, type = 'HIRAGA
 
   return (
     <div className="writing-practice">
+      {showCelebration && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 9999 }}>
+          <CelebrationAnimation />
+        </div>
+      )}
       <div className="writing-header">
         <h2>{character.char}（{type === 'KATAKANA' ? 'カタカナ' : 'ひらがな'}）</h2>
       </div>
@@ -271,7 +404,7 @@ const WritingPractice = ({ character, onComplete, initialStrokes, type = 'HIRAGA
       </div>
       <div className="writing-controls">
         <button className="cancel-button" onClick={clearCanvas}>
-          取消
+          消す
         </button>
         <div className="color-picker">
           <button 
