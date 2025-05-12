@@ -112,7 +112,7 @@ body {
   justify-content: center;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 22px;
 }
 
 .katakana-display .rail-connector {

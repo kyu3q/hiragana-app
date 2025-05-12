@@ -11,6 +11,8 @@ const WritingPractice = ({ character, onComplete, initialStrokes, type = 'HIRAGA
   const [strokeWidth, setStrokeWidth] = useState(8);
   const [currentStroke, setCurrentStroke] = useState([]);
   const [allStrokes, setAllStrokes] = useState([]);
+ // const GUIDE_FONT_FAMILY = "'HG教科書体', 'HGKyokashotai', 'Yu Kyokasho', 'YuKyokasho', 'やさしさゴシック手書き', 'YasashisaGothic', 'AnzuMoji', 'あんずもじ', 'Yu Mincho', '游明朝', 'Noto Serif JP', serif";
+  const GUIDE_FONT_FAMILY = "'M PLUS Rounded 1c', sans-serif";
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -68,7 +70,9 @@ const WritingPractice = ({ character, onComplete, initialStrokes, type = 'HIRAGA
 
   // ガイド文字をcanvasサイズに合わせて描画する共通関数
   const drawGuideCharacter = (ctx, char, size, type) => {
-    ctx.font = `${size * 0.7}px 'M PLUS Rounded 1c', sans-serif`;
+    // 拗音の場合は文字サイズを大きくする
+    const fontSize = char.length > 1 ? size * 0.55 : size * 0.7;
+    ctx.font = `${fontSize}px ${GUIDE_FONT_FAMILY}`;
     ctx.fillStyle = type === 'KATAKANA' ? 'rgba(0, 0, 128, 0.10)' : 'rgba(0, 0, 0, 0.08)';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';

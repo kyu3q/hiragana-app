@@ -5,7 +5,8 @@ import { characterService } from '../../api/characterService';
 
 const PRACTICE_CANVAS_SIZE = 300; // 練習用キャンバスのサイズ
 const GRID_CANVAS_SIZE = 180;     // グリッド用キャンバスのサイズ
-
+const GUIDE_FONT_FAMILY = "'HG教科書体', 'HGKyokashotai', 'Yu Kyokasho', 'YuKyokasho', 'やさしさゴシック手書き', 'YasashisaGothic', 'AnzuMoji', 'あんずもじ', 'Yu Mincho', '游明朝', 'Noto Serif JP', 'M PLUS Rounded 1c', sans-serif";
+ 
 const WritingGrid = ({ character, onClose, type = 'HIRAGANA' }) => {
   const [gridItems, setGridItems] = useState(Array(9).fill(null).map(() => ({
     strokes: [],
@@ -88,7 +89,9 @@ const WritingGrid = ({ character, onClose, type = 'HIRAGANA' }) => {
   };
 
   const drawGuideCharacter = (ctx, char, width, height) => {
-    ctx.font = `${width * 0.7}px 'M PLUS Rounded 1c', sans-serif`;
+    // 拗音の場合は文字サイズを大きくする
+    const fontSize = char.length > 1 ? width * 0.55 : width * 0.7;
+    ctx.font = `${fontSize}px ${GUIDE_FONT_FAMILY}`;
     ctx.fillStyle = 'rgba(0, 0, 0, 0.08)';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
