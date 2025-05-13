@@ -1,0 +1,166 @@
+.hiragana-chart {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.chart-title {
+  text-align: center;
+  font-size: 2.5rem;
+  color: #333;
+  margin-bottom: 2rem;
+  font-weight: bold;
+}
+
+.chart-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  padding: 1rem;
+}
+
+.chart-group {
+  background: #fff;
+  border-radius: 15px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.group-name {
+  font-size: 1.5rem;
+  color: #4a86e8;
+  margin-bottom: 1rem;
+  text-align: center;
+  font-weight: bold;
+}
+
+.characters-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.characters-row {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.chart-character {
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8f9fa;
+  border-radius: 10px;
+  font-size: 2rem;
+  color: #333;
+  transition: all 0.3s ease;
+}
+
+.chart-character:hover {
+  transform: scale(1.1);
+  background: #e3f2fd;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.character-main {
+  font-weight: bold;
+}
+
+.hiragana-chart-modal-bg {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.25);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hiragana-chart-modal {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  padding: 2.5rem 2rem 2rem 2rem;
+  min-width: 340px;
+  max-width: 95vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+.chart-title {
+  text-align: center;
+  font-size: 2rem;
+  color: #333;
+  margin-bottom: 1.5rem;
+  font-weight: bold;
+}
+
+.chart-table-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.hiragana-table {
+  border-collapse: collapse;
+  margin: 0 auto;
+  background: #fff;
+}
+
+.hiragana-table td {
+  border: 2px solid #222;
+  width: 60px;
+  height: 45px;
+  text-align: center;
+  font-size: 1.7rem;
+  font-family: 'Noto Sans JP', 'M PLUS Rounded 1c', sans-serif;
+  font-weight: 700;
+  color: #222;
+  background: #fff;
+  padding: 0;
+}
+
+.hiragana-table td.empty {
+  color: transparent;
+  background: #fff;
+}
+
+.dakuon-table {
+  margin-top: 1.5rem;
+}
+
+table.youon-table {
+  margin-top: 1.5rem;
+}
+
+.chart-modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.25);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chart-modal-close-btn {
+  position: absolute;
+  top: 12px;
+  right: 18px;
+  font-size: 2rem;
+  color: #888;
+  cursor: pointer;
+  font-weight: bold;
+  z-index: 10;
+  background: none;
+  border: none;
+  transition: color 0.2s;
+}
+.chart-modal-close-btn:hover {
+  color: #d72660;
+} 

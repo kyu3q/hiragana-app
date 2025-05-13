@@ -7,6 +7,7 @@ import { hiraganaGroups } from '../../data/hiraganaData';
 import { playSound, playCorrectSound, playCheerSound, playStarSound, playWrongSound } from '../../utils/soundPlayer';
 import { triggerConfetti, triggerColorfulConfetti, triggerFireworks } from '../../utils/confettiEffect';
 import WritingGrid from '../WritingGrid/WritingGrid';
+import HiraganaChart from '../HiraganaChart/HiraganaChart';
 
 const HiraganaDisplay = () => {
   const [selectedChar, setSelectedChar] = useState(null);
@@ -21,6 +22,7 @@ const HiraganaDisplay = () => {
   const [isTransitioning, setIsTransitioning] = useState(false); // 状態遷移中かどうか
   const [showWritingGrid, setShowWritingGrid] = useState(false);
   const [selectedCharacter, setSelectedCharacter] = useState(null);
+  const [showChart, setShowChart] = useState(false);
 
   // ゲームモードを切り替える
   const toggleGameMode = () => {
@@ -331,7 +333,7 @@ const HiraganaDisplay = () => {
           </button>
           <button 
             className="chart-button"
-            onClick={() => window.open('/hiragana-chart', '_blank')}
+            onClick={() => setShowChart(true)}
           >
             ひらがな表
           </button>
@@ -398,6 +400,13 @@ const HiraganaDisplay = () => {
           character={selectedCharacter}
           onClose={handleCloseWritingGrid}
         />
+      )}
+
+      {showChart && (
+        <div className="chart-modal-overlay">
+          <div className="chart-modal-close-btn" onClick={() => setShowChart(false)}>×</div>
+          <HiraganaChart />
+        </div>
       )}
     </div>
   );
