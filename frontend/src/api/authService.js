@@ -47,8 +47,12 @@ export const getCurrentUser = () => {
   if (!userId) return null;
   
   return apiClient.get(`/api/users/${userId}`)
-    .then(response => response.data)
-    .catch(() => {
+    .then(response => {
+      console.log('ユーザー情報のレスポンス:', response.data);
+      return response.data;
+    })
+    .catch(error => {
+      console.error('ユーザー情報取得エラー:', error);
       logout(); // エラーの場合はログアウト処理
       return null;
     });

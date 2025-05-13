@@ -4,6 +4,7 @@ import HiraganaDisplay from './components/HiraganaDisplay';
 import KatakanaDisplay from './components/KatakanaDisplay';
 import StartScreen from './components/StartScreen';
 import AuthPage from './components/auth/AuthPage';
+import Header from './components/Header/Header';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import './App.css';
 
@@ -15,7 +16,7 @@ function PrivateRoute({ children }) {
 }
 
 function AppRoutes() {
-  const [selectedType, setSelectedType] = useState(null);
+  const [selectedType, setSelectedType] = useState('hiragana');
 
   return (
     <Routes>
@@ -24,13 +25,21 @@ function AppRoutes() {
         path="/"
         element={
           <PrivateRoute>
-            {!selectedType ? (
-              <StartScreen onSelect={setSelectedType} />
-            ) : selectedType === 'hiragana' ? (
-              <HiraganaDisplay />
-            ) : selectedType === 'katakana' ? (
-              <KatakanaDisplay />
-            ) : null}
+            <div className="app-container">
+              <Header currentType={selectedType} onTypeChange={setSelectedType} />
+              <main className="main-content">
+                {selectedType === 'hiragana' ? (
+                  <HiraganaDisplay />
+                ) : selectedType === 'katakana' ? (
+                  <KatakanaDisplay />
+                ) : (
+                  <div className="coming-soon">
+                    <h2>漢字モードは準備中です！</h2>
+                    <p>もうしばらくお待ちください。</p>
+                  </div>
+                )}
+              </main>
+            </div>
           </PrivateRoute>
         }
       />

@@ -323,11 +323,17 @@ const HiraganaDisplay = () => {
         <h1 className="title stylish-title">ひらがなであそぼう！</h1>
         <div className="mode-toggle-inline">
           <button 
-            className={`mode-button ${gameMode === 'learn' ? 'active' : ''}`}
+            className={`chart-button ${gameMode === 'learn' ? 'active' : ''}`}
             onClick={toggleGameMode}
             disabled={isTransitioning}
           >
             {gameMode === 'learn' ? '学習モード' : 'クイズモード'}
+          </button>
+          <button 
+            className="chart-button"
+            onClick={() => window.open('/hiragana-chart', '_blank')}
+          >
+            ひらがな表
           </button>
         </div>
       </div>

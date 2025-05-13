@@ -323,11 +323,17 @@ const KatakanaDisplay = () => {
         <h1 className="title stylish-title">カタカナであそぼう！</h1>
         <div className="mode-toggle-inline">
           <button 
-            className={`mode-button ${gameMode === 'learn' ? 'active' : ''}`}
+            className={`chart-button ${gameMode === 'learn' ? 'active' : ''}`}
             onClick={toggleGameMode}
             disabled={isTransitioning}
           >
             {gameMode === 'learn' ? '学習モード' : 'クイズモード'}
+          </button>
+          <button 
+            className="chart-button"
+            onClick={() => window.open('/katakana-chart', '_blank')}
+          >
+            カタカナ表
           </button>
         </div>
       </div>

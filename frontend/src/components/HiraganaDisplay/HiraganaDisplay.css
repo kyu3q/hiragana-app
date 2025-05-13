@@ -41,6 +41,31 @@ body {
 .mode-toggle-inline {
   display: flex;
   align-items: center;
+  gap: 12px;
+}
+
+.chart-button {
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #fffde4 0%, #f9c6ff 100%);
+  border: 2px solid #f48fb1;
+  border-radius: 20px;
+  color: #d72660;
+  font-family: 'M PLUS Rounded 1c', sans-serif;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(244, 143, 177, 0.2);
+}
+
+.chart-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(244, 143, 177, 0.3);
+}
+
+.chart-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(244, 143, 177, 0.2);
 }
 
 .characters-area {

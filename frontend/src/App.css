@@ -1,8 +1,45 @@
 #root {
   max-width: 1280px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 0;
   text-align: center;
+}
+
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #f4fcff;
+}
+
+.main-content {
+  margin-top: 64px;
+  padding: 24px;
+  flex: 1;
+}
+
+.coming-soon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 112px);
+  background: linear-gradient(135deg, #f9fbe7 0%, #ffe082 100%);
+  border-radius: 24px;
+  padding: 48px;
+}
+
+.coming-soon h2 {
+  font-family: 'M PLUS Rounded 1c', sans-serif;
+  font-size: 2.5rem;
+  color: #f57c00;
+  margin-bottom: 16px;
+}
+
+.coming-soon p {
+  font-family: 'M PLUS Rounded 1c', sans-serif;
+  font-size: 1.2rem;
+  color: #795548;
 }
 
 .logo {
