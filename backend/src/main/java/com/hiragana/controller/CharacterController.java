@@ -12,6 +12,11 @@ import org.springframework.web.bind.annotation.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import com.hiragana.model.User;
+import com.hiragana.service.UserService;
 
 import java.util.*;
 
@@ -28,6 +33,9 @@ public class CharacterController {
 
     @Autowired
     private CharacterService characterService;
+
+    @Autowired
+    private UserService userService;
 
     @GetMapping
     public ResponseEntity<List<Character>> getAllCharacters() {
@@ -78,7 +86,13 @@ public class CharacterController {
     @GetMapping("/{id}/stroke-result")
     public ResponseEntity<?> getStrokeResult(@PathVariable Long id) {
         try {
-            Optional<StrokeResult> result = characterService.getStrokeResult(id);
+            // 現在のユーザーIDを取得
+            Long userId = getCurrentUserId();
+            if (userId == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("ユーザーが認証されていません");
+            }
+
+            Optional<StrokeResult> result = characterService.getStrokeResult(id, userId);
             if (result.isPresent()) {
                 return ResponseEntity.ok(result.get());
             }
@@ -97,20 +111,15 @@ public class CharacterController {
     @PostMapping("/{id}/stroke-result")
     public ResponseEntity<?> saveStrokeResult(@PathVariable Long id, @RequestBody StrokeResult strokeResult) {
         try {
+            // 現在のユーザーIDを取得
+            Long userId = getCurrentUserId();
+            if (userId == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("ユーザーが認証されていません");
+            }
+
             if (strokeResult == null || strokeResult.getPosition() == null) {
                 return ResponseEntity.badRequest().body("ストローク結果または位置情報が設定されていません");
             }
-
-            // 既存のStrokeResultを検索して削除
-            StrokeResult existing = characterService.findByCharacterIdAndPosition(id, strokeResult.getPosition());
-            if (existing != null) {
-                characterService.deleteStrokeResult(existing);
-            }
-
-            // 新しいStrokeResultをセット
-            Character character = characterService.getCharacterById(id)
-                .orElseThrow(() -> new RuntimeException("Character not found with id: " + id));
-            strokeResult.setCharacter(character);
 
             // ストロークとポイントの親子関係をセット
             if (strokeResult.getStrokes() != null) {
@@ -124,7 +133,7 @@ public class CharacterController {
                 }
             }
 
-            StrokeResult savedResult = characterService.saveStrokeResult(strokeResult);
+            StrokeResult savedResult = characterService.saveStrokeResult(id, userId, strokeResult);
             return ResponseEntity.ok(savedResult);
 
         } catch (Exception e) {
@@ -211,7 +220,25 @@ public class CharacterController {
 
     @GetMapping("/{id}/stroke-results")
     public ResponseEntity<List<StrokeResult>> getAllStrokeResults(@PathVariable Long id) {
-        List<StrokeResult> results = characterService.getAllStrokeResultsByCharacterId(id);
+        // 現在のユーザーIDを取得
+        Long userId = getCurrentUserId();
+        if (userId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        List<StrokeResult> results = characterService.getAllStrokeResultsByCharacterIdAndUserId(id, userId);
         return ResponseEntity.ok(results);
+    }
+
+    // 現在のユーザーIDを取得するヘルパーメソッド
+    private Long getCurrentUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.isAuthenticated()) {
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            return userService.getUserByEmail(userDetails.getUsername())
+                .map(User::getId)
+                .orElse(null);
+        }
+        return null;
     }
 } 

@@ -14,14 +14,16 @@ CREATE TABLE characters (
 
 CREATE TABLE stroke_results (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
     character_id BIGINT NOT NULL,
     position INTEGER NOT NULL,
     score INTEGER,
     comment VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id),
     FOREIGN KEY (character_id) REFERENCES characters(id),
-    UNIQUE KEY unique_position (character_id, position)
+    UNIQUE KEY unique_position (character_id, position, user_id)
 );
 
 CREATE TABLE strokes (

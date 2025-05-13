@@ -14,7 +14,6 @@ import org.springframework.dao.DataAccessException;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.ArrayList;
 
 @Service
 @Transactional
@@ -26,6 +25,9 @@ public class CharacterService {
 
     @Autowired
     private StrokeResultRepository strokeResultRepository;
+
+    @Autowired
+    private StrokeResultService strokeResultService;
 
     public List<Character> getAllCharacters() {
         try {
@@ -58,18 +60,22 @@ public class CharacterService {
         return characterRepository.findByTypeAndCharacter(type, character);
     }
 
-    public Optional<StrokeResult> getStrokeResult(Long characterId) {
-        return strokeResultRepository.findByCharacter_Id(characterId);
-    }
-
-    public StrokeResult findByCharacterIdAndPosition(Long characterId, Integer position) {
-        return strokeResultRepository.findByCharacter_IdAndPosition(characterId, position)
-            .orElse(null);
-    }
-
     @Transactional
-    public StrokeResult saveStrokeResult(StrokeResult strokeResult) {
-        return strokeResultRepository.save(strokeResult);
+    public StrokeResult saveStrokeResult(Long characterId, Long userId, StrokeResult strokeResult) {
+        return strokeResultService.saveStrokeResult(characterId, userId, strokeResult);
+    }
+
+    public Optional<StrokeResult> getStrokeResult(Long characterId, Long userId) {
+        return strokeResultService.getStrokeResult(characterId, userId);
+    }
+
+    public List<StrokeResult> getAllStrokeResults(Long characterId, Long userId) {
+        return strokeResultService.getAllStrokeResults(characterId, userId);
+    }
+
+    public StrokeResult findByCharacterIdAndPosition(Long characterId, Integer position, Long userId) {
+        return strokeResultRepository.findByCharacter_IdAndPositionAndUser_Id(characterId, position, userId)
+            .orElse(null);
     }
 
     public Character createCharacter(Character character) {
@@ -91,7 +97,7 @@ public class CharacterService {
         strokeResultRepository.delete(strokeResult);
     }
 
-    public List<StrokeResult> getAllStrokeResultsByCharacterId(Long characterId) {
-        return strokeResultRepository.findAllByCharacter_Id(characterId);
+    public List<StrokeResult> getAllStrokeResultsByCharacterIdAndUserId(Long characterId, Long userId) {
+        return strokeResultRepository.findAllByCharacter_IdAndUser_Id(characterId, userId);
     }
 } 

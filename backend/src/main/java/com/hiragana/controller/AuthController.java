@@ -30,8 +30,8 @@ public class AuthController {
             return ResponseEntity.badRequest().body("メールアドレスとパスワードが必要です");
         }
 
-        User user = userService.getUserByEmail(email);
-        if (user != null && user.getPassword().equals(password)) {
+        User user = userService.getUserByEmail(email).orElse(null);
+        if (user != null && userService.matchesPassword(password, user.getPassword())) {
             String token = jwtConfig.generateToken(email);
             Map<String, Object> response = new HashMap<>();
             response.put("token", token);

@@ -18,6 +18,11 @@ public class StrokeResult {
     @JsonIgnoreProperties({"strokeResults"})
     private Character character;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnoreProperties({"strokeResults"})
+    private User user;
+
     @Column(nullable = false)
     private Integer position;
 
@@ -43,6 +48,14 @@ public class StrokeResult {
 
     public void setCharacter(Character character) {
         this.character = character;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 
     public Integer getPosition() {
