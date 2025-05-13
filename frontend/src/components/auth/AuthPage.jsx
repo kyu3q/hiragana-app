@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LoginForm from './LoginForm';
 import RegisterForm from './RegisterForm';
@@ -10,11 +10,11 @@ const AuthPage = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
 
-  // 既にログインしている場合はトップページへリダイレクト
-  if (isAuthenticated) {
-    navigate('/');
-    return null;
-  }
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/');
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleAuthSuccess = () => {
     navigate('/');

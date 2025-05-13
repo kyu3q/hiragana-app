@@ -19,12 +19,23 @@ public class UserService {
     private PasswordEncoder passwordEncoder;
 
     public User createUser(User user) {
+        if (user.getEmail() == null || user.getEmail().trim().isEmpty()) {
+            throw new RuntimeException("メールアドレスは必須です");
+        }
+        if (user.getUsername() == null || user.getUsername().trim().isEmpty()) {
+            throw new RuntimeException("ユーザー名は必須です");
+        }
+        if (user.getPassword() == null || user.getPassword().trim().isEmpty()) {
+            throw new RuntimeException("パスワードは必須です");
+        }
+
         if (userRepository.existsByUsername(user.getUsername())) {
-            throw new RuntimeException("Username already exists");
+            throw new RuntimeException("このユーザー名は既に使用されています");
         }
         if (userRepository.existsByEmail(user.getEmail())) {
-            throw new RuntimeException("Email already exists");
+            throw new RuntimeException("このメールアドレスは既に登録されています");
         }
+
         // パスワードをハッシュ化
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         return userRepository.save(user);
@@ -38,8 +49,8 @@ public class UserService {
         return userRepository.findByUsername(username);
     }
 
-    public Optional<User> getUserByEmail(String email) {
-        return userRepository.findByEmail(email);
+    public User getUserByEmail(String email) {
+        return userRepository.findByEmail(email).orElse(null);
     }
 
     public User updateUser(User user) {

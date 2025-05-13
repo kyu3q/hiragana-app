@@ -1,31 +1,28 @@
-import { API_BASE_URL } from '../config';
+import apiClient from './client';
 
 export const characterService = {
     // 文字一覧を取得
     async getAllCharacters() {
-        const response = await fetch(`${API_BASE_URL}/characters`);
-        if (!response.ok) {
-            throw new Error('文字一覧の取得に失敗しました');
-        }
-        return response.json();
+        const response = await apiClient.get('/api/characters');
+        return response.data;
     },
 
     // 特定のタイプの文字を取得
     getCharactersByType: async (type) => {
-        const response = await fetch(`${API_BASE_URL}/characters/type/${type}`);
-        return response.json();
+        const response = await apiClient.get(`/api/characters/type/${type}`);
+        return response.data;
     },
 
     // 特定のタイプと難易度以下の文字を取得
     getCharactersByTypeAndDifficulty: async (type, maxDifficulty) => {
-        const response = await fetch(`${API_BASE_URL}/characters/type/${type}/difficulty/${maxDifficulty}`);
-        return response.json();
+        const response = await apiClient.get(`/api/characters/type/${type}/difficulty/${maxDifficulty}`);
+        return response.data;
     },
 
     // 特定の文字を取得
     getCharacterByTypeAndCharacter: async (type, character) => {
-        const response = await fetch(`${API_BASE_URL}/characters/type/${type}/character/${character}`);
-        return response.json();
+        const response = await apiClient.get(`/api/characters/type/${type}/character/${character}`);
+        return response.data;
     },
 
     // なぞり結果を保存
@@ -57,46 +54,33 @@ export const characterService = {
 
             console.log('Request body:', requestBody);
             
-            const response = await fetch(`${API_BASE_URL}/characters/${characterId}/stroke-result`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(requestBody),
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                console.error('Server response:', errorData);
-                throw new Error(errorData.message || `ストローク結果の保存に失敗しました (${response.status})`);
-            }
-
-            return await response.json();
+            const response = await apiClient.post(`/api/characters/${characterId}/stroke-result`, requestBody);
+            return response.data;
         } catch (error) {
             console.error('Error saving stroke result:', error);
-            throw error;
+            throw error.response?.data || error;
         }
     },
 
     // なぞり結果を取得
     async getStrokeResult(characterId) {
         try {
-            const response = await fetch(`${API_BASE_URL}/characters/${characterId}/stroke-result`);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const data = await response.json();
-            return data;
+            const response = await apiClient.get(`/api/characters/${characterId}/stroke-result`);
+            return response.data;
         } catch (error) {
             console.error('Error fetching stroke result:', error);
-            throw error;
+            throw error.response?.data || error;
         }
     },
 
     // すべてのなぞり結果を取得
     getAllStrokeResults: async (characterId) => {
-        const response = await fetch(`${API_BASE_URL}/characters/${characterId}/stroke-results`);
-        if (!response.ok) throw new Error('なぞり書き結果の取得に失敗しました');
-        return response.json();
+        try {
+            const response = await apiClient.get(`/api/characters/${characterId}/stroke-results`);
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching stroke results:', error);
+            throw error;
+        }
     }
 }; 

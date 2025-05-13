@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './WritingGrid.css';
 import WritingPractice from '../WritingPractice/WritingPractice';
 import { characterService } from '../../api/characterService';
+import { useAuth } from '../../context/AuthContext';
 
 const PRACTICE_CANVAS_SIZE = 300; // 練習用キャンバスのサイズ
 const GRID_CANVAS_SIZE = 180;     // グリッド用キャンバスのサイズ
@@ -14,10 +15,16 @@ const WritingGrid = ({ character, onClose, type = 'HIRAGANA' }) => {
     comment: '',
     isEditing: false
   })));
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     const fetchStrokeResults = async () => {
       try {
+        if (!isAuthenticated) {
+          console.log('ユーザーが認証されていません');
+          return;
+        }
+
         // すべてのなぞり書き結果を取得
         const results = await characterService.getAllStrokeResults(character.id);
         if (results && Array.isArray(results)) {
@@ -45,7 +52,7 @@ const WritingGrid = ({ character, onClose, type = 'HIRAGANA' }) => {
     if (character && character.id) {
       fetchStrokeResults();
     }
-  }, [character]);
+  }, [character, isAuthenticated]);
 
   const handleGridItemClick = (index) => {
     const newGridItems = [...gridItems];

@@ -5,6 +5,8 @@ import com.hiragana.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
 
@@ -12,12 +14,25 @@ import java.util.Optional;
 @RequestMapping("/api/users")
 @CrossOrigin(origins = "http://localhost:5173")
 public class UserController {
+    private static final Logger logger = LoggerFactory.getLogger(UserController.class);
+
     @Autowired
     private UserService userService;
 
     @PostMapping
-    public ResponseEntity<User> createUser(@RequestBody User user) {
-        return ResponseEntity.ok(userService.createUser(user));
+    public ResponseEntity<?> createUser(@RequestBody User user) {
+        try {
+            logger.info("Creating new user: {}", user.getEmail());
+            User createdUser = userService.createUser(user);
+            logger.info("User created successfully: {}", createdUser.getId());
+            return ResponseEntity.ok(createdUser);
+        } catch (RuntimeException e) {
+            logger.error("Error creating user: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            logger.error("Unexpected error creating user", e);
+            return ResponseEntity.internalServerError().body("ユーザー登録中にエラーが発生しました");
+        }
     }
 
     @GetMapping("/{id}")

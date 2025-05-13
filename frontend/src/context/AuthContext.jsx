@@ -24,6 +24,19 @@ export const AuthProvider = ({ children }) => {
     };
 
     initAuth();
+
+    // 認証エラーイベントのリスナーを設定
+    const handleAuthError = () => {
+      setCurrentUser(null);
+      setError('セッションが切れました。再度ログインしてください。');
+      window.location.href = '/login';
+    };
+
+    window.addEventListener('auth-error', handleAuthError);
+
+    return () => {
+      window.removeEventListener('auth-error', handleAuthError);
+    };
   }, []);
 
   const value = {
