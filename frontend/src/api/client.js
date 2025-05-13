@@ -11,6 +11,10 @@ const apiClient = axios.create({
 apiClient.interceptors.request.use(
   (config) => {
     // リクエスト送信前の処理
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      config.headers['Authorization'] = `Bearer ${token}`;
+    }
     return config;
   },
   (error) => {
@@ -25,6 +29,12 @@ apiClient.interceptors.response.use(
     return response;
   },
   (error) => {
+    // 認証エラー（401）の場合、ローカルストレージをクリア
+    if (error.response && error.response.status === 401) {
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('userId');
+    }
+    
     // エラー処理
     console.error('API Error:', error);
     return Promise.reject(error);

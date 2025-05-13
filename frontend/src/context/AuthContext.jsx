@@ -1,0 +1,46 @@
+import React, { createContext, useState, useEffect, useContext } from 'react';
+import { isLoggedIn, getCurrentUser, logout } from '../api/authService';
+
+const AuthContext = createContext(null);
+
+export const AuthProvider = ({ children }) => {
+  const [currentUser, setCurrentUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const initAuth = async () => {
+      if (isLoggedIn()) {
+        try {
+          const user = await getCurrentUser();
+          setCurrentUser(user);
+        } catch (error) {
+          console.error('認証エラー:', error);
+          setError('ユーザー情報の取得に失敗しました');
+          logout();
+        }
+      }
+      setLoading(false);
+    };
+
+    initAuth();
+  }, []);
+
+  const value = {
+    currentUser,
+    setCurrentUser,
+    loading,
+    error,
+    isAuthenticated: !!currentUser,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === null) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+}; 
