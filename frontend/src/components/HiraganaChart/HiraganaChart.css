@@ -77,18 +77,20 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  will-change: opacity;
 }
 
 .hiragana-chart-modal {
   background: #fff;
   border-radius: 16px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.18);
-  padding: 2.5rem 2.5rem;
+  padding: 2.5rem 3rem;
   min-width: 340px;
   max-width: 95vw;
   max-height: 90vh;
   overflow-y: auto;
   position: relative;
+  will-change: transform;
 }
 
 .hiragana-chart-header {
@@ -136,20 +138,22 @@
   flex-direction: column;
   align-items: center;
   gap: 1.5rem;
+  will-change: transform;
 }
 
 .hiragana-table {
   border-collapse: collapse;
   margin: 0 auto;
   background: #fff;
+  font-size: 2rem;
 }
 
 .hiragana-table td {
   border: 2px solid #222;
-  width: 60px;
-  height: 45px;
+  width: 120px;
+  height: 90px;
   text-align: center;
-  font-size: 1.7rem;
+  font-size: 3.4rem;
   font-family: 'Noto Sans JP', 'M PLUS Rounded 1c', sans-serif;
   font-weight: 700;
   color: #222;
@@ -211,4 +215,60 @@ table.youon-table {
 .hiragana-table td.char-cell:active {
   transform: scale(0.98);
   background-color: #ffea9a;
+}
+
+/* 進捗状態のスタイル */
+.hiragana-table td.progress-not-started {
+  background-color: #ffffff;
+}
+
+.hiragana-table td.progress-attempted {
+  background-color: #ffdede;
+}
+
+.hiragana-table td.progress-in-progress {
+  background-color: #fff3cd;
+}
+
+.hiragana-table td.progress-half-completed {
+  background-color: #cff4fc;
+}
+
+.hiragana-table td.progress-completed {
+  background-color: #d1e7dd;
+  position: relative;
+}
+
+.hiragana-table td.progress-completed::after {
+  content: "✓";
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-size: 10px;
+  color: #198754;
+}
+
+.progress-indicator {
+  display: block;
+  font-size: 10px;
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  color: #666;
+}
+
+.hiragana-table td {
+  position: relative;
+}
+
+.chart-page-tabs-horizontal {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: 1.5rem;
+}
+
+.hiragana-chart-content {
+  position: relative;
 } 
