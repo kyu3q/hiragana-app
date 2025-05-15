@@ -72,7 +72,7 @@
 .hiragana-chart-modal-bg {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.25);
+  background: rgba(186, 104, 200, 0.10);
   z-index: 1000;
   display: flex;
   align-items: center;
@@ -81,9 +81,9 @@
 }
 
 .hiragana-chart-modal {
-  background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  background: #f9f4fb;
+  border-radius: 24px;
+  box-shadow: 0 8px 32px rgba(186, 104, 200, 0.18);
   padding: 2.5rem 3rem;
   min-width: 340px;
   max-width: 95vw;
@@ -103,9 +103,11 @@
 
 .hiragana-chart-header h2 {
   margin: 0;
-  font-size: 1.5rem;
-  color: #333;
-  text-align: center;
+  font-size: 2.4rem;
+  font-family: 'M PLUS Rounded 1c', 'Noto Sans JP', sans-serif;
+  font-weight: bold;
+  color: #8e24aa;
+  letter-spacing: 0.05em;
 }
 
 .hiragana-chart-close-btn {
@@ -144,21 +146,23 @@
 .hiragana-table {
   border-collapse: collapse;
   margin: 0 auto;
-  background: #fff;
+  background: #f9f4fb;
+  border-radius: 24px;
+  box-shadow: 0 4px 24px rgba(186, 104, 200, 0.10);
+  padding: 8px;
   font-size: 2rem;
 }
 
 .hiragana-table td {
-  border: 2px solid #222;
   width: 120px;
-  height: 90px;
-  text-align: center;
-  font-size: 3.4rem;
-  font-family: 'Noto Sans JP', 'M PLUS Rounded 1c', sans-serif;
-  font-weight: 700;
-  color: #222;
-  background: #fff;
-  padding: 0;
+  height: 60px;
+  font-size: 2.2rem;
+  position: relative;
+  background: #f3e5f5;
+  box-shadow: 0 2px 8px rgba(186, 104, 200, 0.08);
+  transition: background 0.2s, box-shadow 0.2s;
+  border-radius: 0;
+  border: 2.5px solid #222;
 }
 
 .hiragana-table td.empty {
@@ -207,45 +211,21 @@ table.youon-table {
 }
 
 .hiragana-table td.char-cell:hover {
-  background-color: #fff9d4;
-  transform: scale(1.08);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background-color: #e1bee7;
+  box-shadow: 0 4px 16px rgba(186, 104, 200, 0.18);
 }
 
 .hiragana-table td.char-cell:active {
-  transform: scale(0.98);
-  background-color: #ffea9a;
+  background-color: #ce93d8;
 }
 
-/* 進捗状態のスタイル */
-.hiragana-table td.progress-not-started {
-  background-color: #ffffff;
-}
-
-.hiragana-table td.progress-attempted {
-  background-color: #ffdede;
-}
-
-.hiragana-table td.progress-in-progress {
-  background-color: #fff3cd;
-}
-
-.hiragana-table td.progress-half-completed {
-  background-color: #cff4fc;
-}
-
+/* 進捗状態のスタイル（紫系濃淡） */
+.hiragana-table td.progress-not-started,
+.hiragana-table td.progress-attempted,
+.hiragana-table td.progress-in-progress,
+.hiragana-table td.progress-half-completed,
 .hiragana-table td.progress-completed {
-  background-color: #d1e7dd;
-  position: relative;
-}
-
-.hiragana-table td.progress-completed::after {
-  content: "✓";
-  position: absolute;
-  top: 2px;
-  right: 2px;
-  font-size: 10px;
-  color: #198754;
+  background-color: #f3e5f5;
 }
 
 .progress-indicator {
@@ -255,10 +235,6 @@ table.youon-table {
   bottom: 2px;
   right: 2px;
   color: #666;
-}
-
-.hiragana-table td {
-  position: relative;
 }
 
 .chart-page-tabs-horizontal {
@@ -271,4 +247,205 @@ table.youon-table {
 
 .hiragana-chart-content {
   position: relative;
+}
+
+.shinkansen-progress {
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  font-size: 1.1rem;
+  pointer-events: none;
+  z-index: 2;
+}
+.station {
+  font-size: 1.1rem;
+  margin: 0 0.5px;
+}
+.rail {
+  font-size: 1.1rem;
+  color: #888;
+  margin: 0 1px;
+}
+.shinkansen {
+  font-size: 1.2rem;
+  margin-left: 2px;
+}
+
+.bento-progress {
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 1.2rem;
+  pointer-events: none;
+  z-index: 2;
+}
+.bento {
+  font-size: 1.2rem;
+  margin: 0 1px;
+  filter: drop-shadow(0 1px 2px #fff6);
+}
+
+.chart-page-tab {
+  border-radius: 16px;
+  background: #f3e5f5;
+  color: #8e24aa;
+  border: 2px solid #ce93d8;
+}
+.chart-page-tab.active {
+  background: #ba68c8;
+  color: #fff;
+  border: 2px solid #8e24aa;
+}
+
+.bento-progress-inline {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1px;
+  margin-top: 2px;
+}
+.bento-inline {
+  font-size: 1.1rem;
+  margin: 0 0.5px;
+  filter: drop-shadow(0 1px 2px #fff6);
+}
+
+.hiragana-table td .bento-progress-inline {
+  font-size: 1.1rem;
+}
+
+.bento-grid {
+  display: flex;
+  flex-direction: column;
+  margin-left: 0.3em;
+  gap: 1px;
+}
+.bento-grid-row {
+  display: flex;
+  flex-direction: row;
+  gap: 1px;
+}
+.bento-grid-item {
+  width: 1.1em;
+  height: 1.1em;
+  font-size: 1.1em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 文字とお弁当グリッドの間隔調整 */
+.hiragana-table td > span:first-child {
+  margin-right: 0.2em;
+}
+
+.bento-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 2px auto 0 auto;
+}
+.bento-stack-row {
+  display: flex;
+  flex-direction: row;
+  gap: 2px;
+}
+.bento-stack-item {
+  font-size: 0.9rem;
+  width: 0.9rem;
+  height: 0.9rem;
+  margin: 0 1px;
+  filter: drop-shadow(0 1px 2px #fff6);
+}
+
+.bento-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0;
+}
+
+.bento-placeholder {
+  display: inline-block;
+  width: 1.1rem;
+  height: 1.1rem;
+  opacity: 0;
+  font-size: 0.9rem;
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
+.char-box {
+  background: #f3e5f5;
+  border: 1.5px solid #ce93d8;
+  border-radius: 18px 18px 6px 6px;
+  padding: 2px 0 1px 0;
+  width: 2.2em;
+  min-height: 1.2em;
+  font-size: 1em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+  font-weight: 700;
+  color: #222;
+}
+
+.char-bento-divider {
+  display: none;
+}
+
+.cell-content > .char-box {
+  margin-bottom: 0.05em;
+}
+
+.bento-box {
+  background: #f9f4fb;
+  border: 1.5px solid #ce93d8;
+  border-radius: 6px 6px 10px 10px;
+  padding: 1px 0 2px 0;
+  min-height: 1.2em;
+  min-width: 2.2em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hiragana-table td.progress-not-started,
+.hiragana-table td.progress-attempted,
+.hiragana-table td.progress-in-progress,
+.hiragana-table td.progress-half-completed,
+.hiragana-table td.progress-completed {
+  border-radius: 0;
+}
+
+.hiragana-table td {
+  border-radius: 0;
+}
+
+.cell-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+}
+
+.progress-status-icon {
+  position: absolute;
+  top: 2px;
+  right: 6px;
+  font-size: 1.1rem;
+  z-index: 3;
+  pointer-events: none;
+  opacity: 0.85;
 } 

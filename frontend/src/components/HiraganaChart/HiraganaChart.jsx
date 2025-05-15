@@ -125,8 +125,8 @@ const HiraganaChart = ({ onClose }) => {
     if (totalResults === 0) return 'not-started';        // 結果なし
     if (goodScoresCount === 0) return 'attempted';       // 結果あり、60点以上なし
     if (goodScoresCount >= 9) return 'completed';        // 9件すべて60点以上
-    if (goodScoresCount >= 5) return 'half-completed';   // 5-8件が60点以上
-    return 'in-progress';                                // 1-4件が60点以上
+    if (goodScoresCount >= 1) return 'in-progress';      // 1件以上9件未満
+    return 'not-started';
   };
 
   const handleCharClick = (char) => {
@@ -178,6 +178,32 @@ const HiraganaChart = ({ onClose }) => {
     }
   };
 
+  // お弁当アイコンを文字の下部に5+4の2段で表示（空白プレースホルダーで高さを揃える）
+  const renderBentoStack = (count) => {
+    const topRow = [];
+    const bottomRow = [];
+    for (let i = 0; i < 5; i++) {
+      topRow.push(
+        <span key={i} className="bento-stack-item">
+          {i < count ? '🍱' : <span className="bento-placeholder"></span>}
+        </span>
+      );
+    }
+    for (let i = 5; i < 9; i++) {
+      bottomRow.push(
+        <span key={i} className="bento-stack-item">
+          {i < count ? '🍱' : <span className="bento-placeholder"></span>}
+        </span>
+      );
+    }
+    return (
+      <div className="bento-stack">
+        <div className="bento-stack-row">{topRow}</div>
+        <div className="bento-stack-row">{bottomRow}</div>
+      </div>
+    );
+  };
+
   return (
     <div className="hiragana-chart-modal-bg">
       <div className="hiragana-chart-modal">
@@ -215,12 +241,15 @@ const HiraganaChart = ({ onClose }) => {
                             className={progressClass} 
                             onClick={() => cell ? handleCharClick(cell) : null}
                           >
-                            {cell}
-                            {cell && progressData[cell] && progressData[cell].goodCount > 0 && (
-                              <span className="progress-indicator">
-                                {progressData[cell].goodCount}/9
-                              </span>
-                            )}
+                            {cell ? (
+                              <div className="cell-content">
+                                <div className="char-box">{cell}</div>
+                                <div className="char-bento-divider"></div>
+                                <div className="bento-box">
+                                  {renderBentoStack(progressData[cell] ? progressData[cell].goodCount : 0)}
+                                </div>
+                              </div>
+                            ) : null}
                           </td>
                         );
                       })}
@@ -245,12 +274,15 @@ const HiraganaChart = ({ onClose }) => {
                             className={progressClass}
                             onClick={() => handleCharClick(cell)}
                           >
-                            {cell}
-                            {cell && progressData[cell] && progressData[cell].goodCount > 0 && (
-                              <span className="progress-indicator">
-                                {progressData[cell].goodCount}/9
-                              </span>
-                            )}
+                            {cell ? (
+                              <div className="cell-content">
+                                <div className="char-box">{cell}</div>
+                                <div className="char-bento-divider"></div>
+                                <div className="bento-box">
+                                  {renderBentoStack(progressData[cell] ? progressData[cell].goodCount : 0)}
+                                </div>
+                              </div>
+                            ) : null}
                           </td>
                         );
                       })}
@@ -273,12 +305,15 @@ const HiraganaChart = ({ onClose }) => {
                             className={progressClass}
                             onClick={() => handleCharClick(cell)}
                           >
-                            {cell}
-                            {cell && progressData[cell] && progressData[cell].goodCount > 0 && (
-                              <span className="progress-indicator">
-                                {progressData[cell].goodCount}/9
-                              </span>
-                            )}
+                            {cell ? (
+                              <div className="cell-content">
+                                <div className="char-box">{cell}</div>
+                                <div className="char-bento-divider"></div>
+                                <div className="bento-box">
+                                  {renderBentoStack(progressData[cell] ? progressData[cell].goodCount : 0)}
+                                </div>
+                              </div>
+                            ) : null}
                           </td>
                         );
                       })}
