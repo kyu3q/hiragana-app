@@ -4,6 +4,7 @@ import WritingGrid from '../WritingGrid/WritingGrid';
 import { useAuth } from '../../context/AuthContext';
 import { characterService } from '../../api/characterService';
 import ProgressStack from './ProgressStack';
+import HanamaruSVG from './HanamaruSVG';
 
 // 画像のような表形式の2次元配列データ
 const mainTable = [
@@ -202,6 +203,9 @@ const HiraganaChart = ({ onClose }) => {
                           >
                             {cell ? (
                               <div className="cell-content">
+                                {progressData[cell] && progressData[cell].status === 'completed' && (
+                                  <HanamaruSVG className="hanamaru-overlay" />
+                                )}
                                 <div className="char-box">{cell}</div>
                                 <div className="char-bento-divider"></div>
                                 <div className="bento-box">
@@ -235,6 +239,9 @@ const HiraganaChart = ({ onClose }) => {
                           >
                             {cell ? (
                               <div className="cell-content">
+                                {progressData[cell] && progressData[cell].status === 'completed' && (
+                                  <HanamaruSVG className="hanamaru-overlay" />
+                                )}
                                 <div className="char-box">{cell}</div>
                                 <div className="char-bento-divider"></div>
                                 <div className="bento-box">
@@ -266,6 +273,9 @@ const HiraganaChart = ({ onClose }) => {
                           >
                             {cell ? (
                               <div className="cell-content">
+                                {progressData[cell] && progressData[cell].status === 'completed' && (
+                                  <HanamaruSVG className="hanamaru-overlay" />
+                                )}
                                 <div className="char-box">{cell}</div>
                                 <div className="char-bento-divider"></div>
                                 <div className="bento-box">

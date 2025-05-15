@@ -4,6 +4,7 @@ import WritingGrid from '../WritingGrid/WritingGrid';
 import { useAuth } from '../../context/AuthContext';
 import { characterService } from '../../api/characterService';
 import ProgressStack from '../HiraganaChart/ProgressStack';
+import HanamaruSVG from '../HiraganaChart/HanamaruSVG';
 
 // 画像のような表形式の2次元配列データ
 const mainTable = [
@@ -198,6 +199,9 @@ const KatakanaChart = ({ onClose }) => {
                           >
                             {cell ? (
                               <div className="cell-content">
+                                {progressStatus === 'completed' && (
+                                  <HanamaruSVG className="hanamaru-overlay" />
+                                )}
                                 <div className="char-box">{cell}</div>
                                 <div className="char-bento-divider"></div>
                                 <div className="bento-box">
@@ -231,6 +235,9 @@ const KatakanaChart = ({ onClose }) => {
                           >
                             {cell ? (
                               <div className="cell-content">
+                                {progressStatus === 'completed' && (
+                                  <HanamaruSVG className="hanamaru-overlay" />
+                                )}
                                 <div className="char-box">{cell}</div>
                                 <div className="char-bento-divider"></div>
                                 <div className="bento-box">
@@ -262,6 +269,9 @@ const KatakanaChart = ({ onClose }) => {
                           >
                             {cell ? (
                               <div className="cell-content">
+                                {progressStatus === 'completed' && (
+                                  <HanamaruSVG className="hanamaru-overlay" />
+                                )}
                                 <div className="char-box">{cell}</div>
                                 <div className="char-bento-divider"></div>
                                 <div className="bento-box">
