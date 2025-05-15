@@ -82,16 +82,25 @@ const WritingGrid = ({ character, onClose, type = 'HIRAGANA' }) => {
       );
       setGridItems(updatedGridItems);
 
-      const strokeData = {
-        position: position,
-        strokes: strokes,
-        score: score || 0,
-        comment: comment || ''
-      };
-      await characterService.saveStrokeResult(character.id, strokeData);
+      // 認証されている場合のみ保存を試みる
+      if (isAuthenticated) {
+        const strokeData = {
+          position: position,
+          strokes: strokes,
+          score: score || 0,
+          comment: comment || ''
+        };
+        await characterService.saveStrokeResult(character.id, strokeData);
+      } else {
+        console.log('ログインしていないため、結果は保存されません。');
+      }
     } catch (error) {
       console.error('Error saving stroke result:', error);
-      alert(error.message || 'ストローク結果の保存に失敗しました。もう一度お試しください。');
+      if (!isAuthenticated) {
+        console.log('練習結果は保存されませんでした。保存するにはログインしてください。');
+      } else {
+        alert(error.message || 'ストローク結果の保存に失敗しました。もう一度お試しください。');
+      }
     }
   };
 

@@ -195,4 +195,20 @@ table.youon-table {
 }
 .chart-modal-close-btn:hover {
   color: #d72660;
+}
+
+.hiragana-table td.char-cell {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.hiragana-table td.char-cell:hover {
+  background-color: #fff9d4;
+  transform: scale(1.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.hiragana-table td.char-cell:active {
+  transform: scale(0.98);
+  background-color: #ffea9a;
 } 

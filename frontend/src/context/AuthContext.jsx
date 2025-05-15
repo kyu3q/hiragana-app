@@ -16,8 +16,13 @@ export const AuthProvider = ({ children }) => {
           setCurrentUser(user);
         } catch (error) {
           console.error('認証エラー:', error);
-          setError('ユーザー情報の取得に失敗しました');
-          logout();
+          // 403エラーの場合でもログインを維持（デモユーザーが返ってくる）
+          if (error.response && error.response.status === 403) {
+            console.log('デモモードで続行します');
+          } else {
+            setError('ユーザー情報の取得に失敗しました');
+            logout();
+          }
         }
       }
       setLoading(false);
