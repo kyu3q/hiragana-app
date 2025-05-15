@@ -83,12 +83,44 @@
   background: #fff;
   border-radius: 16px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.18);
-  padding: 2.5rem 2rem 2rem 2rem;
+  padding: 2.5rem 2.5rem;
   min-width: 340px;
   max-width: 95vw;
   max-height: 90vh;
   overflow-y: auto;
   position: relative;
+}
+
+.hiragana-chart-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  position: relative;
+}
+
+.hiragana-chart-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #333;
+  text-align: center;
+}
+
+.hiragana-chart-close-btn {
+  position: absolute;
+  right: 0;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #666;
+  cursor: pointer;
+  padding: 0.5rem;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.hiragana-chart-close-btn:hover {
+  color: #d72660;
 }
 
 .chart-title {

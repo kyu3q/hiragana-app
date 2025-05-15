@@ -404,8 +404,7 @@ const HiraganaDisplay = () => {
 
       {showChart && (
         <div className="chart-modal-overlay">
-          <div className="chart-modal-close-btn" onClick={() => setShowChart(false)}>×</div>
-          <HiraganaChart />
+          <HiraganaChart onClose={() => setShowChart(false)} />
         </div>
       )}
     </div>

@@ -18,11 +18,14 @@ const dakuonTable = [
   ['','','','','','','','','ぽ','ぼ','ど','ぞ','ご'],
 ];
 
-const HiraganaChart = () => {
+const HiraganaChart = ({ onClose }) => {
   return (
     <div className="hiragana-chart-modal-bg">
       <div className="hiragana-chart-modal">
-        <h1 className="chart-title">ひらがな表</h1>
+        <div className="hiragana-chart-header">
+          <h2>ひらがな表</h2>
+          <button className="hiragana-chart-close-btn" onClick={onClose}>×</button>
+        </div>
         <div className="chart-table-wrap">
           <table className="hiragana-table">
             <tbody>
