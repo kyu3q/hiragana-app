@@ -1,36 +1,36 @@
 import React, { useState, useEffect } from 'react';
-import './HiraganaChart.css';
+import './KatakanaChart.css';
 import WritingGrid from '../WritingGrid/WritingGrid';
 import { useAuth } from '../../context/AuthContext';
 import { characterService } from '../../api/characterService';
-import ProgressStack from './ProgressStack';
+import ProgressStack from '../HiraganaChart/ProgressStack';
 
 // 画像のような表形式の2次元配列データ
 const mainTable = [
-  ['ん','わ','ら','や','ま','は','な','た','さ','か','あ'],
-  ['','','り','','み','ひ','に','ち','し','き','い'],
-  ['','','る','ゆ','む','ふ','ぬ','つ','す','く','う'],
-  ['','','れ','','め','へ','ね','て','せ','け','え'],
-  ['','を','ろ','よ','も','ほ','の','と','そ','こ','お'],
+  ['ン','ワ','ラ','ヤ','マ','ハ','ナ','タ','サ','カ','ア'],
+  ['','','リ','','ミ','ヒ','ニ','チ','シ','キ','イ'],
+  ['','','ル','ユ','ム','フ','ヌ','ツ','ス','ク','ウ'],
+  ['','','レ','','メ','ヘ','ネ','テ','セ','ケ','エ'],
+  ['','ヲ','ロ','ヨ','モ','ホ','ノ','ト','ソ','コ','オ'],
 ];
 
 // 濁音・半濁音テーブル（空白セルなし）
 const dakuonTable = [
-  ['が','ざ','だ','ば','ぱ'],
-  ['ぎ','じ','ぢ','び','ぴ'],
-  ['ぐ','ず','づ','ぶ','ぷ'],
-  ['げ','ぜ','で','べ','ぺ'],
-  ['ご','ぞ','ど','ぼ','ぽ'],
+  ['ガ','ザ','ダ','バ','パ'],
+  ['ギ','ジ','ヂ','ビ','ピ'],
+  ['グ','ズ','ヅ','ブ','プ'],
+  ['ゲ','ゼ','デ','ベ','ペ'],
+  ['ゴ','ゾ','ド','ボ','ポ'],
 ];
 
-// 拗音テーブル（きゃ〜びょう）
+// 拗音テーブル
 const youonTable = [
-  ['きゃ','ぎゃ','しゃ','じゃ','ちゃ','にゃ','ひゃ','びゃ','ぴゃ','みゃ','りゃ'],
-  ['きゅ','ぎゅ','しゅ','じゅ','ちゅ','にゅ','ひゅ','びゅ','ぴゅ','みゅ','りゅ'],
-  ['きょ','ぎょ','しょ','じょ','ちょ','にょ','ひょ','びょ','ぴょ','みょ','りょ'],
+  ['キャ','ギャ','シャ','ジャ','チャ','ニャ','ヒャ','ビャ','ピャ','ミャ','リャ'],
+  ['キュ','ギュ','シュ','ジュ','チュ','ニュ','ヒュ','ビュ','ピュ','ミュ','リュ'],
+  ['キョ','ギョ','ショ','ジョ','チョ','ニョ','ヒョ','ビョ','ピョ','ミョ','リョ'],
 ];
 
-const HiraganaChart = ({ onClose }) => {
+const KatakanaChart = ({ onClose }) => {
   const [selectedChar, setSelectedChar] = useState(null);
   const [showWritingGrid, setShowWritingGrid] = useState(false);
   const { isAuthenticated } = useAuth();
@@ -38,35 +38,31 @@ const HiraganaChart = ({ onClose }) => {
   const [currentPage, setCurrentPage] = useState(0); // 0: 清音ページ, 1: 濁音・半濁音ページ, 2: 拗音ページ
   const totalPages = 3;
 
-  // ひらがなからIDへの変換マッピング
-  const hiraganaToIds = {
-    'あ': 1, 'い': 2, 'う': 3, 'え': 4, 'お': 5,
-    'か': 6, 'き': 7, 'く': 8, 'け': 9, 'こ': 10,
-    'さ': 11, 'し': 12, 'す': 13, 'せ': 14, 'そ': 15,
-    'た': 16, 'ち': 17, 'つ': 18, 'て': 19, 'と': 20,
-    'な': 21, 'に': 22, 'ぬ': 23, 'ね': 24, 'の': 25,
-    'は': 26, 'ひ': 27, 'ふ': 28, 'へ': 29, 'ほ': 30,
-    'ま': 31, 'み': 32, 'む': 33, 'め': 34, 'も': 35,
-    'や': 36, 'ゆ': 37, 'よ': 38,
-    'ら': 39, 'り': 40, 'る': 41, 'れ': 42, 'ろ': 43,
-    'わ': 44, 'を': 45, 'ん': 46,
-    // 濁音・半濁音・拗音のIDも必要に応じて追加
-    'が': 47, 'ぎ': 48, 'ぐ': 49, 'げ': 50, 'ご': 51,
-    'ざ': 52, 'じ': 53, 'ず': 54, 'ぜ': 55, 'ぞ': 56,
-    'だ': 57, 'ぢ': 58, 'づ': 59, 'で': 60, 'ど': 61,
-    'ば': 62, 'び': 63, 'ぶ': 64, 'べ': 65, 'ぼ': 66,
-    'ぱ': 67, 'ぴ': 68, 'ぷ': 69, 'ぺ': 70, 'ぽ': 71,
-    'きゃ': 72, 'きゅ': 73, 'きょ': 74,
-    'しゃ': 75, 'しゅ': 76, 'しょ': 77,
-    'ちゃ': 78, 'ちゅ': 79, 'ちょ': 80,
-    'にゃ': 81, 'にゅ': 82, 'にょ': 83,
-    'ひゃ': 84, 'ひゅ': 85, 'ひょ': 86,
-    'みゃ': 87, 'みゅ': 88, 'みょ': 89,
-    'りゃ': 90, 'りゅ': 91, 'りょ': 92,
-    'ぎゃ': 93, 'ぎゅ': 94, 'ぎょ': 95,
-    'じゃ': 96, 'じゅ': 97, 'じょ': 98,
-    'びゃ': 99, 'びゅ': 100, 'びょ': 101,
-    'ぴゃ': 102, 'ぴゅ': 103, 'ぴょ': 104
+  // カタカナからIDへの変換マッピング
+  const katakanaToIds = {
+    'ア': 96, 'イ': 97, 'ウ': 98, 'エ': 99, 'オ': 100,
+    'カ': 101, 'キ': 102, 'ク': 103, 'ケ': 104, 'コ': 105,
+    'サ': 106, 'シ': 107, 'ス': 108, 'セ': 109, 'ソ': 110,
+    'タ': 111, 'チ': 112, 'ツ': 113, 'テ': 114, 'ト': 115,
+    'ナ': 116, 'ニ': 117, 'ヌ': 118, 'ネ': 119, 'ノ': 120,
+    'ハ': 121, 'ヒ': 122, 'フ': 123, 'ヘ': 124, 'ホ': 125,
+    'マ': 126, 'ミ': 127, 'ム': 128, 'メ': 129, 'モ': 130,
+    'ヤ': 131, 'ユ': 132, 'ヨ': 133,
+    'ラ': 134, 'リ': 135, 'ル': 136, 'レ': 137, 'ロ': 138,
+    'ワ': 139, 'ヲ': 140, 'ン': 141,
+    'ガ': 142, 'ギ': 143, 'グ': 144, 'ゲ': 145, 'ゴ': 146,
+    'ザ': 147, 'ジ': 148, 'ズ': 149, 'ゼ': 150, 'ゾ': 151,
+    'ダ': 152, 'ヂ': 153, 'ヅ': 154, 'デ': 155, 'ド': 156,
+    'バ': 157, 'ビ': 158, 'ブ': 159, 'ベ': 160, 'ボ': 161,
+    'パ': 162, 'ピ': 163, 'プ': 164, 'ペ': 165, 'ポ': 166,
+    'キャ': 167, 'キュ': 168, 'キョ': 169,
+    'シャ': 170, 'シュ': 171, 'ショ': 172,
+    'チャ': 173, 'チュ': 174, 'チョ': 175,
+    'ニャ': 176, 'ニュ': 177, 'ニョ': 178,
+    'ギャ': 179, 'ギュ': 180, 'ギョ': 181,
+    'ジャ': 182, 'ジュ': 183, 'ジョ': 184,
+    'ビャ': 185, 'ビュ': 186, 'ビョ': 187,
+    'ピャ': 188, 'ピュ': 189, 'ピョ': 190
   };
 
   // 進捗データを取得する関数
@@ -75,10 +71,10 @@ const HiraganaChart = ({ onClose }) => {
       if (!isAuthenticated) return;
       
       try {
-        // 各ひらがなの進捗状況を取得
+        // 各カタカナの進捗状況を取得
         const progressDataTemp = {};
         
-        for (const [char, id] of Object.entries(hiraganaToIds)) {
+        for (const [char, id] of Object.entries(katakanaToIds)) {
           try {
             const results = await characterService.getAllStrokeResults(id);
             if (results && Array.isArray(results)) {
@@ -117,7 +113,7 @@ const HiraganaChart = ({ onClose }) => {
 
   const handleCharClick = (char) => {
     if (char) {
-      const id = hiraganaToIds[char] || null;
+      const id = katakanaToIds[char] || null;
       
       setSelectedChar({
         id: id,
@@ -164,10 +160,10 @@ const HiraganaChart = ({ onClose }) => {
   };
 
   return (
-    <div className="hiragana-chart-modal-bg">
-      <div className="hiragana-chart-modal">
-        <div className="hiragana-chart-header">
-          <h2>ひらがな表</h2>
+    <div className="katakana-chart-modal-bg">
+      <div className="katakana-chart-modal">
+        <div className="katakana-chart-header">
+          <h2>カタカナ表</h2>
           <div className="chart-page-tabs-horizontal">
             {[1,2,3].map((num, idx) => (
               <button
@@ -179,13 +175,13 @@ const HiraganaChart = ({ onClose }) => {
               </button>
             ))}
           </div>
-          <button className="hiragana-chart-close-btn" onClick={onClose}>×</button>
+          <button className="katakana-chart-close-btn" onClick={onClose}>×</button>
         </div>
         <div className="chart-table-wrap">
-          <div className="hiragana-chart-content">
+          <div className="katakana-chart-content">
             {currentPage === 0 ? (
               // 清音ページ
-              <table className="hiragana-table">
+              <table className="katakana-table">
                 <tbody>
                   {mainTable.map((row, i) => (
                     <tr key={i}>
@@ -205,7 +201,7 @@ const HiraganaChart = ({ onClose }) => {
                                 <div className="char-box">{cell}</div>
                                 <div className="char-bento-divider"></div>
                                 <div className="bento-box">
-                                  <ProgressStack count={progressData[cell] ? progressData[cell].goodCount : 0} icon="🍱" />
+                                  <ProgressStack count={progressData[cell] ? progressData[cell].goodCount : 0} icon="🍯" />
                                 </div>
                               </div>
                             ) : null}
@@ -218,7 +214,7 @@ const HiraganaChart = ({ onClose }) => {
               </table>
             ) : currentPage === 1 ? (
               // 濁音・半濁音ページ
-              <table className="hiragana-table dakuon-table">
+              <table className="katakana-table dakuon-table">
                 <tbody>
                   {dakuonTable.map((row, i) => (
                     <tr key={i}>
@@ -238,7 +234,7 @@ const HiraganaChart = ({ onClose }) => {
                                 <div className="char-box">{cell}</div>
                                 <div className="char-bento-divider"></div>
                                 <div className="bento-box">
-                                  <ProgressStack count={progressData[cell] ? progressData[cell].goodCount : 0} icon="🍱" />
+                                  <ProgressStack count={progressData[cell] ? progressData[cell].goodCount : 0} icon="🍯" />
                                 </div>
                               </div>
                             ) : null}
@@ -251,7 +247,7 @@ const HiraganaChart = ({ onClose }) => {
               </table>
             ) : (
               // 3ページ目：拗音
-              <table className="hiragana-table youon-table">
+              <table className="katakana-table youon-table">
                 <tbody>
                   {youonTable.map((row, i) => (
                     <tr key={i}>
@@ -269,7 +265,7 @@ const HiraganaChart = ({ onClose }) => {
                                 <div className="char-box">{cell}</div>
                                 <div className="char-bento-divider"></div>
                                 <div className="bento-box">
-                                  <ProgressStack count={progressData[cell] ? progressData[cell].goodCount : 0} icon="🍱" />
+                                  <ProgressStack count={progressData[cell] ? progressData[cell].goodCount : 0} icon="🍯" />
                                 </div>
                               </div>
                             ) : null}
@@ -289,10 +285,11 @@ const HiraganaChart = ({ onClose }) => {
         <WritingGrid
           character={selectedChar}
           onClose={handleCloseWritingGrid}
+          type="KATAKANA"
         />
       )}
     </div>
   );
 };
 
-export default HiraganaChart; 
+export default KatakanaChart; 

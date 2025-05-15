@@ -72,25 +72,23 @@
 .hiragana-chart-modal-bg {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(186, 104, 200, 0.10);
+  background: rgba(188, 170, 164, 0.15);
   z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: center;
-  will-change: opacity;
 }
 
 .hiragana-chart-modal {
-  background: #f9f4fb;
+  background: #fff8e1;
   border-radius: 24px;
-  box-shadow: 0 8px 32px rgba(186, 104, 200, 0.18);
-  padding: 2.5rem 3rem;
+  box-shadow: 0 8px 32px rgba(188, 134, 98, 0.18);
+  padding: 2rem 2rem;
   min-width: 340px;
   max-width: 95vw;
   max-height: 90vh;
   overflow-y: auto;
   position: relative;
-  will-change: transform;
 }
 
 .hiragana-chart-header {
@@ -106,7 +104,7 @@
   font-size: 2.4rem;
   font-family: 'M PLUS Rounded 1c', 'Noto Sans JP', sans-serif;
   font-weight: bold;
-  color: #8e24aa;
+  color: #795548;
   letter-spacing: 0.05em;
 }
 
@@ -116,7 +114,7 @@
   background: none;
   border: none;
   font-size: 1.5rem;
-  color: #666;
+  color: #6d4c41;
   cursor: pointer;
   padding: 0.5rem;
   line-height: 1;
@@ -140,15 +138,14 @@
   flex-direction: column;
   align-items: center;
   gap: 1.5rem;
-  will-change: transform;
 }
 
 .hiragana-table {
   border-collapse: collapse;
   margin: 0 auto;
-  background: #f9f4fb;
+  background: #fff8e1;
   border-radius: 24px;
-  box-shadow: 0 4px 24px rgba(186, 104, 200, 0.10);
+  box-shadow: 0 4px 24px rgba(188, 134, 98, 0.12);
   padding: 8px;
   font-size: 2rem;
 }
@@ -158,11 +155,10 @@
   height: 60px;
   font-size: 2.2rem;
   position: relative;
-  background: #f3e5f5;
-  box-shadow: 0 2px 8px rgba(186, 104, 200, 0.08);
+  background: #ffecb3;
+  box-shadow: 0 2px 8px rgba(188, 134, 98, 0.10);
   transition: background 0.2s, box-shadow 0.2s;
-  border-radius: 0;
-  border: 2.5px solid #222;
+  border: 2.5px solid #3e2723;
 }
 
 .hiragana-table td.empty {
@@ -170,39 +166,9 @@
   background: #fff;
 }
 
-.dakuon-table {
+.dakuon-table, 
+.youon-table {
   margin-top: 1.5rem;
-}
-
-table.youon-table {
-  margin-top: 1.5rem;
-}
-
-.chart-modal-overlay {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.25);
-  z-index: 2000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.chart-modal-close-btn {
-  position: absolute;
-  top: 12px;
-  right: 18px;
-  font-size: 2rem;
-  color: #888;
-  cursor: pointer;
-  font-weight: bold;
-  z-index: 10;
-  background: none;
-  border: none;
-  transition: color 0.2s;
-}
-.chart-modal-close-btn:hover {
-  color: #d72660;
 }
 
 .hiragana-table td.char-cell {
@@ -211,21 +177,19 @@ table.youon-table {
 }
 
 .hiragana-table td.char-cell:hover {
-  background-color: #e1bee7;
-  box-shadow: 0 4px 16px rgba(186, 104, 200, 0.18);
+  background-color: #ffe082;
+  box-shadow: 0 4px 16px rgba(188, 134, 98, 0.20);
 }
 
 .hiragana-table td.char-cell:active {
-  background-color: #ce93d8;
+  background-color: #ffd54f;
 }
 
-/* 進捗状態のスタイル（紫系濃淡） */
 .hiragana-table td.progress-not-started,
 .hiragana-table td.progress-attempted,
 .hiragana-table td.progress-in-progress,
-.hiragana-table td.progress-half-completed,
 .hiragana-table td.progress-completed {
-  background-color: #f3e5f5;
+  background-color: #ffecb3;
 }
 
 .progress-indicator {
@@ -295,14 +259,14 @@ table.youon-table {
 
 .chart-page-tab {
   border-radius: 16px;
-  background: #f3e5f5;
-  color: #8e24aa;
-  border: 2px solid #ce93d8;
+  background: #ffecb3;
+  color: #795548;
+  border: 2px solid #bcaaa4;
 }
 .chart-page-tab.active {
-  background: #ba68c8;
-  color: #fff;
-  border: 2px solid #8e24aa;
+  background: #ffb74d;
+  color: #3e2723;
+  border: 2px solid #795548;
 }
 
 .bento-progress-inline {
@@ -384,8 +348,8 @@ table.youon-table {
 }
 
 .char-box {
-  background: #f3e5f5;
-  border: 1.5px solid #ce93d8;
+  background: #ffecb3;
+  border: 1.5px solid #bcaaa4;
   border-radius: 18px 18px 6px 6px;
   padding: 2px 0 1px 0;
   width: 2.2em;
@@ -396,7 +360,7 @@ table.youon-table {
   justify-content: center;
   font-family: inherit;
   font-weight: 700;
-  color: #222;
+  color: #3e2723;
 }
 
 .char-bento-divider {
@@ -408,8 +372,8 @@ table.youon-table {
 }
 
 .bento-box {
-  background: #f9f4fb;
-  border: 1.5px solid #ce93d8;
+  background: #fff8e1;
+  border: 1.5px solid #bcaaa4;
   border-radius: 6px 6px 10px 10px;
   padding: 1px 0 2px 0;
   min-height: 1.2em;
@@ -417,18 +381,6 @@ table.youon-table {
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.hiragana-table td.progress-not-started,
-.hiragana-table td.progress-attempted,
-.hiragana-table td.progress-in-progress,
-.hiragana-table td.progress-half-completed,
-.hiragana-table td.progress-completed {
-  border-radius: 0;
-}
-
-.hiragana-table td {
-  border-radius: 0;
 }
 
 .cell-content {

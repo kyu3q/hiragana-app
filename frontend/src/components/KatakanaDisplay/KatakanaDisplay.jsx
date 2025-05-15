@@ -7,6 +7,7 @@ import { katakanaGroups } from '../../data/katakanaData';
 import { playSound, playCorrectSound, playCheerSound, playStarSound, playWrongSound } from '../../utils/soundPlayer';
 import { triggerConfetti, triggerColorfulConfetti, triggerFireworks } from '../../utils/confettiEffect';
 import WritingGrid from '../WritingGrid/WritingGrid';
+import KatakanaChart from '../KatakanaChart';
 
 const KatakanaDisplay = () => {
   const [selectedChar, setSelectedChar] = useState(null);
@@ -21,6 +22,7 @@ const KatakanaDisplay = () => {
   const [isTransitioning, setIsTransitioning] = useState(false); // 状態遷移中かどうか
   const [showWritingGrid, setShowWritingGrid] = useState(false);
   const [selectedCharacter, setSelectedCharacter] = useState(null);
+  const [showChart, setShowChart] = useState(false);
 
   // ゲームモードを切り替える
   const toggleGameMode = () => {
@@ -331,7 +333,7 @@ const KatakanaDisplay = () => {
           </button>
           <button 
             className="chart-button"
-            onClick={() => window.open('/katakana-chart', '_blank')}
+            onClick={() => setShowChart(true)}
           >
             カタカナ表
           </button>
@@ -412,6 +414,10 @@ const KatakanaDisplay = () => {
           onClose={handleCloseWritingGrid}
           type="KATAKANA"
         />
+      )}
+
+      {showChart && (
+        <KatakanaChart onClose={() => setShowChart(false)} />
       )}
     </div>
   );
