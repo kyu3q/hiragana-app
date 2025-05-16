@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.http.HttpStatus;
 
 import java.util.Optional;
 
@@ -47,12 +48,7 @@ public class UserController {
         
         if (!isAuthenticated) {
             logger.warn("Unauthenticated access attempt to user info: {}", id);
-            // テスト用のデモユーザー情報を返す（本番環境では使用しない）
-            User demoUser = new User();
-            demoUser.setId(id);
-            demoUser.setUsername("デモユーザー");
-            demoUser.setEmail("demo@example.com");
-            return ResponseEntity.ok(demoUser);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("認証が必要です");
         }
         
         // 認証済みユーザーの場合、通常の処理を行う

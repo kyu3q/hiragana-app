@@ -234,10 +234,24 @@ public class CharacterController {
     private Long getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.isAuthenticated()) {
-            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-            return userService.getUserByEmail(userDetails.getUsername())
-                .map(User::getId)
-                .orElse(null);
+            Object principal = authentication.getPrincipal();
+            logger.debug("Authentication principal type: {}", principal.getClass().getName());
+            
+            if (principal instanceof UserDetails) {
+                UserDetails userDetails = (UserDetails) principal;
+                return userService.getUserByEmail(userDetails.getUsername())
+                    .map(User::getId)
+                    .orElse(null);
+            } else if (principal instanceof String) {
+                String email = (String) principal;
+                logger.debug("Principal is String, using as email: {}", email);
+                return userService.getUserByEmail(email)
+                    .map(User::getId)
+                    .orElse(null);
+            } else {
+                logger.warn("Unexpected principal type: {}", principal.getClass().getName());
+                return null;
+            }
         }
         return null;
     }
