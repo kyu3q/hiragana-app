@@ -51,16 +51,6 @@ export const getCurrentUser = async () => {
     return response.data;
   } catch (error) {
     console.error('Get current user error:', error);
-    // ユーザー情報取得に失敗した場合でも、アプリを続行するためのデモユーザー
-    if (error.response && error.response.status === 403) {
-      console.log('認証エラーですが、デモユーザーとして続行します');
-      return {
-        id: userId,
-        username: 'デモユーザー',
-        email: 'demo@example.com'
-      };
-    }
-    // それ以外のエラーの場合はログアウト
     logout();
     return null;
   }
