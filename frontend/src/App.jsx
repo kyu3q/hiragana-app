@@ -6,7 +6,10 @@ import StartScreen from './components/StartScreen';
 import AuthPage from './components/auth/AuthPage';
 import Header from './components/Header/Header';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import GameMode from './components/Games/GameMode';
+import './components/Games/GameModeModal.css';
 import './App.css';
+import ShiritoriGame from './components/Games/ShiritoriGame';
 
 // 認証が必要なルート用コンポーネント
 function PrivateRoute({ children }) {
@@ -17,6 +20,8 @@ function PrivateRoute({ children }) {
 
 function AppRoutes() {
   const [selectedType, setSelectedType] = useState('hiragana');
+  const [showGameMode, setShowGameMode] = useState(false);
+  const [activeGame, setActiveGame] = useState(null);
 
   return (
     <Routes>
@@ -26,10 +31,15 @@ function AppRoutes() {
         element={
           <PrivateRoute>
             <div className="app-container">
-              <Header currentType={selectedType} onTypeChange={setSelectedType} />
+              <Header
+                currentType={selectedType}
+                onTypeChange={setSelectedType}
+              />
               <main className="main-content">
-                {selectedType === 'hiragana' ? (
-                  <HiraganaDisplay />
+                {activeGame === 'shiritori' ? (
+                  <ShiritoriGame onClose={() => setActiveGame(null)} />
+                ) : selectedType === 'hiragana' ? (
+                  <HiraganaDisplay showGameMode={showGameMode} setShowGameMode={setShowGameMode} />
                 ) : selectedType === 'katakana' ? (
                   <KatakanaDisplay />
                 ) : (
@@ -39,6 +49,20 @@ function AppRoutes() {
                   </div>
                 )}
               </main>
+              {showGameMode && (
+                <div className="game-modal-overlay">
+                  <div className="game-modal-content">
+                    <GameMode
+                      onSelectGame={game => {
+                        setActiveGame(game);
+                        setShowGameMode(false);
+                      }}
+                      onClose={() => setShowGameMode(false)}
+                      type={selectedType}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </PrivateRoute>
         }
@@ -49,11 +73,11 @@ function AppRoutes() {
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
+    <Router>
+      <AuthProvider>
         <AppRoutes />
-      </Router>
-    </AuthProvider>
+      </AuthProvider>
+    </Router>
   );
 }
 

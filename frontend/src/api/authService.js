@@ -22,11 +22,27 @@ export const login = async (email, password) => {
   try {
     const response = await apiClient.post('/api/auth/login', { email, password });
     const { token, user } = response.data;
+    if (!token || !user) {
+      throw new Error('ログインに失敗しました。無効なレスポンスです。');
+    }
+    
+    // トークンとユーザー情報を保存
     localStorage.setItem('token', token);
     localStorage.setItem('userId', user.id);
-    return user;
+    
+    // ユーザー情報を返す前に、トークンが正しく設定されているか確認
+    const currentToken = localStorage.getItem('token');
+    if (!currentToken) {
+      throw new Error('トークンの保存に失敗しました');
+    }
+    
+    return { user };  // オブジェクトとして返す
   } catch (error) {
     console.error('Login error:', error);
+    // エラー発生時にローカルストレージをクリア
+    localStorage.removeItem('token');
+    localStorage.removeItem('userId');
+    
     if (error.response?.status === 401) {
       throw new Error('メールアドレスまたはパスワードが正しくありません');
     } else if (error.response?.status === 404) {
@@ -53,14 +69,20 @@ export const getCurrentUser = async () => {
   const userId = localStorage.getItem('userId');
   
   if (!token || !userId) {
+    // トークンまたはユーザーIDが存在しない場合は、ローカルストレージをクリア
+    logout();
     return null;
   }
 
   try {
     const response = await apiClient.get(`/api/users/${userId}`);
+    if (!response.data) {
+      throw new Error('ユーザー情報の取得に失敗しました');
+    }
     return response.data;
   } catch (error) {
     console.error('Get current user error:', error);
+    // エラーが発生した場合は、ローカルストレージをクリア
     logout();
     return null;
   }
@@ -73,5 +95,7 @@ export const getAuthToken = () => {
 
 // ログイン状態のチェック
 export const isLoggedIn = () => {
-  return !!localStorage.getItem('token');
+  const token = localStorage.getItem('token');
+  const userId = localStorage.getItem('userId');
+  return !!(token && userId);
 }; 

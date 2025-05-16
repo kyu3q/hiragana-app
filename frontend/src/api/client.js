@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { API_BASE_URL } from '../config';
+import { getAuthToken } from './authService';
 
 const client = axios.create({
     baseURL: API_BASE_URL,
@@ -11,7 +12,7 @@ const client = axios.create({
 // リクエストインターセプター
 client.interceptors.request.use(
     config => {
-        const token = localStorage.getItem('token');
+        const token = getAuthToken();
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
@@ -27,9 +28,8 @@ client.interceptors.response.use(
     response => response,
     error => {
         if (error.response?.status === 401) {
-            localStorage.removeItem('token');
-            localStorage.removeItem('userId');
-            window.location.href = '/login';
+            // 認証エラーイベントを発火
+            window.dispatchEvent(new Event('auth-error'));
         }
         return Promise.reject(error);
     }

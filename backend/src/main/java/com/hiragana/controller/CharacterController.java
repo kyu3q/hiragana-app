@@ -11,7 +11,6 @@ import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -24,7 +23,6 @@ import java.util.*;
 @RequestMapping("/api/characters")
 public class CharacterController {
     private static final Logger logger = LoggerFactory.getLogger(CharacterController.class);
-    private final RestTemplate restTemplate = new RestTemplate();
 
     @Autowired
     private CharacterService characterService;
@@ -166,50 +164,6 @@ public class CharacterController {
         } catch (Exception e) {
             logger.error("Error deleting character: " + id, e);
             return ResponseEntity.internalServerError().build();
-        }
-    }
-
-    @PostMapping("/proxy/aitopia")
-    public ResponseEntity<?> proxyAitopiaRequest(@RequestBody String body) {
-        try {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            HttpEntity<String> entity = new HttpEntity<>(body, headers);
-            
-            ResponseEntity<String> response = restTemplate.exchange(
-                "https://extensions.aitopia.ai/ai/prompts",
-                HttpMethod.POST,
-                entity,
-                String.class
-            );
-            
-            return ResponseEntity.ok(response.getBody());
-        } catch (Exception e) {
-            logger.error("Aitopia APIへのリクエストに失敗しました", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("APIリクエストに失敗しました: " + e.getMessage());
-        }
-    }
-
-    @PostMapping("/proxy/aitopia/lang")
-    public ResponseEntity<?> proxyAitopiaLangRequest(@RequestBody String body) {
-        try {
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("Content-Type", "application/json");
-            HttpEntity<String> entity = new HttpEntity<>(body, headers);
-            
-            ResponseEntity<String> response = restTemplate.exchange(
-                "https://extensions.aitopia.ai/languages/lang/get/lang/ja",
-                HttpMethod.POST,
-                entity,
-                String.class
-            );
-            
-            return ResponseEntity.ok(response.getBody());
-        } catch (Exception e) {
-            logger.error("Error proxying request to Aitopia Lang", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error proxying request: " + e.getMessage());
         }
     }
 
