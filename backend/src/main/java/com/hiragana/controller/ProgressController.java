@@ -16,7 +16,6 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/progress")
-@CrossOrigin(origins = "http://localhost:5173")
 public class ProgressController {
     @Autowired
     private ProgressService progressService;

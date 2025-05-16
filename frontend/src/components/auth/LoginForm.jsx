@@ -37,7 +37,7 @@ const LoginForm = ({ onSuccess, onRegisterClick }) => {
       if (onSuccess) onSuccess(userData.user);
     } catch (err) {
       console.error('ログインエラー:', err);
-      setError('メールアドレスまたはパスワードが正しくありません');
+      setError(err.message || 'ログインに失敗しました。もう一度お試しください。');
     } finally {
       setLoading(false);
     }
@@ -47,7 +47,23 @@ const LoginForm = ({ onSuccess, onRegisterClick }) => {
     <div className="auth-form-container">
       <h2>ログイン</h2>
       
-      {error && <div className="error-message">{error}</div>}
+      {error && (
+        <div className="error-message">
+          <div>
+            <p>{error}</p>
+            {error.includes('ネットワーク接続') && (
+              <>
+                <p className="error-help">以下の点を確認してください：</p>
+                <ul className="error-help-list">
+                  <li>インターネット接続が安定しているか</li>
+                  <li>サーバーが起動しているか</li>
+                  <li>ファイアウォールの設定</li>
+                </ul>
+              </>
+            )}
+          </div>
+        </div>
+      )}
       
       <form onSubmit={handleSubmit} className="auth-form">
         <div className="form-group">

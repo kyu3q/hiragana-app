@@ -1,5 +1,8 @@
 // APIのベースURL
-export const API_BASE_URL = 'http://localhost:8080/api';
+const isDevelopment = process.env.NODE_ENV === 'development';
+export const API_BASE_URL = isDevelopment 
+  ? 'http://localhost:8080'
+  : 'http://192.168.50.201:8080';
 
 // その他の設定値
 export const APP_CONFIG = {

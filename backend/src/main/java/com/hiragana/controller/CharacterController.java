@@ -22,11 +22,6 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/api/characters")
-@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:8080"}, 
-             methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS},
-             allowedHeaders = "*",
-             allowCredentials = "true",
-             maxAge = 3600)
 public class CharacterController {
     private static final Logger logger = LoggerFactory.getLogger(CharacterController.class);
     private final RestTemplate restTemplate = new RestTemplate();

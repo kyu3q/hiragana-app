@@ -27,7 +27,17 @@ export const login = async (email, password) => {
     return user;
   } catch (error) {
     console.error('Login error:', error);
-    throw error;
+    if (error.response?.status === 401) {
+      throw new Error('メールアドレスまたはパスワードが正しくありません');
+    } else if (error.response?.status === 404) {
+      throw new Error('ユーザーが見つかりません');
+    } else if (error.response?.data?.message) {
+      throw new Error(error.response.data.message);
+    } else if (error.message === 'Network Error') {
+      throw new Error('サーバーに接続できません。ネットワーク接続を確認してください。');
+    } else {
+      throw new Error('ログインに失敗しました。もう一度お試しください。');
+    }
   }
 };
 

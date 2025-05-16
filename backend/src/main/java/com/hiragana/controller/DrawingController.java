@@ -15,7 +15,6 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/drawings")
-@CrossOrigin(origins = "http://localhost:5173")
 public class DrawingController {
     @Autowired
     private DrawingService drawingService;
