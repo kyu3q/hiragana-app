@@ -8,6 +8,7 @@ import { playSound, playCorrectSound, playCheerSound, playStarSound, playWrongSo
 import { triggerConfetti, triggerColorfulConfetti, triggerFireworks } from '../../utils/confettiEffect';
 import WritingGrid from '../WritingGrid/WritingGrid';
 import KatakanaChart from '../KatakanaChart';
+import GameMode from '../Games/GameMode';
 
 const KatakanaDisplay = () => {
   const [selectedChar, setSelectedChar] = useState(null);
@@ -23,6 +24,7 @@ const KatakanaDisplay = () => {
   const [showWritingGrid, setShowWritingGrid] = useState(false);
   const [selectedCharacter, setSelectedCharacter] = useState(null);
   const [showChart, setShowChart] = useState(false);
+  const [showGameMode, setShowGameMode] = useState(false);
 
   // ゲームモードを切り替える
   const toggleGameMode = () => {
@@ -329,7 +331,13 @@ const KatakanaDisplay = () => {
             onClick={toggleGameMode}
             disabled={isTransitioning}
           >
-            {gameMode === 'learn' ? '学習モード' : 'クイズモード'}
+            {gameMode === 'learn' ? 'クイズ' : '学習'}
+          </button>
+          <button
+            className="chart-button"
+            onClick={() => setShowGameMode(true)}
+          >
+            ゲーム
           </button>
           <button 
             className="chart-button"
@@ -418,6 +426,15 @@ const KatakanaDisplay = () => {
 
       {showChart && (
         <KatakanaChart onClose={() => setShowChart(false)} />
+      )}
+
+      {showGameMode && (
+        <div className="game-modal-overlay">
+          <GameMode
+            onClose={() => setShowGameMode(false)}
+            type="katakana"
+          />
+        </div>
       )}
     </div>
   );

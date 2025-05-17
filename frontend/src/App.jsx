@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import HiraganaDisplay from './components/HiraganaDisplay';
 import KatakanaDisplay from './components/KatakanaDisplay';
@@ -7,7 +7,6 @@ import AuthPage from './components/auth/AuthPage';
 import Header from './components/Header/Header';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import GameMode from './components/Games/GameMode';
-import './components/Games/GameModeModal.css';
 import './App.css';
 import ShiritoriGame from './components/Games/ShiritoriGame';
 
@@ -22,6 +21,14 @@ function AppRoutes() {
   const [selectedType, setSelectedType] = useState('hiragana');
   const [showGameMode, setShowGameMode] = useState(false);
   const [activeGame, setActiveGame] = useState(null);
+
+  useEffect(() => {
+    if (showGameMode) {
+      document.body.classList.add('modal-open');
+    } else {
+      document.body.classList.remove('modal-open');
+    }
+  }, [showGameMode]);
 
   return (
     <Routes>
@@ -49,14 +56,11 @@ function AppRoutes() {
                   </div>
                 )}
               </main>
+              {console.log('showGameMode:', showGameMode)}
               {showGameMode && (
-                <div className="game-modal-overlay">
-                  <div className="game-modal-content">
+                <div className="game-mode-overlay">
+                  <div className="game-mode-content">
                     <GameMode
-                      onSelectGame={game => {
-                        setActiveGame(game);
-                        setShowGameMode(false);
-                      }}
                       onClose={() => setShowGameMode(false)}
                       type={selectedType}
                     />

@@ -8,8 +8,9 @@ import { playSound, playCorrectSound, playCheerSound, playStarSound, playWrongSo
 import { triggerConfetti, triggerColorfulConfetti, triggerFireworks } from '../../utils/confettiEffect';
 import WritingGrid from '../WritingGrid/WritingGrid';
 import HiraganaChart from '../HiraganaChart/HiraganaChart';
+import GameMode from '../Games/GameMode';
 
-const HiraganaDisplay = () => {
+const HiraganaDisplay = ({ showGameMode, setShowGameMode }) => {
   const [selectedChar, setSelectedChar] = useState(null);
   const [score, setScore] = useState(0);
   const [showAnimation, setShowAnimation] = useState(false);
@@ -329,7 +330,13 @@ const HiraganaDisplay = () => {
             onClick={toggleGameMode}
             disabled={isTransitioning}
           >
-            {gameMode === 'learn' ? '学習モード' : 'クイズモード'}
+            {gameMode === 'learn' ? 'クイズ' : '学習'}
+          </button>
+          <button
+            className="chart-button"
+            onClick={() => setShowGameMode(true)}
+          >
+            ゲーム
           </button>
           <button 
             className="chart-button"

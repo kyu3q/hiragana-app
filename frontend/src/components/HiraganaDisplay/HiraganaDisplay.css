@@ -45,7 +45,7 @@ body {
 }
 
 .chart-button {
-  padding: 8px 16px;
+  padding: 12px 8px;
   background: linear-gradient(135deg, #fffde4 0%, #f9c6ff 100%);
   border: 2px solid #f48fb1;
   border-radius: 20px;
