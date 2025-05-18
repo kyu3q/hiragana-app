@@ -1,6 +1,6 @@
 .shiritori-game {
   background: #fff;
-  padding: 2rem;
+  padding: 1rem;
   border-radius: 20px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   width: 95%;
@@ -23,6 +23,9 @@
   margin-bottom: 2.5rem;
   flex-wrap: wrap;
   gap: 1rem;
+  font-weight: bold;
+  color: #3e2723;
+  text-align: center;
 }
 
 .shiritori-game .shiritori-players-area {
@@ -96,11 +99,20 @@
 .shiritori-game .shiritori-history-word {
   font-weight: bold;
   color: #3e2723;
+  margin: 0 0.3rem;
+  font-size: 2.4rem;
+}
+
+.shiritori-game .shiritori-history-word.wrong-word {
+  color: #ff0000;
+  opacity: 0.8;
+  font-size: 2.4rem;
+  font-weight: bold;
 }
 
 .shiritori-game .shiritori-history-arrow {
   color: #bdbdbd;
-  font-size: 1.8rem;
+  font-size: 2.4rem;
   margin: 0 0.4rem;
 }
 

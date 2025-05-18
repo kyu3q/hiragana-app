@@ -394,10 +394,6 @@ const ShiritoriGame = ({ onClose, type }) => {
           )}
         </div>
       </div>
-      <div className="shiritori-controls">
-        <button onClick={initializeGame} className="restart-button">リトライ</button>
-        <button onClick={onClose} className="close-button">終了</button>
-      </div>
     </div>
   );
 };
