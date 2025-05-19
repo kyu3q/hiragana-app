@@ -409,17 +409,4 @@ body {
 .katakana-display .chart-button:active {
   transform: translateY(0);
   box-shadow: 0 2px 8px rgba(56, 142, 60, 0.2);
-} 
-
-.game-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0,0,0,0.18);
-  z-index: 9999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }

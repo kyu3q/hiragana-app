@@ -15,7 +15,7 @@ const GAMES = {
   }
 };
 
-const GameMode = ({ onClose }) => {
+const GameMode = ({ onClose, type = 'hiragana' }) => {
   const [selectedGame, setSelectedGame] = useState(() => {
     const gameKeys = Object.keys(GAMES);
     return gameKeys[Math.floor(Math.random() * gameKeys.length)];
@@ -41,13 +41,10 @@ const GameMode = ({ onClose }) => {
   const CurrentGame = GAMES[selectedGame]?.component;
 
   return (
-    <div className="game-container">
-      <div className="game-content">
-        {CurrentGame && <CurrentGame ref={gameRef} onClose={onClose} />}
-      </div>
-      <div className="game-footer">
+    <>
+      <div className="game-header-buttons">
         <button className="game-button" onClick={handleRetry}>
-          やり直す
+          リセット
         </button>
         <button className="game-button" onClick={handleGameSwitch}>
           ゲーム切替
@@ -56,7 +53,12 @@ const GameMode = ({ onClose }) => {
           終了
         </button>
       </div>
-    </div>
+      <div className="game-container">
+        <div className="game-content">
+          {CurrentGame && <CurrentGame onClose={onClose} type={type} />}
+        </div>
+      </div>
+    </>
   );
 };
 

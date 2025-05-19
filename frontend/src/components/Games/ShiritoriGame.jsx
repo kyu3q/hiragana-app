@@ -332,10 +332,6 @@ const ShiritoriGame = ({ onClose, type }) => {
               <span style={{ fontWeight: 'bold', color: '#2196f3' }}>{childTotal.toFixed(1)}秒</span>
             </div>
           </div>
-          <div className="shiritori-controls">
-            <button onClick={initializeGame} className="restart-button">リトライ</button>
-            <button onClick={onClose} className="close-button">終了</button>
-          </div>
         </div>
       </div>
     );

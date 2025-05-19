@@ -10,7 +10,7 @@ import WritingGrid from '../WritingGrid/WritingGrid';
 import KatakanaChart from '../KatakanaChart';
 import GameMode from '../Games/GameMode';
 
-const KatakanaDisplay = () => {
+const KatakanaDisplay = ({ showGameMode, setShowGameMode }) => {
   const [selectedChar, setSelectedChar] = useState(null);
   const [score, setScore] = useState(0);
   const [showAnimation, setShowAnimation] = useState(false);
@@ -24,7 +24,6 @@ const KatakanaDisplay = () => {
   const [showWritingGrid, setShowWritingGrid] = useState(false);
   const [selectedCharacter, setSelectedCharacter] = useState(null);
   const [showChart, setShowChart] = useState(false);
-  const [showGameMode, setShowGameMode] = useState(false);
 
   // ゲームモードを切り替える
   const toggleGameMode = () => {
@@ -426,15 +425,6 @@ const KatakanaDisplay = () => {
 
       {showChart && (
         <KatakanaChart onClose={() => setShowChart(false)} />
-      )}
-
-      {showGameMode && (
-        <div className="game-modal-overlay">
-          <GameMode
-            onClose={() => setShowGameMode(false)}
-            type="katakana"
-          />
-        </div>
       )}
     </div>
   );

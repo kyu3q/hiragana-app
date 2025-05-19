@@ -7,6 +7,12 @@ const MemoryGame = ({ onClose, type }) => {
   const [matchedPairs, setMatchedPairs] = useState([]);
   const [isChecking, setIsChecking] = useState(false);
   const [selectedType, setSelectedType] = useState('main'); // 'main', 'dakuon', 'youon'
+  const [isBattleMode, setIsBattleMode] = useState(true);
+  const [currentPlayer, setCurrentPlayer] = useState('lion'); // 'lion' or 'dog'
+  const [playerPairs, setPlayerPairs] = useState({ lion: 0, dog: 0 });
+  const [showResult, setShowResult] = useState(false);
+  const [winner, setWinner] = useState(null);
+  const [matchedColors, setMatchedColors] = useState({}); // マッチしたカードの色を保持
 
   const SUCCESS_SOUND = '/music/success.mp3';
   const FAILURE_SOUND = '/music/failure.mp3';
@@ -120,12 +126,20 @@ const MemoryGame = ({ onClose, type }) => {
     setCards(createCardPairs());
   }, [selectedType, type]);
 
+  const handleBattleModeToggle = () => {
+    setIsBattleMode((prev) => !prev);
+    setCurrentPlayer('lion');
+    setPlayerPairs({ lion: 0, dog: 0 });
+    setCards(createCardPairs());
+    setFlippedCards([]);
+    setMatchedPairs([]);
+  };
+
   const handleCardClick = (clickedCard) => {
     if (isChecking || flippedCards.length >= 2 || clickedCard.isMatched || flippedCards.includes(clickedCard)) {
       return;
     }
 
-    // カードを裏返す
     const updatedCards = cards.map(card => 
       card.id === clickedCard.id ? { ...card, isFlipped: true } : card
     );
@@ -138,19 +152,39 @@ const MemoryGame = ({ onClose, type }) => {
       setIsChecking(true);
       const [first, second] = newFlippedCards;
       
-      // ペアの判定
       if (first.value === second.value) {
-        // マッチした場合
         playSound(SUCCESS_SOUND);
         const matchedCards = updatedCards.map(card => 
           card.id === first.id || card.id === second.id ? { ...card, isMatched: true } : card
         );
         setCards(matchedCards);
         setMatchedPairs([...matchedPairs, first.id, second.id]);
+        // マッチしたカードの色を保存
+        setMatchedColors(prev => ({
+          ...prev,
+          [first.id]: currentPlayer,
+          [second.id]: currentPlayer
+        }));
         setFlippedCards([]);
         setIsChecking(false);
+        if (isBattleMode) {
+          const newPlayerPairs = { ...playerPairs, [currentPlayer]: playerPairs[currentPlayer] + 1 };
+          setPlayerPairs(newPlayerPairs);
+          
+          if (matchedPairs.length + 2 === cards.length) {
+            const lionScore = newPlayerPairs.lion;
+            const dogScore = newPlayerPairs.dog;
+            if (lionScore > dogScore) {
+              setWinner('lion');
+            } else if (dogScore > lionScore) {
+              setWinner('dog');
+            } else {
+              setWinner('draw');
+            }
+            setShowResult(true);
+          }
+        }
       } else {
-        // マッチしなかった場合
         playSound(FAILURE_SOUND);
         setTimeout(() => {
           const resetCards = updatedCards.map(card => 
@@ -159,57 +193,112 @@ const MemoryGame = ({ onClose, type }) => {
           setCards(resetCards);
           setFlippedCards([]);
           setIsChecking(false);
+          if (isBattleMode) {
+            setCurrentPlayer(prev => (prev === 'lion' ? 'dog' : 'lion'));
+          }
         }, 1000);
       }
     }
   };
 
-  const resetGame = () => {
+  const handleRetry = () => {
     setCards(createCardPairs());
     setFlippedCards([]);
     setMatchedPairs([]);
+    setCurrentPlayer('lion');
+    setPlayerPairs({ lion: 0, dog: 0 });
+    setShowResult(false);
+    setWinner(null);
+    setMatchedColors({}); // マッチした色もリセット
   };
 
   return (
     <div className="memory-game">
-      <div className="game-header">
-        <h2>
-          同じ文字のカードを見つけよう！ </h2>
-        <div className="character-type-selector">
-          <button
-            className={`type-button ${selectedType === 'main' ? 'active' : ''}`}
-            onClick={() => setSelectedType('main')}
-          >
-            清音
-          </button>
-          <button
-            className={`type-button ${selectedType === 'dakuon' ? 'active' : ''}`}
-            onClick={() => setSelectedType('dakuon')}
-          >
-            濁音・半濁音
-          </button>
-          <button
-            className={`type-button ${selectedType === 'youon' ? 'active' : ''}`}
-            onClick={() => setSelectedType('youon')}
-          >
-            拗音
-          </button>
-        </div>
-      </div>
-      <div className="game-board">
-        {cards.map((card) => (
-          <div
-            key={card.id}
-            className={`card ${card.isFlipped ? 'flipped' : ''} ${card.isMatched ? 'matched' : ''}`}
-            onClick={() => handleCardClick(card)}
-          >
-            <div className="card-inner">
-              <div className="card-front">?</div>
-              <div className="card-back">{card.value}</div>
+      {showResult ? (
+        <div className="memory-result-area">
+          <div className="result-content">
+            <div className="winner-emoji" style={{ fontSize: '4rem', marginBottom: '1rem', animation: 'bounce 1s infinite' }}>
+              {winner === 'draw' ? '🤝' : winner === 'lion' ? '🦁' : '🐶'}
+            </div>
+            <div className="winner-announcement" style={{
+              color: winner === 'lion' ? '#fbbc5d' : winner === 'dog' ? '#5eb5fc' : '#888',
+              fontSize: '2.5rem',
+              fontWeight: 'bold',
+              marginBottom: '1.5rem',
+              letterSpacing: '0.1em',
+              textShadow: '0 2px 8px #fff3'
+            }}>
+              🎉{winner === 'draw' ? '引き分け！' : winner === 'lion' ? '🦁' : '🐶' || 'の勝ち！'}
+            </div>
+            <div className="result-scores">
+              <div className="result-score-row">
+                <span style={{ fontSize: '2rem', marginRight: '0.5rem' }}>🦁</span>
+                <span style={{ fontWeight: 'bold', color: '#fbbc5d' }}>{playerPairs.lion * 2} 枚</span>
+              </div>
+              <div className="result-score-row">
+                <span style={{ fontSize: '2rem', marginRight: '0.5rem' }}>🐶</span>
+                <span style={{ fontWeight: 'bold', color: '#5eb5fc' }}>{playerPairs.dog * 2} 枚</span>
+              </div>
             </div>
           </div>
-        ))}
-      </div>
+        </div>
+      ) : (
+        <>
+          <div className="game-header">
+            <h2>文字記憶ゲーム</h2>
+            <div className="character-type-selector">
+              <button
+                className={`type-button ${selectedType === 'main' ? 'active' : ''}`}
+                onClick={() => setSelectedType('main')}
+              >
+                清音
+              </button>
+              <button
+                className={`type-button ${selectedType === 'dakuon' ? 'active' : ''}`}
+                onClick={() => setSelectedType('dakuon')}
+              >
+                濁音・半濁音
+              </button>
+              <button
+                className={`type-button ${selectedType === 'youon' ? 'active' : ''}`}
+                onClick={() => setSelectedType('youon')}
+              >
+                拗音
+              </button>
+              <button className="battle-mode-button" onClick={handleBattleModeToggle}>
+                {isBattleMode ? 'ひとりで遊び' : '対決'}
+              </button>
+            </div>
+          </div>
+          <div className="game-board">
+            {cards.map((card) => (
+              <div
+                key={card.id}
+                className={`card ${card.isFlipped ? 'flipped' : ''} ${card.isMatched ? 'matched' : ''}`}
+                onClick={() => handleCardClick(card)}
+              >
+                <div className="card-inner">
+                  <div className={`card-front ${isBattleMode ? (card.isMatched ? `${matchedColors[card.id]}-turn` : `${currentPlayer}-turn`) : ''}`}>?</div>
+                  <div className={`card-back ${isBattleMode ? (card.isMatched ? `${matchedColors[card.id]}-turn` : `${currentPlayer}-turn`) : ''}`}>{card.value}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+          {isBattleMode && (
+            <div className="battle-info-bottom">
+              <div style={{display:'flex',flexDirection:'column',alignItems:'center'}}>
+                <span className={`player-emoji ${currentPlayer === 'lion' ? 'current' : ''}`}>🦁</span>
+                <span className={`player-score lion`}>{playerPairs.lion * 2} 枚</span>
+              </div>
+              <span style={{fontSize:'1.5rem',color:'#888'}}>vs</span>
+              <div style={{display:'flex',flexDirection:'column',alignItems:'center'}}>
+                <span className={`player-emoji ${currentPlayer === 'dog' ? 'current' : ''}`}>🐶</span>
+                <span className={`player-score dog`}>{playerPairs.dog * 2} 枚</span>
+              </div>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 };

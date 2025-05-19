@@ -20,7 +20,6 @@ function PrivateRoute({ children }) {
 function AppRoutes() {
   const [selectedType, setSelectedType] = useState('hiragana');
   const [showGameMode, setShowGameMode] = useState(false);
-  const [activeGame, setActiveGame] = useState(null);
 
   useEffect(() => {
     if (showGameMode) {
@@ -43,12 +42,10 @@ function AppRoutes() {
                 onTypeChange={setSelectedType}
               />
               <main className="main-content">
-                {activeGame === 'shiritori' ? (
-                  <ShiritoriGame onClose={() => setActiveGame(null)} />
-                ) : selectedType === 'hiragana' ? (
+                {selectedType === 'hiragana' ? (
                   <HiraganaDisplay showGameMode={showGameMode} setShowGameMode={setShowGameMode} />
                 ) : selectedType === 'katakana' ? (
-                  <KatakanaDisplay />
+                  <KatakanaDisplay showGameMode={showGameMode} setShowGameMode={setShowGameMode} />
                 ) : (
                   <div className="coming-soon">
                     <h2>漢字モードは準備中です！</h2>
