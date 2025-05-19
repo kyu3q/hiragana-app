@@ -414,13 +414,6 @@ const HiraganaDisplay = ({ showGameMode, setShowGameMode }) => {
           <HiraganaChart onClose={() => setShowChart(false)} />
         </div>
       )}
-
-      {showGameMode && (
-        <GameMode
-          onClose={() => setShowGameMode(false)}
-          type="hiragana"
-        />
-      )}
     </div>
   );
 };
