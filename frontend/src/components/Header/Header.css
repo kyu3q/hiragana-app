@@ -68,3 +68,18 @@
   color: #666666;
   font-weight: bold;
 } 
+
+.fullscreen-btn {
+  margin-left: 16px;
+  padding: 6px 16px;
+  font-size: 1rem;
+  border-radius: 8px;
+  border: none;
+  background: #fce354;
+  color: #333;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.fullscreen-btn:hover {
+  background: #fee78a;
+}

@@ -15,6 +15,15 @@ const Header = ({ currentType, onTypeChange }) => {
     }
   };
 
+  const handleFullScreen = () => {
+    const elem = document.documentElement;
+    if (!document.fullscreenElement) {
+      elem.requestFullscreen();
+    } else {
+      document.exitFullscreen();
+    }
+  };
+
   return (
     <header className="app-header">
       <div className="header-left">
@@ -43,6 +52,7 @@ const Header = ({ currentType, onTypeChange }) => {
         {currentUser && (
           <div className="user-info">
             <span className="user-name">{currentUser.username}</span>
+            <button className="fullscreen-btn" onClick={handleFullScreen}>全画面</button>
           </div>
         )}
       </div>
