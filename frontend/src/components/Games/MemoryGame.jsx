@@ -228,7 +228,7 @@ const MemoryGame = ({ onClose, type }) => {
               letterSpacing: '0.1em',
               textShadow: '0 2px 8px #fff3'
             }}>
-              🎉{winner === 'draw' ? '引き分け！' : winner === 'lion' ? '🦁' : '🐶' || 'の勝ち！'}
+              🎉{winner === 'draw' ? '引き分け！' : `${winner === 'lion' ? '🦁' : '🐶'}の勝ち！`}
             </div>
             <div className="result-scores">
               <div className="result-score-row">
