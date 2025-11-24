@@ -18,6 +18,8 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
     player: { x: 100, y: GROUND_Y - PLAYER_SIZE, vy: 0, grounded: true },
     cameraX: 0,
     score: 0,
+    lives: 3,
+    invincible: 0,
     enemies: [],
     obstacles: [],
     coins: [],
@@ -49,7 +51,7 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
     while (currentX < levelLength) {
       const type = Math.random();
       // Increased spacing for easier gameplay
-      if (type < 0.3) {
+      if (type < 0.25) {
         // Enemy
         enemies.push({
           x: currentX,
@@ -59,14 +61,12 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
           active: true,
           type: 'enemy'
         });
-        // Coins above enemy
         if (Math.random() > 0.5) {
             coins.push({ x: currentX, y: GROUND_Y - 150, w: 30, h: 30, active: true });
-            coins.push({ x: currentX + 40, y: GROUND_Y - 150, w: 30, h: 30, active: true });
         }
-        currentX += 400; // Increased spacing
-      } else if (type < 0.6) {
-        // Obstacle (Block)
+        currentX += 400;
+      } else if (type < 0.5) {
+        // Block (Platform)
         obstacles.push({
           x: currentX,
           y: GROUND_Y - 60,
@@ -74,15 +74,33 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
           h: 60,
           type: 'block'
         });
-        // Coins on block
         coins.push({ x: currentX + 15, y: GROUND_Y - 100, w: 30, h: 30, active: true });
-
-        currentX += 500; // Increased spacing
+        currentX += 500;
+      } else if (type < 0.7) {
+        // Spike (Damage)
+        obstacles.push({
+          x: currentX,
+          y: GROUND_Y - 40,
+          w: 40,
+          h: 40,
+          type: 'spike'
+        });
+        currentX += 400;
+      } else if (type < 0.85) {
+        // Wall (Blocking, must jump)
+        obstacles.push({
+          x: currentX,
+          y: GROUND_Y - 100,
+          w: 40,
+          h: 100,
+          type: 'wall'
+        });
+        currentX += 400;
       } else {
         // Gap / Coin trail
         coins.push({ x: currentX, y: GROUND_Y - 80, w: 30, h: 30, active: true });
         coins.push({ x: currentX + 50, y: GROUND_Y - 80, w: 30, h: 30, active: true });
-        currentX += 300; // Increased spacing
+        currentX += 300;
       }
     }
 
@@ -99,6 +117,8 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
       player: { x: 100, y: GROUND_Y - PLAYER_SIZE, vy: 0, grounded: true },
       cameraX: 0,
       score: 0,
+      lives: 3,
+      invincible: 0,
       enemies: enemies,
       obstacles: obstacles,
       coins: coins,
@@ -125,8 +145,10 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
     const { player } = state;
 
     // 1. Player Movement (Auto Run)
-    player.x += MOVE_SPEED;
-    state.cameraX = player.x - 200; // Camera follows player
+    let intendedMove = MOVE_SPEED;
+    
+    // Invincibility
+    if (state.invincible > 0) state.invincible--;
 
     // 2. Physics
     player.vy += GRAVITY;
@@ -153,21 +175,39 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
 
     // Obstacles Collision
     state.obstacles.forEach(obs => {
-      if (obs.type === 'goal') return; // Skip goal in collision check
+      if (obs.type === 'goal') return;
 
-      if (rectIntersect(player.x, player.y, PLAYER_SIZE, PLAYER_SIZE, obs.x, obs.y, obs.w, obs.h)) {
-        // Simple collision resolution
-        // If hitting from top
-        if (player.y + PLAYER_SIZE - player.vy <= obs.y) {
-          player.y = obs.y - PLAYER_SIZE;
-          player.vy = 0;
-          player.grounded = true;
+      if (rectIntersect(player.x + intendedMove, player.y, PLAYER_SIZE, PLAYER_SIZE, obs.x, obs.y, obs.w, obs.h)) {
+        if (obs.type === 'spike') {
+            // Spike: Damage
+            if (state.invincible <= 0) {
+                state.lives--;
+                state.invincible = 60; // 1 sec invincibility
+                if (state.lives <= 0) setGameState('lost');
+            }
         } else {
-          // Hitting side -> Game Over
-          setGameState('lost');
+            // Block/Wall: Solid
+            // Check collision direction
+            // If falling onto it
+            if (player.y + PLAYER_SIZE - player.vy <= obs.y) {
+                player.y = obs.y - PLAYER_SIZE;
+                player.vy = 0;
+                player.grounded = true;
+            } else {
+                // Side collision -> Stop
+                intendedMove = 0;
+                // Align to wall
+                if (player.x + PLAYER_SIZE < obs.x + 10) {
+                    player.x = obs.x - PLAYER_SIZE - 1;
+                }
+            }
         }
       }
     });
+    
+    // Apply movement
+    player.x += intendedMove;
+    state.cameraX = player.x - 200;
 
     // Enemy Collision
     state.enemies.forEach(enemy => {
@@ -180,7 +220,7 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
           enemy.active = false;
           player.vy = JUMP_STRENGTH * 0.7; // Bounce higher
           onAddScore(100);
-          state.score += 100; // Local state for rendering
+          state.score += 100; 
           // Spawn particles
           for(let i=0; i<8; i++) {
             state.particles.push({
@@ -192,7 +232,11 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
           }
         } else {
           // Hurt player
-          setGameState('lost');
+          if (state.invincible <= 0) {
+              state.lives--;
+              state.invincible = 60;
+              if (state.lives <= 0) setGameState('lost');
+          }
         }
       }
     });
@@ -292,21 +336,32 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
       ctx.fillText(config.targetChar || '★', goal.x + 25, goal.y + 55);
     }
 
-    // Draw Obstacles (Blocks)
+    // Draw Obstacles
     state.obstacles.forEach(obs => {
-      if (obs.type === 'block') {
-        // Main Block
-        ctx.fillStyle = '#8D6E63'; 
+      if (obs.type === 'block' || obs.type === 'wall') {
+        // Block/Wall
+        ctx.fillStyle = obs.type === 'wall' ? '#795548' : '#8D6E63'; 
         ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
-        // Highlight/Shadow
-        ctx.fillStyle = '#A1887F'; ctx.fillRect(obs.x, obs.y, obs.w, 5);
-        ctx.fillStyle = '#5D4037'; ctx.fillRect(obs.x + obs.w - 5, obs.y, 5, obs.h); ctx.fillRect(obs.x, obs.y + obs.h - 5, obs.w, 5);
-        // Question mark style?
-        ctx.fillStyle = '#5D4037';
-        ctx.fillRect(obs.x + 10, obs.y + 10, 5, 5);
-        ctx.fillRect(obs.x + obs.w - 15, obs.y + 10, 5, 5);
-        ctx.fillRect(obs.x + 10, obs.y + obs.h - 15, 5, 5);
-        ctx.fillRect(obs.x + obs.w - 15, obs.y + obs.h - 15, 5, 5);
+        // Border
+        ctx.strokeStyle = '#5D4037';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(obs.x, obs.y, obs.w, obs.h);
+        if (obs.type === 'block') {
+            // Question mark dots
+            ctx.fillStyle = '#5D4037';
+            ctx.fillRect(obs.x + 10, obs.y + 10, 5, 5);
+            ctx.fillRect(obs.x + obs.w - 15, obs.y + 10, 5, 5);
+            ctx.fillRect(obs.x + 10, obs.y + obs.h - 15, 5, 5);
+            ctx.fillRect(obs.x + obs.w - 15, obs.y + obs.h - 15, 5, 5);
+        }
+      } else if (obs.type === 'spike') {
+        // Spike
+        ctx.fillStyle = '#D32F2F';
+        ctx.beginPath();
+        ctx.moveTo(obs.x, obs.y + obs.h);
+        ctx.lineTo(obs.x + obs.w/2, obs.y);
+        ctx.lineTo(obs.x + obs.w, obs.y + obs.h);
+        ctx.fill();
       }
     });
 
@@ -352,44 +407,53 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
       ctx.fill();
     });
 
-    // Draw Player (Cute Character)
+    // Draw Player
     const px = state.player.x;
     const py = state.player.y;
     
-    // Body
-    ctx.fillStyle = '#FF9F43';
-    ctx.beginPath();
-    ctx.ellipse(px + 20, py + 20, 15, 20, 0, 0, Math.PI * 2);
-    ctx.fill();
-    
-    // Legs (Running Animation)
-    const time = Date.now() / 100;
-    const legOffset1 = Math.sin(time) * 10;
-    const legOffset2 = Math.sin(time + Math.PI) * 10;
-    
-    ctx.strokeStyle = '#333';
-    ctx.lineWidth = 4;
-    ctx.beginPath(); // Leg 1
-    ctx.moveTo(px + 20, py + 35);
-    ctx.lineTo(px + 20 + legOffset1, py + 50);
-    ctx.stroke();
-    
-    ctx.beginPath(); // Leg 2
-    ctx.moveTo(px + 20, py + 35);
-    ctx.lineTo(px + 20 + legOffset2, py + 50);
-    ctx.stroke();
+    // Blink if invincible
+    if (state.invincible > 0 && Math.floor(Date.now() / 100) % 2 === 0) {
+        // Skip drawing
+    } else {
+        // Body
+        ctx.fillStyle = '#FF9F43';
+        ctx.beginPath();
+        ctx.ellipse(px + 20, py + 20, 15, 20, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Legs (Running Animation)
+        const time = Date.now() / 100;
+        const legOffset1 = Math.sin(time) * 10;
+        const legOffset2 = Math.sin(time + Math.PI) * 10;
+        
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.moveTo(px + 20, py + 35); ctx.lineTo(px + 20 + legOffset1, py + 50); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(px + 20, py + 35); ctx.lineTo(px + 20 + legOffset2, py + 50); ctx.stroke();
 
-    // Head band / Hat
-    ctx.fillStyle = '#4ECDC4';
-    ctx.fillRect(px + 5, py + 5, 30, 8);
-    
-    // Eyes
-    ctx.fillStyle = 'black';
-    ctx.beginPath(); ctx.arc(px + 28, py + 15, 3, 0, Math.PI*2); ctx.fill();
+        // Head band / Hat
+        ctx.fillStyle = '#4ECDC4';
+        ctx.fillRect(px + 5, py + 5, 30, 8);
+        
+        // Eyes
+        ctx.fillStyle = 'black';
+        ctx.beginPath(); ctx.arc(px + 28, py + 15, 3, 0, Math.PI*2); ctx.fill();
+    }
+
+    ctx.restore();
+
+    // UI Overlay
     ctx.font = "20px Arial";
     ctx.fillStyle = "white";
     ctx.textAlign = "right";
     ctx.fillText(`Score: ${state.score}`, CANVAS_WIDTH - 20, 40);
+    
+    // Draw Hearts
+    ctx.textAlign = "left";
+    let hearts = "";
+    for(let i=0; i<state.lives; i++) hearts += "❤ ";
+    ctx.fillStyle = "#ff4757";
+    ctx.fillText(hearts, 20, 40);
   };
 
   const handleInput = (e) => {
