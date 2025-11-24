@@ -7,6 +7,7 @@ import AuthPage from './components/auth/AuthPage';
 import Header from './components/Header/Header';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import GameMode from './components/Games/GameMode';
+import KanjiDisplay from './components/KanjiDisplay';
 import './App.css';
 import ShiritoriGame from './components/Games/ShiritoriGame';
 
@@ -47,10 +48,7 @@ function AppRoutes() {
                 ) : selectedType === 'katakana' ? (
                   <KatakanaDisplay showGameMode={showGameMode} setShowGameMode={setShowGameMode} />
                 ) : (
-                  <div className="coming-soon">
-                    <h2>漢字モードは準備中です！</h2>
-                    <p>もうしばらくお待ちください。</p>
-                  </div>
+                  <KanjiDisplay />
                 )}
               </main>
               {console.log('showGameMode:', showGameMode)}

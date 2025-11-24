@@ -1,5 +1,5 @@
-// APIのベースURL
-export const API_BASE_URL = 'http://192.168.50.201:8080';
+// APIのベースURL（Vite の環境変数があれば優先）
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
 // その他の設定値
 export const APP_CONFIG = {
