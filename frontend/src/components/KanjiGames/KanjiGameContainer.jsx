@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import './KanjiGames.css';
-import TapGame from './TapGame';
 import TraceGame from './TraceGame';
 import CatchGame from './CatchGame';
 import BlockGame from './BlockGame';
+import JumpGame from './JumpGame';
 
 const KanjiGameContainer = ({ kanji, onClose }) => {
   const [score, setScore] = useState(0);
@@ -27,14 +27,14 @@ const KanjiGameContainer = ({ kanji, onClose }) => {
     const { gameType, gameConfig } = kanji;
     
     switch (gameType) {
-      case 'tap':
-        return <TapGame config={gameConfig} onComplete={handleComplete} onAddScore={handleAddScore} />;
       case 'trace':
         return <TraceGame config={gameConfig} onComplete={handleComplete} onAddScore={handleAddScore} />;
       case 'catch':
         return <CatchGame config={gameConfig} onComplete={handleComplete} onAddScore={handleAddScore} />;
       case 'block':
         return <BlockGame config={gameConfig} onComplete={handleComplete} onAddScore={handleAddScore} />;
+      case 'jump':
+        return <JumpGame config={gameConfig} onComplete={handleComplete} onAddScore={handleAddScore} />;
       default:
         return (
           <div className="game-instruction-overlay">
