@@ -27,7 +27,8 @@ const CatchGame = ({ config, onComplete, onAddScore }) => {
     lastSpawn: 0,
     spawnRate: 1000, // ms
     combo: 0,
-    isGameOver: false
+    isGameOver: false,
+    score: 0
   });
 
   const initGame = () => {
@@ -38,7 +39,8 @@ const CatchGame = ({ config, onComplete, onAddScore }) => {
       lastSpawn: 0,
       spawnRate: 1000,
       combo: 0,
-      isGameOver: false
+      isGameOver: false,
+      score: 0
     };
     setScore(0);
   };
