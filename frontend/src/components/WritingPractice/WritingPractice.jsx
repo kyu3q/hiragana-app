@@ -146,21 +146,6 @@ const WritingPractice = ({ character, onComplete, initialStrokes, type = 'HIRAGA
     // ガイドラインと文字の描画
     drawGuidelines(ctx, size);
     drawGuideCharacter(ctx, character.char, size, type);
-
-    // 保存されたストロークの取得
-    const fetchSavedStrokes = async () => {
-      try {
-        const data = await characterService.getStrokeResult(character.id);
-        if (data && data.strokes) {
-          setAllStrokes(data.strokes);
-          drawSavedStrokes(data.strokes);
-        }
-      } catch (error) {
-        console.error('なぞり結果の取得に失敗しました:', error);
-      }
-    };
-
-    fetchSavedStrokes();
   }, [character]);
 
   useEffect(() => {
@@ -421,4 +406,4 @@ const WritingPractice = ({ character, onComplete, initialStrokes, type = 'HIRAGA
   );
 };
 
-export default WritingPractice; 
+export default WritingPractice;
