@@ -82,7 +82,10 @@ public class CharacterController {
             // 現在のユーザーIDを取得
             Long userId = getCurrentUserId();
             if (userId == null) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("ユーザーが認証されていません");
+                // 認証されていない場合は空の結果を返す（ログアウトを防ぐため）
+                StrokeResult emptyResult = new StrokeResult();
+                emptyResult.setStrokes(new ArrayList<>());
+                return ResponseEntity.ok(emptyResult);
             }
 
             Optional<StrokeResult> result = characterService.getStrokeResult(id, userId);
@@ -107,7 +110,8 @@ public class CharacterController {
             // 現在のユーザーIDを取得
             Long userId = getCurrentUserId();
             if (userId == null) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("ユーザーが認証されていません");
+                // 401を返すとフロントエンドでログアウト処理が走るため、403を返す
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("ユーザーが認証されていません");
             }
 
             if (strokeResult == null || strokeResult.getPosition() == null) {
@@ -172,7 +176,8 @@ public class CharacterController {
         // 現在のユーザーIDを取得
         Long userId = getCurrentUserId();
         if (userId == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            // 認証されていない場合は空のリストを返す（ログアウトを防ぐため）
+            return ResponseEntity.ok(new ArrayList<>());
         }
 
         List<StrokeResult> results = characterService.getAllStrokeResultsByCharacterIdAndUserId(id, userId);
@@ -204,4 +209,4 @@ public class CharacterController {
         }
         return null;
     }
-} 
+}

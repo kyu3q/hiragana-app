@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { register } from '../../api/authService';
+import { register, login } from '../../api/authService';
 import { useAuth } from '../../context/AuthContext';
 import './AuthForms.css';
 
@@ -58,9 +58,14 @@ const RegisterForm = ({ onSuccess, onLoginClick }) => {
     setError('');
     
     try {
-      const user = await register(formData.email, formData.nickname, formData.password);
-      setCurrentUser(user);
-      if (onSuccess) onSuccess(user);
+      // ユーザー登録
+      await register(formData.email, formData.nickname, formData.password);
+      
+      // 自動ログインしてトークンを取得
+      const loginData = await login(formData.email, formData.password);
+      
+      setCurrentUser(loginData.user);
+      if (onSuccess) onSuccess(loginData.user);
     } catch (err) {
       console.error('登録エラー:', err);
       setError(err.toString() || '登録に失敗しました。もう一度お試しください。');
@@ -139,4 +144,4 @@ const RegisterForm = ({ onSuccess, onLoginClick }) => {
   );
 };
 
-export default RegisterForm; 
+export default RegisterForm;

@@ -31,7 +31,8 @@ public class AuthController {
 
         User user = userService.getUserByEmail(email).orElse(null);
         if (user != null && userService.matchesPassword(password, user.getPassword())) {
-            String token = jwtConfig.generateToken(email);
+            // Use email from database user object to ensure consistency
+            String token = jwtConfig.generateToken(user.getEmail());
             Map<String, Object> response = new HashMap<>();
             response.put("token", token);
             response.put("user", user);
@@ -40,4 +41,4 @@ public class AuthController {
 
         return ResponseEntity.badRequest().body("メールアドレスまたはパスワードが正しくありません");
     }
-} 
+}
