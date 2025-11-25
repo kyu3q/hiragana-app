@@ -16,12 +16,12 @@ export const kanjiByGrade = [
       { 
         char: '木', kunyomi: 'き', onyomi: 'ボク', meaning: '木・森', strokes: 4, hint: 'たて1本とクロスのえだ', story: '木の幹に枝が伸びて、鳥がひと休み。', example: 'きのぼり',
         gameType: 'catch',
-        gameConfig: { title: 'リンゴあつめ', instruction: '木から落ちてくるリンゴをカゴでキャッチ！', targetChar: '🍎', badChar: '🐛', bg: '#ffebd3' }
+        gameConfig: { title: '木をあつめよう', instruction: '落ちてくる「木」をカゴでキャッチ！', targetChar: '木', badChar: '本', bg: '#ffebd3' }
       },
       { 
         char: '山', kunyomi: 'やま', onyomi: 'サン', meaning: '高い山', strokes: 3, hint: 'とんがり3つの形', story: '三つの峰で「やっほー」とこだまする。', example: 'やまのぼり',
         gameType: 'catch',
-        gameConfig: { title: '山びこキャッチ', instruction: '山からとんでくる「コダマ」をつかまえよう！', targetChar: '🌲', badChar: '🪨', bg: '#A8E6CF' }
+        gameConfig: { title: '山をあつめよう', instruction: '落ちてくる「山」をキャッチ！', targetChar: '山', badChar: '出', bg: '#A8E6CF' }
       },
       { 
         char: '川', kunyomi: 'かわ', onyomi: 'セン', meaning: '流れる水', strokes: 3, hint: '3本のすいすいライン', story: 'さらさら流れる川を横から見た形。', example: 'かわあそび',
@@ -37,35 +37,35 @@ export const kanjiByGrade = [
       // Additional Grade 1 Kanji
       { char: '一', kunyomi: 'ひと', onyomi: 'イチ', meaning: 'ひとつ', strokes: 1, hint: '横に一本', story: '指一本で数える一。', example: '一つ', gameType: 'trace', gameConfig: { title: '一本道', instruction: 'まっすぐなぞろう', pathPoints: [[50, 200], [250, 200]], bg: '#f0f0f0' } },
       { char: '二', kunyomi: 'ふた', onyomi: 'ニ', meaning: 'ふたつ', strokes: 2, hint: '横に二本', story: '指二本でピースの二。', example: '二つ', gameType: 'block', gameConfig: { title: 'ダブルブロック', instruction: '二つの壁を突破せよ', targetChar: '✌️' } },
-      { char: '三', kunyomi: 'み', onyomi: 'サン', meaning: 'みっつ', strokes: 3, hint: '横に三本', story: 'サンドイッチの三。', example: '三つ', gameType: 'catch', gameConfig: { title: '三角形キャッチ', instruction: '三角おにぎりを集めよう', targetChar: '🍙', badChar: '🥪', bg: '#fff9c4' } },
+      { char: '三', kunyomi: 'み', onyomi: 'サン', meaning: 'みっつ', strokes: 3, hint: '横に三本', story: 'サンドイッチの三。', example: '三つ', gameType: 'catch', gameConfig: { title: '三をあつめよう', instruction: '落ちてくる「三」をキャッチ！', targetChar: '三', badChar: '二', bg: '#fff9c4' } },
       { char: '四', kunyomi: 'よん', onyomi: 'シ', meaning: 'よっつ', strokes: 5, hint: '四角の中に足', story: '四角い窓にカーテン。', example: '四つ', gameType: 'jump', gameConfig: { title: '四つ葉ジャンプ', instruction: 'クローバー畑を駆け抜けろ！', targetChar: '🍀', bg: '#dcedc8' } },
       { char: '五', kunyomi: 'いつ', onyomi: 'ゴ', meaning: 'いつつ', strokes: 4, hint: '指五本', story: 'ゴーゴー進む五。', example: '五つ', gameType: 'block', gameConfig: { title: '五角形崩し', instruction: 'ブロックを崩して星を出そう', targetChar: '⭐' } },
-      { char: '六', kunyomi: 'む', onyomi: 'ロク', meaning: 'むっつ', strokes: 4, hint: '屋根の下に足', story: 'ロボットの六。', example: '六つ', gameType: 'catch', gameConfig: { title: '六角形キャッチ', instruction: 'ハチの巣（六角形）を守れ', targetChar: '🐝', badChar: '🕷️', bg: '#fff59d' } },
+      { char: '六', kunyomi: 'む', onyomi: 'ロク', meaning: 'むっつ', strokes: 4, hint: '屋根の下に足', story: 'ロボットの六。', example: '六つ', gameType: 'catch', gameConfig: { title: '六をあつめよう', instruction: '落ちてくる「六」をキャッチ！', targetChar: '六', badChar: '大', bg: '#fff59d' } },
       { char: '七', kunyomi: 'なな', onyomi: 'シチ', meaning: 'ななつ', strokes: 2, hint: '切る形', story: 'ラッキーセブン。', example: '七つ', gameType: 'trace', gameConfig: { title: '七曲がり', instruction: '曲がり角をなぞろう', pathPoints: [[50, 100], [200, 100], [200, 250]], bg: '#e1bee7' } },
       { char: '八', kunyomi: 'や', onyomi: 'ハチ', meaning: 'やっつ', strokes: 2, hint: '開く形', story: '末広がりの八。', example: '八つ', gameType: 'jump', gameConfig: { title: 'ハチ飛び', instruction: 'ハチのように軽やかにジャンプ！', targetChar: '🐝', bg: '#ffe082' } },
       { char: '九', kunyomi: 'ここの', onyomi: 'キュウ', meaning: 'ここのつ', strokes: 2, hint: '曲がった形', story: 'キュウリが曲がって九。', example: '九つ', gameType: 'block', gameConfig: { title: '九回裏ブロック', instruction: '最後の逆転を狙え', targetChar: '⚾' } },
       { char: '十', kunyomi: 'とお', onyomi: 'ジュウ', meaning: 'とお', strokes: 2, hint: 'クロス', story: 'プラスのパワーで十。', example: '十', gameType: 'trace', gameConfig: { title: '十字なぞり', instruction: 'クロスを描こう', pathPoints: [[150, 50], [150, 250]], bg: '#b2dfdb' } },
       
-      { char: '百', kunyomi: 'もも', onyomi: 'ヒャク', meaning: 'ひゃく', strokes: 6, hint: '一に白', story: '百点満点の百。', example: '百円', gameType: 'catch', gameConfig: { title: '百点キャッチ', instruction: '100点のテストを集めよう', targetChar: '💯', badChar: '❌', bg: '#ffcdd2' } },
+      { char: '百', kunyomi: 'もも', onyomi: 'ヒャク', meaning: 'ひゃく', strokes: 6, hint: '一に白', story: '百点満点の百。', example: '百円', gameType: 'catch', gameConfig: { title: '百をあつめよう', instruction: '落ちてくる「百」をキャッチ！', targetChar: '百', badChar: '白', bg: '#ffcdd2' } },
       { char: '千', kunyomi: 'ち', onyomi: 'セン', meaning: 'せん', strokes: 3, hint: '十にノ', story: '千羽鶴の千。', example: '千円', gameType: 'jump', gameConfig: { title: '千羽鶴ジャンプ', instruction: '鶴と一緒に空を飛ぼう！', targetChar: '🦢', bg: '#b3e5fc' } },
       
-      { char: '上', kunyomi: 'うえ', onyomi: 'ジョウ', meaning: 'うえ', strokes: 3, hint: '上に指す', story: '上を向いて歩こう。', example: '上がる', gameType: 'catch', gameConfig: { title: '上へ上へ', instruction: '風船で上へ登ろう', targetChar: '🎈', badChar: '📍', bg: '#e1f5fe' } },
-      { char: '下', kunyomi: 'した', onyomi: 'カ', meaning: 'した', strokes: 3, hint: '下に指す', story: '地下へ潜る下。', example: '下がる', gameType: 'catch', gameConfig: { title: '地下探検', instruction: '下へ降りて宝石を取ろう', targetChar: '💎', badChar: '🦇', bg: '#424242' } },
+      { char: '上', kunyomi: 'うえ', onyomi: 'ジョウ', meaning: 'うえ', strokes: 3, hint: '上に指す', story: '上を向いて歩こう。', example: '上がる', gameType: 'catch', gameConfig: { title: '上をあつめよう', instruction: '落ちてくる「上」をキャッチ！', targetChar: '上', badChar: '下', bg: '#e1f5fe' } },
+      { char: '下', kunyomi: 'した', onyomi: 'カ', meaning: 'した', strokes: 3, hint: '下に指す', story: '地下へ潜る下。', example: '下がる', gameType: 'catch', gameConfig: { title: '下をあつめよう', instruction: '落ちてくる「下」をキャッチ！', targetChar: '下', badChar: '上', bg: '#424242' } },
       { char: '左', kunyomi: 'ひだり', onyomi: 'サ', meaning: 'ひだり', strokes: 5, hint: '工がある', story: '左手で工作。', example: '左手', gameType: 'block', gameConfig: { title: '左ブロック', instruction: '左側のブロックを崩そう', targetChar: '👈' } },
       { char: '右', kunyomi: 'みぎ', onyomi: 'ウ', meaning: 'みぎ', strokes: 5, hint: '口がある', story: '右手でご飯を食べる口。', example: '右手', gameType: 'block', gameConfig: { title: '右ブロック', instruction: '右側のブロックを崩そう', targetChar: '👉' } },
       
       { char: '中', kunyomi: 'なか', onyomi: 'チュウ', meaning: 'なか', strokes: 4, hint: '真ん中', story: '的の真ん中に的中。', example: '中学生', gameType: 'jump', gameConfig: { title: '真ん中ジャンプ', instruction: '道の真ん中を走ろう！', targetChar: '🎯', bg: '#ffe0b2' } },
       { char: '大', kunyomi: 'おお', onyomi: 'ダイ', meaning: 'おおきい', strokes: 3, hint: '人が手足を広げる', story: '大の字で寝転ぶ。', example: '大きい', gameType: 'block', gameConfig: { title: '巨大ブロック', instruction: '大きな壁を壊せ', targetChar: '🐘' } },
-      { char: '小', kunyomi: 'ちい', onyomi: 'ショウ', meaning: 'ちいさい', strokes: 3, hint: '小さくまとまる', story: '小石がコロコロ。', example: '小さい', gameType: 'catch', gameConfig: { title: '小粒キャッチ', instruction: '小さな星屑を集めよう', targetChar: '✨', badChar: '☄️', bg: '#1a237e' } },
+      { char: '小', kunyomi: 'ちい', onyomi: 'ショウ', meaning: 'ちいさい', strokes: 3, hint: '小さくまとまる', story: '小石がコロコロ。', example: '小さい', gameType: 'catch', gameConfig: { title: '小をあつめよう', instruction: '落ちてくる「小」をキャッチ！', targetChar: '小', badChar: '少', bg: '#1a237e' } },
       
-      { char: '雨', kunyomi: 'あめ', onyomi: 'ウ', meaning: 'あめ', strokes: 8, hint: '雲から水滴', story: '窓の外は雨模様。', example: '雨降り', gameType: 'catch', gameConfig: { title: '雨宿り', instruction: '雨粒を避けて傘をさそう（傘を集める）', targetChar: '🌂', badChar: '💧', bg: '#90caf9' } },
+      { char: '雨', kunyomi: 'あめ', onyomi: 'ウ', meaning: 'あめ', strokes: 8, hint: '雲から水滴', story: '窓の外は雨模様。', example: '雨降り', gameType: 'catch', gameConfig: { title: '雨をあつめよう', instruction: '落ちてくる「雨」をキャッチ！', targetChar: '雨', badChar: '雪', bg: '#90caf9' } },
       { char: '円', kunyomi: 'まる', onyomi: 'エン', meaning: 'まる・おかね', strokes: 4, hint: '丸い硬貨', story: '百円玉で買い物。', example: '円', gameType: 'block', gameConfig: { title: 'コイン落とし', instruction: 'ブロックを崩してコインGET', targetChar: '💰' } },
       { char: '王', kunyomi: '', onyomi: 'オウ', meaning: 'おうさま', strokes: 4, hint: '王冠の形', story: '国を治める王様。', example: '王様', gameType: 'jump', gameConfig: { title: '王冠ジャンプ', instruction: '王様のもとへ急げ！', targetChar: '👑', bg: '#ffecb3' } },
       { char: '火', kunyomi: 'ひ', onyomi: 'カ', meaning: 'ひ', strokes: 4, hint: '燃える炎', story: 'キャンプファイアーの火。', example: '火曜日', gameType: 'jump', gameConfig: { title: '火の用心ジャンプ', instruction: '火を飛び越えて進め！', targetChar: '🔥', bg: '#ffab91' } },
-      { char: '花', kunyomi: 'はな', onyomi: 'カ', meaning: 'はな', strokes: 7, hint: '草かんむり', story: 'きれいに咲いた花。', example: '花びん', gameType: 'catch', gameConfig: { title: 'お花畑', instruction: '花びらを集めよう', targetChar: '🌸', badChar: '🐛', bg: '#f8bbd0' } },
+      { char: '花', kunyomi: 'はな', onyomi: 'カ', meaning: 'はな', strokes: 7, hint: '草かんむり', story: 'きれいに咲いた花。', example: '花びん', gameType: 'catch', gameConfig: { title: '花をあつめよう', instruction: '落ちてくる「花」をキャッチ！', targetChar: '花', badChar: '化', bg: '#f8bbd0' } },
       { char: '貝', kunyomi: 'かい', onyomi: '', meaning: 'かい', strokes: 7, hint: '二枚貝', story: '砂浜で貝殻拾い。', example: '貝がら', gameType: 'jump', gameConfig: { title: '貝集めジャンプ', instruction: '砂浜を走って貝を集めよう！', targetChar: '🐚', bg: '#ffe082' } },
       { char: '学', kunyomi: 'まな', onyomi: 'ガク', meaning: 'まなぶ', strokes: 8, hint: '子が学ぶ', story: '学校で楽しく学ぶ。', example: '学校', gameType: 'trace', gameConfig: { title: '通学路', instruction: '学校へ行こう', pathPoints: [[50, 300], [150, 100], [250, 300]], bg: '#c5cae9' } },
-      { char: '気', kunyomi: '', onyomi: 'キ', meaning: 'きもち・くうき', strokes: 6, hint: '〆る', story: '元気いっぱいの気。', example: '元気', gameType: 'catch', gameConfig: { title: 'パワーチャージ', instruction: '元気玉を集めよう', targetChar: '⚡', badChar: '💤', bg: '#ffff8d' } },
+      { char: '気', kunyomi: '', onyomi: 'キ', meaning: 'きもち・くうき', strokes: 6, hint: '〆る', story: '元気いっぱいの気。', example: '元気', gameType: 'catch', gameConfig: { title: '気をあつめよう', instruction: '落ちてくる「気」をキャッチ！', targetChar: '気', badChar: '汽', bg: '#ffff8d' } },
       { char: '休', kunyomi: 'やす', onyomi: 'キュウ', meaning: 'やすむ', strokes: 6, hint: '人が木で休む', story: '木陰でひと休み。', example: '休み', gameType: 'jump', gameConfig: { title: 'お昼寝ジャンプ', instruction: '休み時間までダッシュ！', targetChar: '💤', bg: '#dcedc8' } },
       { char: '玉', kunyomi: 'たま', onyomi: 'ギョク', meaning: 'たま', strokes: 5, hint: '点がある', story: '王様の宝石、玉。', example: 'お年玉', gameType: 'block', gameConfig: { title: '宝石ブロック', instruction: 'ブロックの中に宝石が！', targetChar: '💎' } },
       { char: '金', kunyomi: 'かね', onyomi: 'キン', meaning: 'おかね・きん', strokes: 8, hint: '屋根の下に王', story: 'ピカピカ輝く金メダル。', example: '金曜日', gameType: 'block', gameConfig: { title: '金塊ブロック', instruction: 'ブロックを崩して金を採掘！', targetChar: '🪙' } },
@@ -74,28 +74,28 @@ export const kanjiByGrade = [
       { char: '見', kunyomi: 'み', onyomi: 'ケン', meaning: 'みる', strokes: 7, hint: '目に足', story: '遠くを見る目。', example: '見学', gameType: 'jump', gameConfig: { title: '見つける旅', instruction: '色々なものを見つけに行こう！', targetChar: '👀', bg: '#e1bee7' } },
       { char: '校', kunyomi: '', onyomi: 'コウ', meaning: 'がっこう', strokes: 10, hint: '木と交わる', story: 'みんなが集まる学校。', example: '校長', gameType: 'block', gameConfig: { title: '校舎建設', instruction: 'レンガを積んで（壊して）学校を作ろう', targetChar: '🏫' } },
       { char: '糸', kunyomi: 'いと', onyomi: 'シ', meaning: 'いと', strokes: 6, hint: '細い糸', story: 'くるくる巻いた糸。', example: '毛糸', gameType: 'trace', gameConfig: { title: 'あやとり', instruction: '糸を絡ませないように', pathPoints: [[100, 100], [200, 200], [100, 300]], bg: '#f8bbd0' } },
-      { char: '字', kunyomi: 'じ', onyomi: 'ジ', meaning: 'もじ', strokes: 6, hint: 'ウに子', story: 'ノートに書く字。', example: '文字', gameType: 'block', gameConfig: { title: '文字ブロック', instruction: 'ブロックを壊して字を読もう', targetChar: '🔤' } },
-      { char: '耳', kunyomi: 'みみ', onyomi: 'ジ', meaning: 'みみ', strokes: 6, hint: '耳の形', story: '音を聞く耳。', example: '耳', gameType: 'catch', gameConfig: { title: '音符キャッチ', instruction: 'きれいな音を集めよう', targetChar: '🎵', badChar: '🔊', bg: '#ffe0b2' } },
+      { char: '字', kunyomi: 'じ', onyomi: 'ジ', meaning: 'もじ', strokes: 6, hint: 'ウに子', story: 'ノートに書く字。', example: '文字', gameType: 'block', gameConfig: { title: '文字ブロック', instruction: 'ブロックを壊して字を読おう', targetChar: '🔤' } },
+      { char: '耳', kunyomi: 'みみ', onyomi: 'ジ', meaning: 'みみ', strokes: 6, hint: '耳の形', story: '音を聞く耳。', example: '耳', gameType: 'catch', gameConfig: { title: '耳をあつめよう', instruction: '落ちてくる「耳」をキャッチ！', targetChar: '耳', badChar: '目', bg: '#ffe0b2' } },
       { char: '手', kunyomi: 'て', onyomi: 'シュ', meaning: 'て', strokes: 4, hint: '手の形', story: '拍手する手。', example: '拍手', gameType: 'jump', gameConfig: { title: 'ハンドジャンプ', instruction: '手を振ってジャンプ！', targetChar: '✋', bg: '#ffccbc' } },
       { char: '出', kunyomi: 'で', onyomi: 'シュツ', meaning: 'でる', strokes: 5, hint: '山が二つ', story: 'お出かけする出。', example: '出口', gameType: 'block', gameConfig: { title: '脱出ブロック', instruction: '出口を塞ぐ壁を壊せ！', targetChar: '🚪' } },
       { char: '女', kunyomi: 'おんな', onyomi: 'ジョ', meaning: 'おんな', strokes: 3, hint: '座る姿', story: '優しい女の人。', example: '女子', gameType: 'jump', gameConfig: { title: 'リボンジャンプ', instruction: 'リボンを集めて進もう！', targetChar: '🎀', bg: '#f8bbd0' } },
-      { char: '小', kunyomi: 'ちい', onyomi: 'ショウ', meaning: 'ちいさい', strokes: 3, hint: '小さい', story: '小鳥がさえずる。', example: '小鳥', gameType: 'catch', gameConfig: { title: '小鳥キャッチ', instruction: '小鳥を集めよう', targetChar: '🐦', badChar: '🦅', bg: '#b3e5fc' } },
+      { char: '小', kunyomi: 'ちい', onyomi: 'ショウ', meaning: 'ちいさい', strokes: 3, hint: '小さい', story: '小鳥がさえずる。', example: '小鳥', gameType: 'catch', gameConfig: { title: '小をあつめよう', instruction: '落ちてくる「小」をキャッチ！', targetChar: '小', badChar: '少', bg: '#b3e5fc' } },
       { char: '森', kunyomi: 'もり', onyomi: 'シン', meaning: 'もり', strokes: 12, hint: '木が三本', story: '木がたくさんある森。', example: '森林', gameType: 'jump', gameConfig: { title: '森の探検', instruction: '森の奥へ進もう！', targetChar: '🐻', bg: '#c8e6c9' } },
-      { char: '水', kunyomi: 'みず', onyomi: 'スイ', meaning: 'みず', strokes: 4, hint: '跳ねる水', story: '冷たい水をごくごく。', example: '水曜日', gameType: 'catch', gameConfig: { title: '水滴キャッチ', instruction: '水を溜めよう', targetChar: '💧', badChar: '🔥', bg: '#e1f5fe' } },
+      { char: '水', kunyomi: 'みず', onyomi: 'スイ', meaning: 'みず', strokes: 4, hint: '跳ねる水', story: '冷たい水をごくごく。', example: '水曜日', gameType: 'catch', gameConfig: { title: '水をあつめよう', instruction: '落ちてくる「水」をキャッチ！', targetChar: '水', badChar: '氷', bg: '#e1f5fe' } },
       { char: '正', kunyomi: 'ただ', onyomi: 'セイ', meaning: 'ただしい', strokes: 5, hint: '一に止', story: '正義の味方。', example: 'お正月', gameType: 'block', gameConfig: { title: '正義ブロック', instruction: '悪いブロックを倒せ', targetChar: '🦸' } },
-      { char: '生', kunyomi: 'い', onyomi: 'セイ', meaning: 'いきる', strokes: 5, hint: '草が生える', story: '生き物が生まれる。', example: '先生', gameType: 'catch', gameConfig: { title: '誕生', instruction: '卵をキャッチしよう', targetChar: '🥚', badChar: '💣', bg: '#fff9c4' } },
+      { char: '生', kunyomi: 'い', onyomi: 'セイ', meaning: 'いきる', strokes: 5, hint: '草が生える', story: '生き物が生まれる。', example: '先生', gameType: 'catch', gameConfig: { title: '生をあつめよう', instruction: '落ちてくる「生」をキャッチ！', targetChar: '生', badChar: '正', bg: '#fff9c4' } },
       { char: '青', kunyomi: 'あお', onyomi: 'セイ', meaning: 'あおい', strokes: 8, hint: '月がある', story: '青い空と海。', example: '青信号', gameType: 'jump', gameConfig: { title: '青空ジャンプ', instruction: '青い空の下を走ろう！', targetChar: '🔵', bg: '#e3f2fd' } },
       { char: '夕', kunyomi: 'ゆう', onyomi: 'セキ', meaning: 'ゆうがた', strokes: 3, hint: '月になりかけ', story: '夕焼け小焼け。', example: '夕方', gameType: 'trace', gameConfig: { title: '夕帰り', instruction: 'お家へ帰ろう', pathPoints: [[250, 100], [50, 300]], bg: '#ffccbc' } },
       { char: '石', kunyomi: 'いし', onyomi: 'セキ', meaning: 'いし', strokes: 5, hint: '口がある', story: '硬い石ころ。', example: '石', gameType: 'block', gameConfig: { title: '石砕き', instruction: '硬い岩を砕け！', targetChar: '🪨' } },
-      { char: '赤', kunyomi: 'あか', onyomi: 'セキ', meaning: 'あかい', strokes: 7, hint: '火がある', story: '真っ赤なトマト。', example: '赤ちゃん', gameType: 'catch', gameConfig: { title: '赤色集め', instruction: '赤いものをキャッチ', targetChar: '🍎', badChar: '🍏', bg: '#ffcdd2' } },
+      { char: '赤', kunyomi: 'あか', onyomi: 'セキ', meaning: 'あかい', strokes: 7, hint: '火がある', story: '真っ赤なトマト。', example: '赤ちゃん', gameType: 'catch', gameConfig: { title: '赤をあつめよう', instruction: '落ちてくる「赤」をキャッチ！', targetChar: '赤', badChar: '亦', bg: '#ffcdd2' } },
       { char: '先', kunyomi: 'さき', onyomi: 'セン', meaning: 'さき', strokes: 6, hint: '足がある', story: '先生の先。', example: '先生', gameType: 'trace', gameConfig: { title: '先導', instruction: 'みんなの先頭を歩こう', pathPoints: [[50, 200], [250, 200]], bg: '#f5f5f5' } },
       { char: '早', kunyomi: 'はや', onyomi: 'ソウ', meaning: 'はやい', strokes: 6, hint: '日が十', story: '早起きは三文の徳。', example: '早送り', gameType: 'jump', gameConfig: { title: '早起きジャンプ', instruction: '遅刻しないように走れ！', targetChar: '⏰', bg: '#fff9c4' } },
-      { char: '草', kunyomi: 'くさ', onyomi: 'ソウ', meaning: 'くさ', strokes: 9, hint: '草かんむり', story: '草が生い茂る。', example: '草花', gameType: 'catch', gameConfig: { title: '草むしり', instruction: '雑草を抜こう（キャッチ）', targetChar: '🌿', badChar: '🌸', bg: '#c8e6c9' } },
+      { char: '草', kunyomi: 'くさ', onyomi: 'ソウ', meaning: 'くさ', strokes: 9, hint: '草かんむり', story: '草が生い茂る。', example: '草花', gameType: 'catch', gameConfig: { title: '草をあつめよう', instruction: '落ちてくる「草」をキャッチ！', targetChar: '草', badChar: '早', bg: '#c8e6c9' } },
       { char: '足', kunyomi: 'あし', onyomi: 'ソク', meaning: 'あし', strokes: 7, hint: '口と止', story: '足で走る。', example: '遠足', gameType: 'jump', gameConfig: { title: 'ランニングジャンプ', instruction: '障害物をジャンプしてゴールを目指せ！', targetChar: '足', bg: '#87CEEB' } },
       { char: '村', kunyomi: 'むら', onyomi: 'ソン', meaning: 'むら', strokes: 7, hint: '木と寸', story: '静かな村。', example: '村長', gameType: 'jump', gameConfig: { title: '村の冒険', instruction: '村中を駆け回ろう！', targetChar: '🏡', bg: '#dcedc8' } },
       { char: '男', kunyomi: 'おとこ', onyomi: 'ダン', meaning: 'おとこ', strokes: 7, hint: '田と力', story: '力持ちの男の人。', example: '男子', gameType: 'block', gameConfig: { title: '力仕事', instruction: '岩を壊して道を作れ', targetChar: '💪' } },
-      { char: '竹', kunyomi: 'たけ', onyomi: 'チク', meaning: 'たけ', strokes: 6, hint: '竹の節', story: '竹取物語の竹。', example: '竹馬', gameType: 'catch', gameConfig: { title: '竹林', instruction: 'かぐや姫を探そう', targetChar: '🌕', badChar: '🎋', bg: '#dcedc8' } },
-      { char: '虫', kunyomi: 'むし', onyomi: 'チュウ', meaning: 'むし', strokes: 6, hint: '虫の形', story: '虫取りに行こう。', example: '虫歯', gameType: 'catch', gameConfig: { title: '昆虫採集', instruction: 'カブトムシを捕まえろ', targetChar: '🪲', badChar: '🐝', bg: '#c8e6c9' } },
+      { char: '竹', kunyomi: 'たけ', onyomi: 'チク', meaning: 'たけ', strokes: 6, hint: '竹の節', story: '竹取物語の竹。', example: '竹馬', gameType: 'catch', gameConfig: { title: '竹をあつめよう', instruction: '落ちてくる「竹」をキャッチ！', targetChar: '竹', badChar: '笹', bg: '#dcedc8' } },
+      { char: '虫', kunyomi: 'むし', onyomi: 'チュウ', meaning: 'むし', strokes: 6, hint: '虫の形', story: '虫取りに行こう。', example: '虫歯', gameType: 'catch', gameConfig: { title: '虫をあつめよう', instruction: '落ちてくる「虫」をキャッチ！', targetChar: '虫', badChar: '患', bg: '#c8e6c9' } },
       { char: '町', kunyomi: 'まち', onyomi: 'チョウ', meaning: 'まち', strokes: 7, hint: '田と丁', story: '賑やかな町。', example: '町長', gameType: 'jump', gameConfig: { title: '街角ジャンプ', instruction: '賑やかな町を探検！', targetChar: '🏪', bg: '#ffe0b2' } },
       { char: '天', kunyomi: 'あま', onyomi: 'テン', meaning: 'てん', strokes: 4, hint: '大に一', story: '天まで届け。', example: '天才', gameType: 'block', gameConfig: { title: '天界ブロック', instruction: '空高く積み上げられたブロック！', targetChar: '☁️' } },
       { char: '土', kunyomi: 'つち', onyomi: 'ド', meaning: 'つち', strokes: 3, hint: '十に一', story: '土いじり。', example: '土曜日', gameType: 'block', gameConfig: { title: '土掘り', instruction: '土を掘って化石を見つけよう', targetChar: '🦖' } },
@@ -111,7 +111,7 @@ export const kanjiByGrade = [
       { char: '林', kunyomi: 'はやし', onyomi: 'リン', meaning: 'はやし', strokes: 8, hint: '木が二本', story: '林の中を探検。', example: '林間', gameType: 'block', gameConfig: { title: '林業ブロック', instruction: '林を開拓しよう', targetChar: '林' } },
       
       // Some simple additions for coverage ( 音 貝 ... covered above or similar)
-      { char: '音', kunyomi: 'おと', onyomi: 'オン', meaning: 'おと', strokes: 9, hint: '立と日', story: '音楽を聴く。', example: '音楽', gameType: 'catch', gameConfig: { title: 'リズムゲーム', instruction: '音符をキャッチ', targetChar: '🎵', badChar: '🔇', bg: '#fff9c4' } }
+      { char: '音', kunyomi: 'おと', onyomi: 'オン', meaning: 'おと', strokes: 9, hint: '立と日', story: '音楽を聴く。', example: '音楽', gameType: 'catch', gameConfig: { title: '音をあつめよう', instruction: '落ちてくる「音」をキャッチ！', targetChar: '音', badChar: '暗', bg: '#fff9c4' } }
     ]
   },
   {
@@ -155,3 +155,51 @@ export const kanjiByGrade = [
     ]
   }
 ];
+
+export const GRADE1_KANJI = "一右雨円王音下火花貝学気九休玉金空月犬見五口校左三山子四糸字耳七車手十出女小上森人水正生青夕石赤千川先早草足村大男竹中虫町天田土二日入年白八百文木本名目立力林六";
+
+export const SIMILAR_PAIRS = {
+  '木': '本林村',
+  '本': '木林村',
+  '林': '木本森',
+  '森': '木林',
+  '山': '出',
+  '出': '山',
+  '人': '入',
+  '入': '人',
+  '日': '目白田',
+  '目': '日自',
+  '白': '日百',
+  '百': '白',
+  '田': '日町',
+  '町': '田',
+  '口': '中',
+  '中': '口',
+  '右': '左石',
+  '左': '右',
+  '石': '右',
+  '大': '犬天',
+  '犬': '大',
+  '天': '大',
+  '手': '毛',
+  '足': '走',
+  '王': '玉',
+  '玉': '王',
+  '金': '全',
+  '青': '晴',
+  '生': '正',
+  '正': '生',
+  '早': '草',
+  '草': '早',
+  '音': '暗',
+  '暗': '音',
+  '小': '少',
+  '夕': '名',
+  '名': '夕',
+  '千': '十',
+  '十': '千',
+  '土': '士',
+  '二': '三',
+  '三': '二',
+  '五': '正'
+};

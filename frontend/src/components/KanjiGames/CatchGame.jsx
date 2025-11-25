@@ -1,17 +1,24 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { GRADE1_KANJI, SIMILAR_PAIRS } from '../../data/kanjiData';
+
+const SIZES = [30, 45, 60]; // Small, Medium, Large
 
 const CatchGame = ({ config, onComplete, onAddScore }) => {
   const canvasRef = useRef(null);
   const [gameState, setGameState] = useState('start');
-  const [score, setScore] = useState(0);
+  const [score, setScore] = useState(0); // Keep for React UI (Start/End screens)
   const requestRef = useRef();
 
   // Constants
   const CANVAS_WIDTH = 800;
   const CANVAS_HEIGHT = 600;
-  const CATCHER_WIDTH = 100;
-  const CATCHER_HEIGHT = 60;
-  const CATCHER_Y = 520;
+  const CATCHER_HEIGHT = 70;
+  const CATCHER_Y = 500;
+
+  const getCatcherWidth = (currentScore) => {
+    // 70% of 300 is 210
+    return currentScore >= 210 ? 110 : 80;
+  };
 
   const stateRef = useRef({
     catcherX: CANVAS_WIDTH / 2,
@@ -19,7 +26,8 @@ const CatchGame = ({ config, onComplete, onAddScore }) => {
     particles: [],
     lastSpawn: 0,
     spawnRate: 1000, // ms
-    combo: 0
+    combo: 0,
+    isGameOver: false
   });
 
   const initGame = () => {
@@ -29,7 +37,8 @@ const CatchGame = ({ config, onComplete, onAddScore }) => {
       particles: [],
       lastSpawn: 0,
       spawnRate: 1000,
-      combo: 0
+      combo: 0,
+      isGameOver: false
     };
     setScore(0);
   };
@@ -41,28 +50,54 @@ const CatchGame = ({ config, onComplete, onAddScore }) => {
       let type = 'target';
       let char = config.targetChar;
       let color = '#FF9F43';
+      let size = SIZES[Math.floor(Math.random() * SIZES.length)];
 
-      if (typeRand < 0.3) {
+      // Increase probability of bad/similar items to 60%
+      if (typeRand < 0.6) {
         type = 'bad';
-        char = config.badChar || '🐛';
         color = '#5D4037';
-      } else if (typeRand < 0.4) {
+        // Choose distractor
+        const target = config.targetChar;
+        let distractor = '';
+        
+        // 50% chance to use similar character if available
+        const useSimilar = Math.random() < 0.5;
+
+        if (useSimilar && SIMILAR_PAIRS[target]) {
+            const similars = SIMILAR_PAIRS[target];
+            distractor = similars[Math.floor(Math.random() * similars.length)];
+        }
+        
+        // Fallback to random Kanji (or if useSimilar was false)
+        if (!distractor) {
+            let attempts = 0;
+            do {
+               distractor = GRADE1_KANJI[Math.floor(Math.random() * GRADE1_KANJI.length)];
+               attempts++;
+            } while (distractor === target && attempts < 10);
+            if (distractor === target) distractor = 'Ｘ';
+        }
+        char = distractor;
+
+      } else if (typeRand < 0.65) {
         type = 'bonus';
         char = '🌟';
         color = '#FFD700';
+        size = 50;
       }
 
       stateRef.current.items.push({
-        x: Math.random() * (CANVAS_WIDTH - 40) + 20,
-        y: -50,
+        x: Math.random() * (CANVAS_WIDTH - size - 20) + size/2 + 10,
+        y: -60,
         speed: Math.random() * 2 + 2,
         type: type,
         char: char,
         color: color,
-        w: 50,
-        h: 50,
+        size: size,
+        w: size,
+        h: size,
         rotation: 0,
-        rotSpeed: (Math.random() - 0.5) * 0.1
+        rotSpeed: (Math.random() - 0.5) * 0.05
       });
       stateRef.current.lastSpawn = now;
       // Increase difficulty
@@ -84,7 +119,7 @@ const CatchGame = ({ config, onComplete, onAddScore }) => {
   };
 
   const update = () => {
-    if (gameState !== 'playing') return;
+    if (gameState !== 'playing' || stateRef.current.isGameOver) return;
     
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -102,29 +137,33 @@ const CatchGame = ({ config, onComplete, onAddScore }) => {
     // Collision Detection
     state.items = state.items.filter(item => {
       // Check collision with catcher
+      const currentCatcherWidth = getCatcherWidth(state.score);
       if (
         item.y + item.h > CATCHER_Y &&
         item.y < CATCHER_Y + CATCHER_HEIGHT &&
-        item.x + item.w > state.catcherX - CATCHER_WIDTH / 2 &&
-        item.x < state.catcherX + CATCHER_WIDTH / 2
+        item.x + item.w > state.catcherX - currentCatcherWidth / 2 &&
+        item.x < state.catcherX + currentCatcherWidth / 2
       ) {
         // Catch!
         if (item.type === 'target') {
           const points = 10 + state.combo;
           onAddScore(points);
-          setScore(s => s + points);
+          state.score += points;
+          setScore(state.score); // Sync React state
           state.combo++;
           createParticles(item.x, item.y, '#FF9F43', 8);
         } else if (item.type === 'bonus') {
           const points = 30;
           onAddScore(points);
-          setScore(s => s + points);
+          state.score += points;
+          setScore(state.score);
           createParticles(item.x, item.y, '#FFD700', 15);
         } else {
           // Bad item
           const points = -10;
           onAddScore(points);
-          setScore(s => Math.max(0, s + points));
+          state.score = Math.max(0, state.score + points);
+          setScore(state.score);
           state.combo = 0;
           createParticles(item.x, item.y, '#555', 5);
         }
@@ -143,7 +182,8 @@ const CatchGame = ({ config, onComplete, onAddScore }) => {
     });
 
     // Win Condition
-    if (score >= 100) {
+    if (state.score >= 300 && !state.isGameOver) {
+      state.isGameOver = true;
       setGameState('won');
       onComplete(true);
     }
@@ -157,6 +197,7 @@ const CatchGame = ({ config, onComplete, onAddScore }) => {
     });
 
     draw(ctx, state);
+    // Loop continues with the same function instance
     requestRef.current = requestAnimationFrame(update);
   };
 
@@ -170,56 +211,89 @@ const CatchGame = ({ config, onComplete, onAddScore }) => {
     // Catcher (Basket)
     const cx = state.catcherX;
     const cy = CATCHER_Y;
+    const currentCatcherWidth = getCatcherWidth(state.score);
     
-    ctx.fillStyle = '#8D6E63'; // Wood color
-    // Basket body
+    // Back of basket (inside)
+    ctx.fillStyle = '#5D4037';
     ctx.beginPath();
-    ctx.moveTo(cx - CATCHER_WIDTH/2, cy);
-    ctx.lineTo(cx + CATCHER_WIDTH/2, cy);
-    ctx.lineTo(cx + CATCHER_WIDTH/2 - 10, cy + CATCHER_HEIGHT);
-    ctx.lineTo(cx - CATCHER_WIDTH/2 + 10, cy + CATCHER_HEIGHT);
+    ctx.ellipse(cx, cy + 10, currentCatcherWidth/2 - 5, 15, 0, 0, Math.PI * 2);
     ctx.fill();
-    // Weave pattern
-    ctx.strokeStyle = '#5D4037';
-    ctx.lineWidth = 2;
-    ctx.stroke();
+
+    // Basket Body
+    // Change color if powered up
+    ctx.fillStyle = currentCatcherWidth > 80 ? '#A1887F' : '#8D6E63';
     ctx.beginPath();
-    ctx.moveTo(cx - CATCHER_WIDTH/2 + 5, cy + 15);
-    ctx.lineTo(cx + CATCHER_WIDTH/2 - 5, cy + 15);
+    ctx.moveTo(cx - currentCatcherWidth/2, cy + 10);
+    ctx.lineTo(cx + currentCatcherWidth/2, cy + 10);
+    ctx.quadraticCurveTo(cx + currentCatcherWidth/2 + 5, cy + CATCHER_HEIGHT, cx + currentCatcherWidth/2 - 20, cy + CATCHER_HEIGHT);
+    ctx.lineTo(cx - currentCatcherWidth/2 + 20, cy + CATCHER_HEIGHT);
+    ctx.quadraticCurveTo(cx - currentCatcherWidth/2 - 5, cy + CATCHER_HEIGHT, cx - currentCatcherWidth/2, cy + 10);
+    ctx.fill();
+    
+    // Weave texture
+    ctx.strokeStyle = '#6D4C41';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(cx - currentCatcherWidth/2 + 5, cy + 30);
+    ctx.quadraticCurveTo(cx, cy + 35, cx + currentCatcherWidth/2 - 5, cy + 30);
     ctx.stroke();
+
+    // Handle (Front)
+    // ctx.strokeStyle = '#5D4037';
+    // ctx.lineWidth = 4;
+    // ctx.beginPath();
+    // ctx.moveTo(cx - CATCHER_WIDTH/2 + 10, cy + 10);
+    // ctx.bezierCurveTo(cx - CATCHER_WIDTH/2, cy - 40, cx + CATCHER_WIDTH/2, cy - 40, cx + CATCHER_WIDTH/2 - 10, cy + 10);
+    // ctx.stroke();
     
     // Items
     state.items.forEach(item => {
       ctx.save();
-      ctx.translate(item.x + item.w/2, item.y + item.h/2);
+      ctx.translate(item.x, item.y);
       ctx.rotate(item.rotation);
-      ctx.fillStyle = item.color;
       
       if (item.type === 'bonus') {
         // Draw Star
-        ctx.font = "40px Arial";
+        ctx.fillStyle = '#FFD700';
+        ctx.font = `${item.size}px Arial`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.fillText(item.char, 0, 0);
-      } else if (item.type === 'bad') {
-        // Draw Bad char
-        ctx.font = "40px Arial";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
+        // Glow
+        ctx.shadowColor = "white";
+        ctx.shadowBlur = 10;
         ctx.fillText(item.char, 0, 0);
       } else {
-        // Draw Target char bubble
-        ctx.beginPath();
-        ctx.arc(0, 0, 25, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = 'white';
-        ctx.font = "bold 30px serif";
+        // Kanji (Target or Bad)
+        // No bubble, just text as requested, but maybe with outline for readability
+        ctx.font = `bold ${item.size}px 'Zen Maru Gothic', sans-serif`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.fillText(item.char, 0, 2);
+        
+        // Outline
+        ctx.strokeStyle = 'white';
+        ctx.lineWidth = 4;
+        ctx.strokeText(item.char, 0, 0);
+        
+        // Fill
+        // Unified color for target and bad items to force reading
+        ctx.fillStyle = '#5D4037'; 
+        ctx.fillText(item.char, 0, 0);
       }
       ctx.restore();
     });
+
+    // Draw Basket Front Lip (to make items look like they fall inside)
+    ctx.fillStyle = '#A1887F';
+    ctx.beginPath();
+    ctx.ellipse(cx, cy + 10, currentCatcherWidth/2, 8, 0, 0, Math.PI, 2*Math.PI); // Semi-circle? No, just thin rim
+    // Actually just redraw the top rim for depth if needed, but simple is ok.
+    // Let's draw a rim
+    ctx.strokeStyle = '#4E342E';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.ellipse(cx, cy + 10, currentCatcherWidth/2, 15, 0, 0, Math.PI * 2);
+    ctx.stroke();
 
     // Particles
     state.particles.forEach(p => {
@@ -235,7 +309,7 @@ const CatchGame = ({ config, onComplete, onAddScore }) => {
     ctx.font = "bold 24px Arial";
     ctx.fillStyle = "#333";
     ctx.textAlign = "left";
-    ctx.fillText(`スコア: ${score} / 100`, 20, 40);
+    ctx.fillText(`スコア: ${state.score} / 300`, 20, 40);
     
     if (state.combo > 1) {
       ctx.fillStyle = "#FF9F43";
@@ -249,7 +323,8 @@ const CatchGame = ({ config, onComplete, onAddScore }) => {
     const rect = canvas.getBoundingClientRect();
     const relativeX = e.clientX - rect.left;
     const canvasX = (relativeX / rect.width) * CANVAS_WIDTH;
-    stateRef.current.catcherX = Math.max(CATCHER_WIDTH/2, Math.min(CANVAS_WIDTH - CATCHER_WIDTH/2, canvasX));
+    const currentWidth = getCatcherWidth(stateRef.current.score);
+    stateRef.current.catcherX = Math.max(currentWidth/2, Math.min(CANVAS_WIDTH - currentWidth/2, canvasX));
   };
 
   const handleTouchMove = (e) => {
@@ -259,7 +334,8 @@ const CatchGame = ({ config, onComplete, onAddScore }) => {
     const rect = canvas.getBoundingClientRect();
     const relativeX = e.touches[0].clientX - rect.left;
     const canvasX = (relativeX / rect.width) * CANVAS_WIDTH;
-    stateRef.current.catcherX = Math.max(CATCHER_WIDTH/2, Math.min(CANVAS_WIDTH - CATCHER_WIDTH/2, canvasX));
+    const currentWidth = getCatcherWidth(stateRef.current.score);
+    stateRef.current.catcherX = Math.max(currentWidth/2, Math.min(CANVAS_WIDTH - currentWidth/2, canvasX));
   };
 
   useEffect(() => {
@@ -280,7 +356,7 @@ const CatchGame = ({ config, onComplete, onAddScore }) => {
       requestRef.current = requestAnimationFrame(update);
     }
     return () => cancelAnimationFrame(requestRef.current);
-  }, [gameState, score]); // Score dep needed for win check? Actually update closes over stateRef, but setGameState triggers re-render
+  }, [gameState]); // Removed score dependency to prevent loop restart
 
   return (
     <div className="game-area catch-game" style={{ background: '#E0F7FA', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
