@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { GRADE1_KANJI, SIMILAR_PAIRS } from '../../data/kanjiData';
-import { playCorrectSound, playWrongSound, playEffect } from '../../utils/soundPlayer';
+import { playOK2Sound, playNGSound, playHappy1Sound } from '../../utils/soundPlayer';
 
 const SnakeGame = ({ config, onComplete, onAddScore }) => {
   const canvasRef = useRef(null);
@@ -109,7 +109,7 @@ const SnakeGame = ({ config, onComplete, onAddScore }) => {
 
         // Wall Collision
         if (head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS) {
-            playWrongSound();
+            playNGSound();
             setGameState('lost');
             return;
         }
@@ -117,7 +117,7 @@ const SnakeGame = ({ config, onComplete, onAddScore }) => {
         // Self Collision
         for (let segment of state.snake) {
             if (head.x === segment.x && head.y === segment.y) {
-                playWrongSound();
+                playNGSound();
                 setGameState('lost');
                 return;
             }
@@ -130,7 +130,7 @@ const SnakeGame = ({ config, onComplete, onAddScore }) => {
             if (item.x === head.x && item.y === head.y) {
                 if (item.type === 'target') {
                     ate = true;
-                    playCorrectSound();
+                    playOK2Sound();
                     onAddScore(50);
                     state.score += 50;
                     setScore(state.score);
@@ -144,7 +144,7 @@ const SnakeGame = ({ config, onComplete, onAddScore }) => {
         state.items = newItems;
 
         if (hitBad) {
-            playWrongSound();
+            playNGSound();
             setGameState('lost');
             return;
         }
@@ -173,6 +173,7 @@ const SnakeGame = ({ config, onComplete, onAddScore }) => {
 
         // Win condition
         if (state.score >= 500) {
+             playHappy1Sound();
              setGameState('won');
              onComplete(true);
              return;

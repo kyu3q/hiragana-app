@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './ShiritoriGame.css';
 import { shiritoriData as hiraganaData } from '../../data/shiritoriHiragana';
 import { shiritoriData as katakanaData } from '../../data/shiritoriKatakana';
-
-const CLAP_SE_URL = 'https://cdn.pixabay.com/audio/2022/07/26/audio_124bfae7e2.mp3'; // 拍手SE
+import { playHappy1Sound, playOK1Sound } from '../../utils/soundPlayer';
 
 const ShiritoriGame = ({ onClose, type }) => {
   const [currentWord, setCurrentWord] = useState('');
@@ -101,8 +100,7 @@ const ShiritoriGame = ({ onClose, type }) => {
   // 勝者発表時に拍手SE再生
   useEffect(() => {
     if (isResult && winner) {
-      const audio = new window.Audio(CLAP_SE_URL);
-      audio.play();
+      playHappy1Sound();
     }
   }, [isResult, winner]);
 
@@ -250,6 +248,7 @@ const ShiritoriGame = ({ onClose, type }) => {
     }
 
     // 単語を履歴に追加
+    playOK1Sound();
     setHistory([...history, choice]);
     setCurrentWord(choice);
     generateChoices(choice);
@@ -394,4 +393,4 @@ const ShiritoriGame = ({ onClose, type }) => {
   );
 };
 
-export default ShiritoriGame; 
+export default ShiritoriGame;

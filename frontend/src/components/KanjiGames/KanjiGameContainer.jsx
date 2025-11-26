@@ -4,6 +4,7 @@ import SnakeGame from './SnakeGame';
 import CatchGame from './CatchGame';
 import BlockGame from './BlockGame';
 import JumpGame from './JumpGame';
+import { playFinishSound } from '../../utils/soundPlayer';
 
 const KanjiGameContainer = ({ kanji, onClose }) => {
   const [score, setScore] = useState(0);
@@ -13,9 +14,7 @@ const KanjiGameContainer = ({ kanji, onClose }) => {
     if (success) {
       setCompleted(true);
       // Play success sound
-      const audio = new Audio('/music/success.mp3');
-      audio.volume = 0.5;
-      audio.play().catch(e => console.log('Audio play failed', e));
+      playFinishSound();
     }
   };
 

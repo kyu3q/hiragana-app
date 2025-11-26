@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { playJumpSound, playOK1Sound, playNGSound, playHappy1Sound } from '../../utils/soundPlayer';
 
 const JumpGame = ({ config, onComplete, onAddScore }) => {
   const canvasRef = useRef(null);
@@ -132,6 +133,7 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
     if (player.grounded) {
       player.vy = JUMP_STRENGTH;
       player.grounded = false;
+      playJumpSound();
     }
   };
 
@@ -183,6 +185,7 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
             if (state.invincible <= 0) {
                 state.lives--;
                 state.invincible = 60; // 1 sec invincibility
+                playNGSound();
                 if (state.lives <= 0) setGameState('lost');
             }
         } else {
@@ -220,7 +223,8 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
           enemy.active = false;
           player.vy = JUMP_STRENGTH * 0.7; // Bounce higher
           onAddScore(100);
-          state.score += 100; 
+          state.score += 100;
+          playHappy1Sound();
           // Spawn particles
           for(let i=0; i<8; i++) {
             state.particles.push({
@@ -235,6 +239,7 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
           if (state.invincible <= 0) {
               state.lives--;
               state.invincible = 60;
+              playNGSound();
               if (state.lives <= 0) setGameState('lost');
           }
         }
@@ -248,6 +253,7 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
             coin.active = false;
             onAddScore(50);
             state.score += 50;
+            playOK1Sound();
             // Coin sparkle
             for(let i=0; i<4; i++) {
                 state.particles.push({

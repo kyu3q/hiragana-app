@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import './WritingPractice.css';
 import { characterService } from '../../api/characterService';
 import { characterShapes, strokeTypes, evaluationCriteria } from '../../data/characterShapes';
+import { playHappy1Sound, playNGSound } from '../../utils/soundPlayer';
 
 const WritingPractice = ({ character, onComplete, initialStrokes, type = 'HIRAGANA' }) => {
   const canvasRef = useRef(null);
@@ -294,13 +295,11 @@ const WritingPractice = ({ character, onComplete, initialStrokes, type = 'HIRAGA
           setHasSoundPlayed(true);
           if (score >= evaluationCriteria.CELEBRATION_THRESHOLD) {
             setTimeout(() => {
-              const audio = new Audio('/music/success.mp3');
-              audio.play();
+              playHappy1Sound();
             }, 500);
           }else{
             setTimeout(() => {
-              const audio = new Audio('/music/failure.mp3');
-              audio.play();
+              playNGSound();
             }, 500);
           }
         }

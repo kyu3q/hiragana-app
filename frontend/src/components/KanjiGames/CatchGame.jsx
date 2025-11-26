@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { GRADE1_KANJI, SIMILAR_PAIRS } from '../../data/kanjiData';
+import { playOK1Sound, playNGSound, playHappy2Sound, playCollisionSound } from '../../utils/soundPlayer';
 
 const SIZES = [30, 45, 60]; // Small, Medium, Large
 
@@ -154,12 +155,14 @@ const CatchGame = ({ config, onComplete, onAddScore }) => {
           setScore(state.score); // Sync React state
           state.combo++;
           createParticles(item.x, item.y, '#FF9F43', 8);
+          playOK1Sound();
         } else if (item.type === 'bonus') {
           const points = 30;
           onAddScore(points);
           state.score += points;
           setScore(state.score);
           createParticles(item.x, item.y, '#FFD700', 15);
+          playHappy2Sound();
         } else {
           // Bad item
           const points = -10;
@@ -168,6 +171,7 @@ const CatchGame = ({ config, onComplete, onAddScore }) => {
           setScore(state.score);
           state.combo = 0;
           createParticles(item.x, item.y, '#555', 5);
+          playNGSound();
         }
         return false; // Remove item
       }
@@ -176,6 +180,7 @@ const CatchGame = ({ config, onComplete, onAddScore }) => {
       if (item.y > CANVAS_HEIGHT) {
         if (item.type === 'target') {
           state.combo = 0; // Combo break on miss
+          playCollisionSound();
         }
         return false;
       }

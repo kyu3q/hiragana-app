@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './MemoryGame.css';
+import { playMemoryOKSound, playMemoryNGSound, playHappy1Sound } from '../../utils/soundPlayer';
 
 const MemoryGame = ({ onClose, type }) => {
   const [cards, setCards] = useState([]);
@@ -13,14 +14,6 @@ const MemoryGame = ({ onClose, type }) => {
   const [showResult, setShowResult] = useState(false);
   const [winner, setWinner] = useState(null);
   const [matchedColors, setMatchedColors] = useState({}); // マッチしたカードの色を保持
-
-  const SUCCESS_SOUND = '/music/success.mp3';
-  const FAILURE_SOUND = '/music/failure.mp3';
-
-  const playSound = (url) => {
-    const audio = new window.Audio(url);
-    audio.play();
-  };
 
   // ひらがな文字データの定義
   const hiraganaMainTable = [
@@ -153,7 +146,7 @@ const MemoryGame = ({ onClose, type }) => {
       const [first, second] = newFlippedCards;
       
       if (first.value === second.value) {
-        playSound(SUCCESS_SOUND);
+        playMemoryOKSound();
         const matchedCards = updatedCards.map(card => 
           card.id === first.id || card.id === second.id ? { ...card, isMatched: true } : card
         );
@@ -181,11 +174,12 @@ const MemoryGame = ({ onClose, type }) => {
             } else {
               setWinner('draw');
             }
+            playHappy1Sound();
             setShowResult(true);
           }
         }
       } else {
-        playSound(FAILURE_SOUND);
+        playMemoryNGSound();
         setTimeout(() => {
           const resetCards = updatedCards.map(card => 
             card.id === first.id || card.id === second.id ? { ...card, isFlipped: false } : card
@@ -303,4 +297,4 @@ const MemoryGame = ({ onClose, type }) => {
   );
 };
 
-export default MemoryGame; 
+export default MemoryGame;

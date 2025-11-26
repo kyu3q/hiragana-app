@@ -54,104 +54,106 @@ export const playSound = (character, forcePlay = false) => {
   }
 };
 
-// 効果音を再生する関数（代替バージョン）
-export const playEffect = (effectName) => {
-  try {
-    // 簡易的な効果音をブラウザのAudio Context APIで生成
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
-    
-    // 効果音の種類によって音を変える
-    switch (effectName) {
-      case 'click':
-        oscillator.type = 'sine';
-        oscillator.frequency.value = 800;
-        gainNode.gain.value = 0.1;
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        oscillator.start();
-        setTimeout(() => oscillator.stop(), 100);
-        break;
-      case 'correct':
-        oscillator.type = 'sine';
-        oscillator.frequency.value = 1200;
-        gainNode.gain.value = 0.1;
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        oscillator.start();
-        setTimeout(() => {
-          oscillator.frequency.value = 1600;
-          setTimeout(() => oscillator.stop(), 150);
-        }, 150);
-        break;
-      case 'cheer':
-      case 'star':
-        // 複数の音を重ねる
-        const osc1 = audioContext.createOscillator();
-        const osc2 = audioContext.createOscillator();
-        osc1.type = 'triangle';
-        osc2.type = 'sine';
-        osc1.frequency.value = 800;
-        osc2.frequency.value = 1200;
-        osc1.connect(gainNode);
-        osc2.connect(gainNode);
-        gainNode.gain.value = 0.1;
-        gainNode.connect(audioContext.destination);
-        osc1.start();
-        osc2.start();
-        setTimeout(() => {
-          osc1.frequency.value = 1000;
-          osc2.frequency.value = 1500;
-          setTimeout(() => {
-            osc1.stop();
-            osc2.stop();
-          }, 200);
-        }, 200);
-        break;
-      default:
-        console.log(`効果音「${effectName}」を再生します`);
+// --- MP3 Audio Functions ---
+
+const playAudioFile = (filename, volume = 0.5) => {
+    try {
+        const audio = new Audio(`/music/${filename}`);
+        audio.volume = volume;
+        audio.play().catch(e => console.error(`Failed to play ${filename}:`, e));
+    } catch (e) {
+        console.error(`Error playing ${filename}:`, e);
     }
-  } catch (error) {
-    console.error('効果音の再生に失敗しました:', error);
-  }
 };
+
+export const playOK1Sound = () => {
+    playAudioFile('OK_1.mp3');
+};
+
+export const playOK2Sound = () => {
+    playAudioFile('OK_2.mp3');
+};
+
+export const playOK3Sound = () => {
+    playAudioFile('OK_3.mp3');
+};
+
+export const playHappy1Sound = () => {
+    playAudioFile('Happy_1.mp3');
+};
+
+export const playHappy2Sound = () => {
+    playAudioFile('Happy_2.mp3');
+};
+
+export const playNGSound = () => {
+    playAudioFile('NG.mp3');
+};
+
+export const playJumpSound = () => {
+    playAudioFile('Jump.mp3', 0.4);
+};
+
+export const playCollisionSound = () => {
+    playAudioFile('Collision.mp3');
+};
+
+export const playFinishSound = () => {
+    playAudioFile('Finish.mp3');
+};
+
+export const playOtherSound = () => {
+    playAudioFile('Other.mp3');
+};
+
+// Memory Game Dedicated Sounds
+export const playMemoryOKSound = () => {
+    playAudioFile('OK_Memory.mp3');
+};
+
+export const playMemoryNGSound = () => {
+    playAudioFile('NG_Memory.mp3');
+};
+
+// --- Legacy Wrapper Functions (Updated to use MP3s) ---
 
 // 正解時の音声と効果音を再生
 export const playCorrectSound = () => {
-  playEffect('correct');
+  playOK1Sound();
 };
 
 // 達成時の音声を再生
 export const playCheerSound = () => {
-  playEffect('cheer');
+  playHappy1Sound();
 };
 
 // 星獲得時の音声を再生
 export const playStarSound = () => {
-  playEffect('star');
+  // Use Other or Happy for Star/Bonus
+  playHappy2Sound();
 };
 
 // 不正解時の音声を再生
 export const playWrongSound = () => {
-  try {
-    // 簡易的な効果音をブラウザのAudio Context APIで生成
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
-    
-    oscillator.type = 'sine';
-    oscillator.frequency.value = 300;
-    gainNode.gain.value = 0.1;
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
-    oscillator.start();
-    
-    setTimeout(() => {
-      oscillator.frequency.value = 200;
-      setTimeout(() => oscillator.stop(), 200);
-    }, 200);
-  } catch (error) {
-    console.error('効果音の再生に失敗しました:', error);
+  playNGSound();
+};
+
+// 効果音を再生する関数（代替バージョン - Backward Compatibility）
+export const playEffect = (effectName) => {
+  switch (effectName) {
+      case 'click':
+          playOtherSound();
+          break;
+      case 'correct':
+          playCorrectSound();
+          break;
+      case 'cheer':
+          playCheerSound();
+          break;
+      case 'star':
+          playStarSound();
+          break;
+      default:
+          console.log(`Effect ${effectName} requested`);
   }
-}; 
+};

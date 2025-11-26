@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { playOK1Sound, playNGSound } from '../../utils/soundPlayer';
 
 const TraceGame = ({ config, onComplete, onAddScore }) => {
   const [isPlaying, setIsPlaying] = useState(false);
@@ -20,6 +21,7 @@ const TraceGame = ({ config, onComplete, onAddScore }) => {
       setActivePoint(index);
       setBoatPos({ x: points[index][0], y: points[index][1] });
       onAddScore(20);
+      playOK1Sound();
       
       if (index === points.length - 1) {
         onComplete(true);
@@ -28,6 +30,7 @@ const TraceGame = ({ config, onComplete, onAddScore }) => {
       // Current point, do nothing
     } else {
       // Wrong point
+      playNGSound();
       // onAddScore(-5);
     }
   };

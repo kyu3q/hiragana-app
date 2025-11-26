@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { playOK1Sound, playNGSound, playCollisionSound, playHappy1Sound } from '../../utils/soundPlayer';
 
 const BlockGame = ({ config, onComplete, onAddScore }) => {
   const canvasRef = useRef(null);
@@ -96,10 +97,12 @@ const BlockGame = ({ config, onComplete, onAddScore }) => {
     // Wall Collision (Left/Right)
     if (state.ball.x + state.ball.dx > width - BALL_RADIUS || state.ball.x + state.ball.dx < BALL_RADIUS) {
       state.ball.dx = -state.ball.dx;
+      playCollisionSound();
     }
     // Ceiling Collision
     if (state.ball.y + state.ball.dy < BALL_RADIUS) {
       state.ball.dy = -state.ball.dy;
+      playCollisionSound();
     } 
     
     // Paddle Collision & Floor Logic
@@ -110,6 +113,7 @@ const BlockGame = ({ config, onComplete, onAddScore }) => {
        if (state.ball.x + BALL_RADIUS > state.paddleX && state.ball.x - BALL_RADIUS < state.paddleX + PADDLE_WIDTH) {
          state.ball.dy = -Math.abs(state.ball.dy); // Ensure it bounces UP
          state.ball.y = height - PADDLE_HEIGHT - BALL_RADIUS - 1; // Prevent sticking
+         playCollisionSound();
          
          // Add some English/Control based on where it hit the paddle
          const hitPoint = state.ball.x - (state.paddleX + PADDLE_WIDTH / 2);
@@ -132,6 +136,7 @@ const BlockGame = ({ config, onComplete, onAddScore }) => {
     // Floor Collision (Miss)
     if (state.ball.y + BALL_RADIUS > height) {
       state.lives -= 1;
+      playNGSound();
       if (state.lives <= 0) {
         setGameState('lost');
       } else {
@@ -154,11 +159,13 @@ const BlockGame = ({ config, onComplete, onAddScore }) => {
           b.status = 0;
           onAddScore(10);
           state.score += 10;
+          playOK1Sound();
         }
       }
     });
 
     if (activeBricks === 0) {
+      playHappy1Sound();
       setGameState('won');
       onComplete(true);
       return;
