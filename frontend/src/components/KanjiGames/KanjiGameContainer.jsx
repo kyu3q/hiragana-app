@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import './KanjiGames.css';
-import TraceGame from './TraceGame';
+import SnakeGame from './SnakeGame';
 import CatchGame from './CatchGame';
 import BlockGame from './BlockGame';
 import JumpGame from './JumpGame';
@@ -27,8 +27,8 @@ const KanjiGameContainer = ({ kanji, onClose }) => {
     const { gameType, gameConfig } = kanji;
     
     switch (gameType) {
-      case 'trace':
-        return <TraceGame config={gameConfig} onComplete={handleComplete} onAddScore={handleAddScore} />;
+      case 'snake':
+        return <SnakeGame config={gameConfig} onComplete={handleComplete} onAddScore={handleAddScore} />;
       case 'catch':
         return <CatchGame config={gameConfig} onComplete={handleComplete} onAddScore={handleAddScore} />;
       case 'block':
