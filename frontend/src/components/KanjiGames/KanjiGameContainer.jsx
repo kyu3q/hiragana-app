@@ -4,6 +4,7 @@ import SnakeGame from './SnakeGame';
 import CatchGame from './CatchGame';
 import BlockGame from './BlockGame';
 import JumpGame from './JumpGame';
+import AirplaneGame from './AirplaneGame';
 import { playFinishSound } from '../../utils/soundPlayer';
 
 const KanjiGameContainer = ({ kanji, onClose }) => {
@@ -34,6 +35,8 @@ const KanjiGameContainer = ({ kanji, onClose }) => {
         return <BlockGame config={gameConfig} onComplete={handleComplete} onAddScore={handleAddScore} />;
       case 'jump':
         return <JumpGame config={gameConfig} onComplete={handleComplete} onAddScore={handleAddScore} />;
+      case 'airplane':
+        return <AirplaneGame config={gameConfig} onComplete={handleComplete} onAddScore={handleAddScore} />;
       default:
         return (
           <div className="game-instruction-overlay">
