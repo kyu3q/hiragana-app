@@ -8,20 +8,18 @@ const randomPick = (arr, count = 1) => {
   return shuffled.slice(0, Math.min(count, arr.length));
 };
 
-const KanjiCard = ({ item, themeColor, onGame, onSelect }) => (
-  <div className="kanji-card" style={{ borderColor: themeColor }}>
+const KanjiCard = ({ item, themeColor, onClick }) => (
+  <div 
+    className="kanji-card clickable" 
+    style={{ borderColor: themeColor, cursor: 'pointer' }}
+    onClick={() => onClick(item)}
+  >
     <div className="kanji-top">
       <span className="kanji-char" style={{ color: themeColor }}>{item.char}</span>
       <div className="badge" style={{ background: themeColor }}>{item.strokes}画</div>
     </div>
     <p className="reading">訓: {item.kunyomi || '—'} / 音: {item.onyomi || '—'}</p>
     <p className="meaning">{item.meaning}</p>
-    <div className="card-actions">
-      <button className="secondary" onClick={() => onSelect(item)}>くわしく</button>
-      <button className="primary" onClick={() => onGame(item)}>
-        {item.gameType ? '🎮 ゲーム' : 'ミニゲーム'}
-      </button>
-    </div>
   </div>
 );
 
@@ -30,6 +28,7 @@ const KanjiDisplay = () => {
   const [selected, setSelected] = useState(null);
   const [gameTarget, setGameTarget] = useState(null);
   const [activeGameMode, setActiveGameMode] = useState(false);
+  const [displayMode, setDisplayMode] = useState('detail'); // 'detail' or 'game'
   
   const [quizQuestion, setQuizQuestion] = useState(null);
   const [quizOptions, setQuizOptions] = useState([]);
@@ -68,11 +67,6 @@ const KanjiDisplay = () => {
     }
   };
 
-  const featured = useMemo(
-    () => (data ? randomPick(data.items, 1)[0] : null),
-    [data]
-  );
-
   // Fallback Mini Game
   const makeMiniGame = (kanji) => {
     if (!data) return [];
@@ -98,6 +92,14 @@ const KanjiDisplay = () => {
     }
   };
 
+  const handleCardClick = (item) => {
+    if (displayMode === 'game') {
+      handleGameStart(item);
+    } else {
+      setSelected(item);
+    }
+  };
+
   const closeGame = () => {
     setGameTarget(null);
     setActiveGameMode(false);
@@ -112,35 +114,36 @@ const KanjiDisplay = () => {
   }
 
   return (
-    <div className="kanji-page">
-      <div className="kanji-hero" style={{ background: `linear-gradient(135deg, ${data?.themeColor || '#fff'} 0%, #ffffff 80%)` }}>
-        <div>
-          <p className="pill">漢字アドベンチャー</p>
-          <h1>学年べつに、楽しく漢字をマスター！</h1>
-          <p className="sub">ストーリー・ミニゲーム・クイズで、今日の漢字をものにしよう。</p>
-          <div className="grade-tabs">
-            {kanjiByGrade.map((g) => (
-              <button
-                key={g.grade}
-                className={`grade-tab ${grade === g.grade ? 'active' : ''}`}
-                onClick={() => setGrade(g.grade)}
-              >
-                {g.grade}年
-              </button>
-            ))}
-          </div>
-        </div>
-        {featured && (
-          <div className="featured-card" style={{ borderColor: data.themeColor }}>
-            <p className="pill light">今日のおすすめ</p>
-            <div className="featured-char" style={{ color: data.themeColor }}>{featured.char}</div>
-            <p className="featured-meaning">{featured.meaning}</p>
-            <p className="featured-hint">{featured.story}</p>
-            <button className="primary" onClick={() => handleGameStart(featured)}>
-              冒険に出る (ゲーム)
+    <div className="kanji-page" style={{ '--theme-color': data?.themeColor || '#111827' }}>
+      <div className="kanji-hero" style={{ background: `linear-gradient(135deg, ${data?.themeColor}22 0%, #ffffff 80%)` }}>
+        <div className="header-row">
+          <h1 className="title kanji-stylish-title">漢字であそぼう！</h1>
+          <div className="mode-toggle-inline">
+            <button 
+              className={`kanji-mode-btn ${displayMode === 'detail' ? 'active' : ''}`}
+              onClick={() => setDisplayMode('detail')}
+            >
+              くわしく
+            </button>
+            <button 
+              className={`kanji-mode-btn ${displayMode === 'game' ? 'active' : ''}`}
+              onClick={() => setDisplayMode('game')}
+            >
+              ゲーム
             </button>
           </div>
-        )}
+        </div>
+        <div className="grade-tabs">
+          {kanjiByGrade.map((g) => (
+            <button
+              key={g.grade}
+              className={`grade-tab ${grade === g.grade ? 'active' : ''}`}
+              onClick={() => setGrade(g.grade)}
+            >
+              {g.grade}年
+            </button>
+          ))}
+        </div>
       </div>
 
       <section className="kanji-grid-wrap">
@@ -154,8 +157,7 @@ const KanjiDisplay = () => {
               key={item.char}
               item={item}
               themeColor={data.themeColor}
-              onSelect={setSelected}
-              onGame={handleGameStart}
+              onClick={handleCardClick}
             />
           ))}
         </div>
