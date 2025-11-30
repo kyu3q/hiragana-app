@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { playJumpSound, playOK1Sound, playNGSound, playHappy1Sound } from '../../utils/soundPlayer';
+import { GRADE1_KANJI, SIMILAR_PAIRS } from '../../data/kanjiData';
+import { playJumpSound, playOK1Sound, playNGSound, playHappy1Sound, playHappy2Sound } from '../../utils/soundPlayer';
 
 const JumpGame = ({ config, onComplete, onAddScore }) => {
   const canvasRef = useRef(null);
   const [gameState, setGameState] = useState('start'); // start, playing, won, lost
+  const [score, setScore] = useState(0);
+  const [gameOverReason, setGameOverReason] = useState('');
   const requestRef = useRef();
 
   // Constants
@@ -11,28 +14,27 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
   const CANVAS_HEIGHT = 600;
   const GRAVITY = 0.6;
   const JUMP_STRENGTH = -12;
-  const MOVE_SPEED = 3.5; // Reduced speed
+  const MOVE_SPEED = 4.0;
   const GROUND_Y = 500;
   const PLAYER_SIZE = 40;
 
   const stateRef = useRef({
-    player: { x: 100, y: GROUND_Y - PLAYER_SIZE, vy: 0, grounded: true },
+    player: { x: 100, y: GROUND_Y - PLAYER_SIZE, vy: 0, grounded: true, jumpCount: 0 },
     cameraX: 0,
     score: 0,
     lives: 3,
     invincible: 0,
+    items: [], // 漢字アイテム
     enemies: [],
     obstacles: [],
-    coins: [],
     clouds: [],
     particles: []
   });
 
   const initGame = () => {
-    // Level Generation
+    const items = [];
     const enemies = [];
     const obstacles = [];
-    const coins = [];
     const clouds = [];
     
     // Background Clouds
@@ -45,63 +47,97 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
         });
     }
 
-    // Simple Level Pattern
-    let currentX = 800;
-    const levelLength = 5000; 
+    // Level Generation
+    let currentX = 600;
+    const levelLength = 6000; 
 
     while (currentX < levelLength) {
       const type = Math.random();
-      // Increased spacing for easier gameplay
-      if (type < 0.25) {
-        // Enemy
-        enemies.push({
-          x: currentX,
-          y: GROUND_Y - 40,
-          w: 40,
-          h: 40,
-          active: true,
-          type: 'enemy'
+      
+      // 1. 漢字アイテム配置 (正しい漢字 or 間違った漢字)
+      const isTarget = Math.random() < 0.4; // 40% 正解
+      let char = config.targetChar;
+      
+      if (!isTarget) {
+          // 間違った漢字を選択
+          let distractor = '';
+          if (SIMILAR_PAIRS[config.targetChar]) {
+              const similars = SIMILAR_PAIRS[config.targetChar];
+              distractor = similars[Math.floor(Math.random() * similars.length)];
+          }
+          if (!distractor) {
+              distractor = GRADE1_KANJI[Math.floor(Math.random() * GRADE1_KANJI.length)];
+              if (distractor === config.targetChar) distractor = 'Ｘ';
+          }
+          char = distractor;
+      }
+
+      // 配置パターン
+      if (type < 0.3) {
+        // 空中にアイテム配置
+        items.push({
+            x: currentX,
+            y: GROUND_Y - 120 - Math.random() * 100,
+            w: 40,
+            h: 40,
+            char: char,
+            type: isTarget ? 'target' : 'bad',
+            active: true
         });
-        if (Math.random() > 0.5) {
-            coins.push({ x: currentX, y: GROUND_Y - 150, w: 30, h: 30, active: true });
-        }
-        currentX += 400;
+        currentX += 300;
       } else if (type < 0.5) {
-        // Block (Platform)
-        obstacles.push({
-          x: currentX,
-          y: GROUND_Y - 60,
-          w: 60,
-          h: 60,
-          type: 'block'
+        // 敵配置
+        enemies.push({
+            x: currentX,
+            y: GROUND_Y - 40,
+            w: 40,
+            h: 40,
+            active: true,
+            type: 'slime'
         });
-        coins.push({ x: currentX + 15, y: GROUND_Y - 100, w: 30, h: 30, active: true });
-        currentX += 500;
+        // 敵を飛び越えた先にアイテム
+        items.push({
+            x: currentX + 50,
+            y: GROUND_Y - 150,
+            w: 40,
+            h: 40,
+            char: char,
+            type: isTarget ? 'target' : 'bad',
+            active: true
+        });
+        currentX += 400;
       } else if (type < 0.7) {
-        // Spike (Damage)
+        // ブロックとアイテム
         obstacles.push({
-          x: currentX,
-          y: GROUND_Y - 40,
-          w: 40,
-          h: 40,
-          type: 'spike'
+            x: currentX,
+            y: GROUND_Y - 80,
+            w: 60,
+            h: 80,
+            type: 'block'
+        });
+        items.push({
+            x: currentX + 10,
+            y: GROUND_Y - 130,
+            w: 40,
+            h: 40,
+            char: char,
+            type: isTarget ? 'target' : 'bad',
+            active: true
         });
         currentX += 400;
       } else if (type < 0.85) {
-        // Wall (Blocking, must jump)
-        obstacles.push({
-          x: currentX,
-          y: GROUND_Y - 100,
-          w: 40,
-          h: 100,
-          type: 'wall'
+         // トゲ
+         obstacles.push({
+            x: currentX,
+            y: GROUND_Y - 40,
+            w: 40,
+            h: 40,
+            type: 'spike'
         });
-        currentX += 400;
+        currentX += 350;
       } else {
-        // Gap / Coin trail
-        coins.push({ x: currentX, y: GROUND_Y - 80, w: 30, h: 30, active: true });
-        coins.push({ x: currentX + 50, y: GROUND_Y - 80, w: 30, h: 30, active: true });
-        currentX += 300;
+         // 何もない区間
+         currentX += 200;
       }
     }
 
@@ -115,24 +151,40 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
     });
 
     stateRef.current = {
-      player: { x: 100, y: GROUND_Y - PLAYER_SIZE, vy: 0, grounded: true },
+      player: { x: 100, y: GROUND_Y - PLAYER_SIZE, vy: 0, grounded: true, jumpCount: 0 },
       cameraX: 0,
       score: 0,
       lives: 3,
       invincible: 0,
+      items: items,
       enemies: enemies,
       obstacles: obstacles,
-      coins: coins,
       clouds: clouds,
       particles: []
     };
+    setScore(0);
+    setGameOverReason('');
   };
 
   const jump = () => {
     const { player } = stateRef.current;
-    if (player.grounded) {
+    // 2段ジャンプまで許可
+    if (player.grounded || player.jumpCount < 2) {
       player.vy = JUMP_STRENGTH;
       player.grounded = false;
+      player.jumpCount++;
+      
+      // パーティクル発生
+      for(let i=0; i<5; i++) {
+        stateRef.current.particles.push({
+            x: player.x + PLAYER_SIZE/2, 
+            y: player.y + PLAYER_SIZE,
+            vx: (Math.random() - 0.5) * 5,
+            vy: Math.random() * 2,
+            color: '#fff',
+            life: 10
+        });
+      }
       playJumpSound();
     }
   };
@@ -161,14 +213,15 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
       player.y = GROUND_Y - PLAYER_SIZE;
       player.vy = 0;
       player.grounded = true;
+      player.jumpCount = 0; // ジャンプ回数リセット
     }
 
     // 3. Interactions
     // Check Goal
     const goal = state.obstacles.find(o => o.type === 'goal');
     if (goal) {
-        // Win if passed or touching
         if (player.x > goal.x || rectIntersect(player.x, player.y, PLAYER_SIZE, PLAYER_SIZE, goal.x, goal.y, goal.w, goal.h)) {
+            playHappy2Sound();
             setGameState('won');
             onComplete(true);
             return;
@@ -184,24 +237,25 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
             // Spike: Damage
             if (state.invincible <= 0) {
                 state.lives--;
-                state.invincible = 60; // 1 sec invincibility
+                state.invincible = 60;
                 playNGSound();
-                if (state.lives <= 0) setGameState('lost');
+                if (state.lives <= 0) {
+                    setGameOverReason('トゲに当たっちゃった！');
+                    setGameState('lost');
+                }
             }
         } else {
-            // Block/Wall: Solid
-            // Check collision direction
-            // If falling onto it
-            if (player.y + PLAYER_SIZE - player.vy <= obs.y) {
+            // Block: Solid
+            // 上から乗る判定
+            if (player.vy >= 0 && player.y + PLAYER_SIZE - player.vy <= obs.y + 10) {
                 player.y = obs.y - PLAYER_SIZE;
                 player.vy = 0;
                 player.grounded = true;
+                player.jumpCount = 0;
             } else {
-                // Side collision -> Stop
-                intendedMove = 0;
-                // Align to wall
-                if (player.x + PLAYER_SIZE < obs.x + 10) {
-                    player.x = obs.x - PLAYER_SIZE - 1;
+                // 横からの衝突
+                if (player.x + PLAYER_SIZE <= obs.x + 10) {
+                    intendedMove = 0; // 進めない
                 }
             }
         }
@@ -211,26 +265,34 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
     // Apply movement
     player.x += intendedMove;
     state.cameraX = player.x - 200;
+    
+    // 落下判定
+    if (player.y > CANVAS_HEIGHT) {
+        setGameOverReason('落ちちゃった！');
+        setGameState('lost');
+        return;
+    }
 
     // Enemy Collision
     state.enemies.forEach(enemy => {
       if (!enemy.active) return;
       
       if (rectIntersect(player.x, player.y, PLAYER_SIZE, PLAYER_SIZE, enemy.x, enemy.y, enemy.w, enemy.h)) {
-        // Stomp check: Falling and above enemy center
-        if (player.vy > 0 && player.y + PLAYER_SIZE < enemy.y + enemy.h / 2) {
+        // 踏みつけ判定: プレイヤーが落下中かつ、敵の上半分にいる
+        if (player.vy > 0 && player.y + PLAYER_SIZE < enemy.y + enemy.h * 0.8) {
           // Kill enemy
           enemy.active = false;
-          player.vy = JUMP_STRENGTH * 0.7; // Bounce higher
-          onAddScore(100);
-          state.score += 100;
+          player.vy = JUMP_STRENGTH * 0.7; // 踏みつけジャンプ
+          onAddScore(50);
+          state.score += 50;
+          setScore(state.score);
           playHappy1Sound();
           // Spawn particles
           for(let i=0; i<8; i++) {
             state.particles.push({
               x: enemy.x + enemy.w/2, y: enemy.y + enemy.h/2, 
               vx: (Math.random() - 0.5) * 15, vy: (Math.random() - 0.5) * 15,
-              color: '#8844ff',
+              color: '#9C27B0',
               life: 30
             });
           }
@@ -240,28 +302,47 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
               state.lives--;
               state.invincible = 60;
               playNGSound();
-              if (state.lives <= 0) setGameState('lost');
+              if (state.lives <= 0) {
+                  setGameOverReason('敵に当たっちゃった！');
+                  setGameState('lost');
+              }
           }
         }
       }
     });
 
-    // Coin Collection
-    state.coins.forEach(coin => {
-        if (!coin.active) return;
-        if (rectIntersect(player.x, player.y, PLAYER_SIZE, PLAYER_SIZE, coin.x, coin.y, coin.w, coin.h)) {
-            coin.active = false;
-            onAddScore(50);
-            state.score += 50;
-            playOK1Sound();
-            // Coin sparkle
-            for(let i=0; i<4; i++) {
-                state.particles.push({
-                  x: coin.x + coin.w/2, y: coin.y + coin.h/2, 
-                  vx: (Math.random() - 0.5) * 10, vy: (Math.random() - 0.5) * 10,
-                  color: '#FFD700',
-                  life: 20
-                });
+    // Item Collection (Kanji)
+    state.items.forEach(item => {
+        if (!item.active) return;
+        if (rectIntersect(player.x, player.y, PLAYER_SIZE, PLAYER_SIZE, item.x, item.y, item.w, item.h)) {
+            item.active = false;
+            
+            if (item.type === 'target') {
+                // 正解！
+                onAddScore(100);
+                state.score += 100;
+                setScore(state.score);
+                playOK1Sound();
+                // Sparkle
+                for(let i=0; i<8; i++) {
+                    state.particles.push({
+                      x: item.x + item.w/2, y: item.y + item.h/2, 
+                      vx: (Math.random() - 0.5) * 10, vy: (Math.random() - 0.5) * 10,
+                      color: '#FFD700',
+                      life: 20
+                    });
+                }
+            } else {
+                // 不正解！
+                if (state.invincible <= 0) {
+                    state.lives--;
+                    state.invincible = 60;
+                    playNGSound();
+                    if (state.lives <= 0) {
+                        setGameOverReason('間違った漢字を取っちゃった！');
+                        setGameState('lost');
+                    }
+                }
             }
         }
     });
@@ -284,7 +365,7 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
   };
 
   const draw = (ctx, state) => {
-    // Ensure identity matrix for clearRect to prevent trails if restore failed
+    // Ensure identity matrix for clearRect
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
     
@@ -298,39 +379,28 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
     // Draw Clouds
     ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
     state.clouds.forEach(cloud => {
-        // Parallax effect: cloud moves relative to camera but slower
-        const parallaxX = cloud.x - (state.cameraX * cloud.speed); 
-        // Loop clouds if needed or just draw long enough
+        const parallaxX = cloud.x - (state.cameraX * 0.5); 
         ctx.beginPath();
-        ctx.arc(state.cameraX + parallaxX % (CANVAS_WIDTH * 2) + 100, cloud.y, cloud.size, 0, Math.PI * 2);
-        ctx.arc(state.cameraX + parallaxX % (CANVAS_WIDTH * 2) + 100 + cloud.size*0.8, cloud.y + 10, cloud.size*0.7, 0, Math.PI * 2);
+        ctx.arc(state.cameraX + parallaxX % (CANVAS_WIDTH * 3), cloud.y, cloud.size, 0, Math.PI * 2);
         ctx.fill();
     });
 
     // Draw Ground
     ctx.fillStyle = '#654321';
     ctx.fillRect(state.cameraX, GROUND_Y, CANVAS_WIDTH, CANVAS_HEIGHT - GROUND_Y);
-    // Grass Pattern
+    // Grass
     ctx.fillStyle = '#4CAF50';
     ctx.fillRect(state.cameraX, GROUND_Y, CANVAS_WIDTH, 20);
-    for(let i=0; i<CANVAS_WIDTH/20; i++) {
-        ctx.fillStyle = '#388E3C';
-        ctx.beginPath();
-        ctx.moveTo(state.cameraX + i*40, GROUND_Y);
-        ctx.lineTo(state.cameraX + i*40 + 20, GROUND_Y + 10);
-        ctx.lineTo(state.cameraX + i*40 + 40, GROUND_Y);
-        ctx.fill();
-    }
 
     // Draw Goal
     const goal = state.obstacles.find(o => o.type === 'goal');
     if (goal) {
-      ctx.fillStyle = '#ddd'; // Pole
+      ctx.fillStyle = '#ddd';
       ctx.fillRect(goal.x, goal.y, 10, 200);
-      ctx.fillStyle = '#FFD700'; // Knob
+      ctx.fillStyle = '#FFD700';
       ctx.beginPath(); ctx.arc(goal.x+5, goal.y, 10, 0, Math.PI*2); ctx.fill();
       
-      ctx.fillStyle = '#ff4757'; // Flag
+      ctx.fillStyle = '#ff4757';
       ctx.beginPath();
       ctx.moveTo(goal.x + 10, goal.y + 10);
       ctx.lineTo(goal.x + 80, goal.y + 40);
@@ -344,24 +414,13 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
 
     // Draw Obstacles
     state.obstacles.forEach(obs => {
-      if (obs.type === 'block' || obs.type === 'wall') {
-        // Block/Wall
-        ctx.fillStyle = obs.type === 'wall' ? '#795548' : '#8D6E63'; 
+      if (obs.type === 'block') {
+        ctx.fillStyle = '#8D6E63'; 
         ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
-        // Border
         ctx.strokeStyle = '#5D4037';
         ctx.lineWidth = 2;
         ctx.strokeRect(obs.x, obs.y, obs.w, obs.h);
-        if (obs.type === 'block') {
-            // Question mark dots
-            ctx.fillStyle = '#5D4037';
-            ctx.fillRect(obs.x + 10, obs.y + 10, 5, 5);
-            ctx.fillRect(obs.x + obs.w - 15, obs.y + 10, 5, 5);
-            ctx.fillRect(obs.x + 10, obs.y + obs.h - 15, 5, 5);
-            ctx.fillRect(obs.x + obs.w - 15, obs.y + obs.h - 15, 5, 5);
-        }
       } else if (obs.type === 'spike') {
-        // Spike
         ctx.fillStyle = '#D32F2F';
         ctx.beginPath();
         ctx.moveTo(obs.x, obs.y + obs.h);
@@ -371,27 +430,34 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
       }
     });
 
-    // Draw Coins
-    state.coins.forEach(coin => {
-        if (!coin.active) return;
+    // Draw Items (Kanji)
+    state.items.forEach(item => {
+        if (!item.active) return;
         const wobble = Math.sin(Date.now() / 200) * 5;
-        ctx.fillStyle = '#FFD700';
+        
+        // Bubble background
+        ctx.fillStyle = item.type === 'target' ? 'rgba(255, 255, 255, 0.9)' : 'rgba(200, 200, 200, 0.9)';
         ctx.beginPath();
-        ctx.arc(coin.x + coin.w/2, coin.y + coin.h/2 + wobble, coin.w/2, 0, Math.PI * 2);
+        ctx.arc(item.x + item.w/2, item.y + item.h/2 + wobble, item.w/2 + 2, 0, Math.PI * 2);
         ctx.fill();
-        ctx.fillStyle = '#FFF176';
-        ctx.beginPath();
-        ctx.arc(coin.x + coin.w/2, coin.y + coin.h/2 + wobble, coin.w/3, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.strokeStyle = item.type === 'target' ? '#FFD700' : '#555';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Kanji text
+        ctx.font = `bold ${item.w * 0.7}px serif`;
+        ctx.fillStyle = item.type === 'target' ? '#E65100' : '#333';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(item.char, item.x + item.w/2, item.y + item.h/2 + wobble);
     });
 
-    // Draw Enemies (Slimes)
+    // Draw Enemies
     state.enemies.forEach(enemy => {
       if (enemy.active) {
         const bounce = Math.abs(Math.sin(Date.now() / 150)) * 5;
-        ctx.fillStyle = '#9C27B0'; // Purple slime
+        ctx.fillStyle = '#9C27B0'; 
         ctx.beginPath();
-        // Slime shape (semi-circle + rectangle bottom)
         ctx.arc(enemy.x + enemy.w/2, enemy.y + enemy.h/2 + bounce, enemy.w/2, Math.PI, 0);
         ctx.rect(enemy.x, enemy.y + enemy.h/2 + bounce, enemy.w, enemy.h/2 - bounce);
         ctx.fill();
@@ -409,7 +475,7 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
     state.particles.forEach(p => {
       ctx.fillStyle = p.color || "orange";
       ctx.beginPath();
-      ctx.arc(p.x, p.y, Math.max(0, p.life/4), 0, Math.PI*2);
+      ctx.arc(p.x, p.y, Math.max(0, p.life/2), 0, Math.PI*2);
       ctx.fill();
     });
 
@@ -418,8 +484,8 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
     const py = state.player.y;
     
     // Blink if invincible
-    if (state.invincible > 0 && Math.floor(Date.now() / 100) % 2 === 0) {
-        // Skip drawing
+    if (state.invincible > 0 && Math.floor(Date.now() / 50) % 2 === 0) {
+        // Skip
     } else {
         // Body
         ctx.fillStyle = '#FF9F43';
@@ -434,10 +500,16 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
         
         ctx.strokeStyle = '#333';
         ctx.lineWidth = 4;
-        ctx.beginPath(); ctx.moveTo(px + 20, py + 35); ctx.lineTo(px + 20 + legOffset1, py + 50); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(px + 20, py + 35); ctx.lineTo(px + 20 + legOffset2, py + 50); ctx.stroke();
+        // Adjust legs based on grounded
+        if (!state.player.grounded) {
+             ctx.beginPath(); ctx.moveTo(px + 20, py + 35); ctx.lineTo(px + 10, py + 45); ctx.stroke();
+             ctx.beginPath(); ctx.moveTo(px + 20, py + 35); ctx.lineTo(px + 30, py + 50); ctx.stroke();
+        } else {
+             ctx.beginPath(); ctx.moveTo(px + 20, py + 35); ctx.lineTo(px + 20 + legOffset1, py + 50); ctx.stroke();
+             ctx.beginPath(); ctx.moveTo(px + 20, py + 35); ctx.lineTo(px + 20 + legOffset2, py + 50); ctx.stroke();
+        }
 
-        // Head band / Hat
+        // Head band
         ctx.fillStyle = '#4ECDC4';
         ctx.fillRect(px + 5, py + 5, 30, 8);
         
@@ -452,7 +524,7 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
     ctx.font = "20px Arial";
     ctx.fillStyle = "white";
     ctx.textAlign = "right";
-    ctx.fillText(`Score: ${state.score}`, CANVAS_WIDTH - 20, 40);
+    ctx.fillText(`スコア: ${state.score}`, CANVAS_WIDTH - 20, 40);
     
     // Draw Hearts
     ctx.textAlign = "left";
@@ -460,6 +532,13 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
     for(let i=0; i<state.lives; i++) hearts += "❤ ";
     ctx.fillStyle = "#ff4757";
     ctx.fillText(hearts, 20, 40);
+    
+    // Target display
+    ctx.fillStyle = "rgba(0,0,0,0.5)";
+    ctx.fillRect(CANVAS_WIDTH/2 - 60, 10, 120, 40);
+    ctx.fillStyle = "white";
+    ctx.textAlign = "center";
+    ctx.fillText(`ターゲット: ${config.targetChar}`, CANVAS_WIDTH/2, 38);
   };
 
   const handleInput = (e) => {
@@ -493,15 +572,29 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
        {gameState === 'start' && (
         <div className="game-instruction-overlay">
           <h3>{config.title || '漢字ラン'}</h3>
-          <p>{config.instruction || 'タップでジャンプ！ゴールを目指そう！'}</p>
-          <button className="start-btn" onClick={() => setGameState('playing')}>スタート！</button>
+          <p>{config.instruction || '正しい漢字を集めながらゴールを目指そう！'}</p>
+          <div className="instruction-icons" style={{display:'flex', gap:'20px', justifyContent:'center', margin:'10px 0'}}>
+             <div style={{textAlign:'center'}}>
+                <div style={{fontSize:'30px', color:'#FF9F43', fontWeight:'bold'}}>{config.targetChar}</div>
+                <small>正解</small>
+             </div>
+             <div style={{textAlign:'center'}}>
+                <div style={{fontSize:'30px', color:'#333'}}>×</div>
+                <small>ハズレ（ダメージ）</small>
+             </div>
+          </div>
+          <p style={{fontSize: '0.9em', marginTop: '10px'}}>画面タップでジャンプ（2段ジャンプ可）</p>
+          <button className="start-btn" onClick={() => {
+              initGame();
+              setGameState('playing');
+          }}>スタート！</button>
         </div>
       )}
 
       {gameState === 'lost' && (
         <div className="game-result-modal">
-          <h2>ざんねん...</h2>
-          <p>ぶつかっちゃった！</p>
+          <h2>ゲームオーバー</h2>
+          <p>{gameOverReason || '残念...'}</p>
           <button className="start-btn" onClick={() => {
             initGame();
             setGameState('playing');

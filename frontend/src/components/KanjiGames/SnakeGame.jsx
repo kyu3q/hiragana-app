@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { GRADE1_KANJI, SIMILAR_PAIRS } from '../../data/kanjiData';
-import { playOK2Sound, playNGSound, playHappy1Sound } from '../../utils/soundPlayer';
+import { playOK2Sound, playNGSound, playHappy1Sound, playHappy2Sound } from '../../utils/soundPlayer';
 
 const SnakeGame = ({ config, onComplete, onAddScore }) => {
   const canvasRef = useRef(null);
   const [gameState, setGameState] = useState('start');
   const [score, setScore] = useState(0);
+  const [gameOverReason, setGameOverReason] = useState('');
   const requestRef = useRef();
   const lastUpdateRef = useRef(0);
   const badItemTimerRef = useRef(0);
@@ -25,7 +26,9 @@ const SnakeGame = ({ config, onComplete, onAddScore }) => {
     direction: { x: 1, y: 0 },
     nextDirection: { x: 1, y: 0 },
     items: [], // { x, y, char, type }
-    score: 0
+    score: 0,
+    lives: 3,
+    flash: 0
   });
 
   const initGame = () => {
@@ -34,7 +37,9 @@ const SnakeGame = ({ config, onComplete, onAddScore }) => {
       direction: { x: 1, y: 0 },
       nextDirection: { x: 1, y: 0 },
       items: [],
-      score: 0
+      score: 0,
+      lives: 3,
+      flash: 0
     };
     badItemTimerRef.current = Date.now();
     setScore(0);
@@ -68,12 +73,19 @@ const SnakeGame = ({ config, onComplete, onAddScore }) => {
                 }
             }
         }
+        // Don't spawn on center (respawn point)
+        if (x === Math.floor(COLS/2) && y === Math.floor(ROWS/2)) valid = false;
+
         if (valid) break;
     }
 
     if (valid) {
         let char = config.targetChar;
-        if (type === 'bad') {
+        // Separate Heart logic to avoid replacing target
+        if (type === 'heart') {
+            char = '❤';
+        }
+        else if (type === 'bad') {
             // Pick distractor
             const target = config.targetChar;
             let distractor = '';
@@ -92,6 +104,29 @@ const SnakeGame = ({ config, onComplete, onAddScore }) => {
     }
   };
 
+  const resetSnake = () => {
+    const cx = Math.floor(COLS/2);
+    const cy = Math.floor(ROWS/2);
+    stateRef.current.snake = [{ x: cx, y: cy }];
+    stateRef.current.direction = { x: 0, y: 0 }; 
+    stateRef.current.nextDirection = { x: 1, y: 0 }; 
+    
+    // Clear items at spawn point just in case
+    stateRef.current.items = stateRef.current.items.filter(i => i.x !== cx || i.y !== cy);
+  };
+
+  const handleLifeLost = () => {
+    stateRef.current.lives--;
+    stateRef.current.shake = 10;
+    playNGSound();
+    if (stateRef.current.lives <= 0) {
+        setGameOverReason('ライフがなくなっちゃった！');
+        setGameState('lost');
+    } else {
+        resetSnake();
+    }
+  };
+
   const update = (timestamp) => {
     if (gameState !== 'playing') return;
 
@@ -100,6 +135,7 @@ const SnakeGame = ({ config, onComplete, onAddScore }) => {
     if (timestamp - lastUpdateRef.current > currentSpeed) {
         const state = stateRef.current;
         state.direction = state.nextDirection;
+        if (state.flash > 0) state.flash--;
         
         // Move
         const head = { 
@@ -110,6 +146,7 @@ const SnakeGame = ({ config, onComplete, onAddScore }) => {
         // Wall Collision
         if (head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS) {
             playNGSound();
+            setGameOverReason('壁にぶつかっちゃった！');
             setGameState('lost');
             return;
         }
@@ -118,22 +155,28 @@ const SnakeGame = ({ config, onComplete, onAddScore }) => {
         for (let segment of state.snake) {
             if (head.x === segment.x && head.y === segment.y) {
                 playNGSound();
+                setGameOverReason('自分にぶつかっちゃった！');
                 setGameState('lost');
                 return;
             }
         }
 
         // Item Collision
-        let ate = false;
+        let ateTarget = false;
+        let ateHeart = false;
         let hitBad = false;
         const newItems = state.items.filter(item => {
             if (item.x === head.x && item.y === head.y) {
                 if (item.type === 'target') {
-                    ate = true;
+                    ateTarget = true;
                     playOK2Sound();
                     onAddScore(50);
                     state.score += 50;
                     setScore(state.score);
+                } else if (item.type === 'heart') {
+                    ateHeart = true;
+                    playHappy1Sound();
+                    state.lives = Math.min(5, state.lives + 1);
                 } else {
                     hitBad = true;
                 }
@@ -144,28 +187,45 @@ const SnakeGame = ({ config, onComplete, onAddScore }) => {
         state.items = newItems;
 
         if (hitBad) {
+            state.lives--;
+            state.flash = 12; // 画面を赤くする期間
             playNGSound();
-            setGameState('lost');
-            return;
+            if (state.lives <= 0) {
+                setGameOverReason('ライフがなくなっちゃった！');
+                setGameState('lost');
+                return;
+            }
         }
 
         state.snake.unshift(head);
-        if (!ate) {
-            state.snake.pop();
-        } else {
-            // Spawn new target
+        
+        if (ateTarget) {
+             // Spawn new target
             spawnItem('target');
-            // Maybe spawn bad?
+            // Chance for heart
+            if (Math.random() < 0.1) spawnItem('heart');
+            // Chance for bad
             if (Math.random() > 0.5) spawnItem('bad');
+        } else if (ateHeart) {
+            // If we ate heart, we didn't eat target, so pop tail unless we want to grow
+            // Usually eating bonus items doesn't grow snake? Let's say it doesn't.
+            state.snake.pop();
+            // BUT if there are NO targets left (rare case), spawn one
+            const hasTarget = state.items.some(i => i.type === 'target');
+            if (!hasTarget) spawnItem('target');
+        } else {
+            // Moved without eating
+            state.snake.pop();
         }
         
-        // Bad item rotation (disappear every 3s)
-        // Check existing bad items
+        // Ensure there is always a target
+        const hasTarget = state.items.some(i => i.type === 'target');
+        if (!hasTarget) spawnItem('target');
+
+        // Bad item rotation (disappear every 5s)
         const now = Date.now();
-        if (now - badItemTimerRef.current > 3000) {
-            // Remove all bad items and spawn new ones
-            state.items = state.items.filter(i => i.type === 'target');
-            // Spawn 1-3 bad items
+        if (now - badItemTimerRef.current > 5000) {
+            state.items = state.items.filter(i => i.type !== 'bad');
             const count = 1 + Math.floor(Math.random() * 3);
             for(let i=0; i<count; i++) spawnItem('bad');
             badItemTimerRef.current = now;
@@ -173,7 +233,7 @@ const SnakeGame = ({ config, onComplete, onAddScore }) => {
 
         // Win condition
         if (state.score >= 500) {
-             playHappy1Sound();
+             playHappy2Sound();
              setGameState('won');
              onComplete(true);
              return;
@@ -192,8 +252,10 @@ const SnakeGame = ({ config, onComplete, onAddScore }) => {
     const ctx = canvas.getContext('2d');
     const state = stateRef.current;
 
+    ctx.save();
+
     // Clear
-    ctx.fillStyle = config.bg || '#f0f9ff'; // Match BlockGame/CatchGame atmosphere
+    ctx.fillStyle = config.bg || '#f0f9ff'; 
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
     // Grid
@@ -259,13 +321,39 @@ const SnakeGame = ({ config, onComplete, onAddScore }) => {
     // Draw Items
     state.items.forEach(item => {
         ctx.font = `bold ${GRID_SIZE - 5}px serif`;
+        if (item.type === 'heart') {
+            ctx.fillStyle = '#FF5252';
+        } else if (item.type === 'bad') {
+            ctx.fillStyle = '#5D4037';
+        } else {
+            ctx.fillStyle = '#5D4037'; // 正しい漢字も同じ色にする (#FF9F43 -> #5D4037)
+        }
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        
-        // Unified color for all items to force reading
-        ctx.fillStyle = '#5D4037';
         ctx.fillText(item.char, item.x * GRID_SIZE + GRID_SIZE/2, item.y * GRID_SIZE + GRID_SIZE/2);
     });
+
+    // Damage Flash
+    if (state.flash > 0) {
+        ctx.fillStyle = `rgba(255, 0, 0, ${state.flash / 20})`;
+        ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    }
+
+    // Draw UI
+    ctx.restore();
+    
+    // Lives
+    ctx.font = "24px Arial";
+    ctx.fillStyle = "#ff4757";
+    ctx.textAlign = "left";
+    let hearts = "";
+    for(let i=0; i<state.lives; i++) hearts += "❤ ";
+    ctx.fillText(hearts, 20, 30);
+    
+    // Score
+    ctx.fillStyle = "#333";
+    ctx.fillText(`スコア: ${state.score} / 500`, 20, 60);
+
   };
 
   const handleKeyDown = (e) => {
@@ -275,11 +363,20 @@ const SnakeGame = ({ config, onComplete, onAddScore }) => {
         e.preventDefault();
     }
     
+    // Prevent reversing direction directly
     switch(e.key) {
-        case 'ArrowUp': if (state.direction.y === 0) state.nextDirection = { x: 0, y: -1 }; break;
-        case 'ArrowDown': if (state.direction.y === 0) state.nextDirection = { x: 0, y: 1 }; break;
-        case 'ArrowLeft': if (state.direction.x === 0) state.nextDirection = { x: -1, y: 0 }; break;
-        case 'ArrowRight': if (state.direction.x === 0) state.nextDirection = { x: 1, y: 0 }; break;
+        case 'ArrowUp': 
+            if (state.direction.y === 0) state.nextDirection = { x: 0, y: -1 }; 
+            break;
+        case 'ArrowDown': 
+            if (state.direction.y === 0) state.nextDirection = { x: 0, y: 1 }; 
+            break;
+        case 'ArrowLeft': 
+            if (state.direction.x === 0) state.nextDirection = { x: -1, y: 0 }; 
+            break;
+        case 'ArrowRight': 
+            if (state.direction.x === 0) state.nextDirection = { x: 1, y: 0 }; 
+            break;
     }
   };
 
@@ -342,6 +439,16 @@ const SnakeGame = ({ config, onComplete, onAddScore }) => {
         <div className="game-instruction-overlay">
           <h3>{config.title || '漢字スネーク'}</h3>
           <p>{config.instruction || '正しい漢字を食べて長くなろう！'}</p>
+          <div className="instruction-icons" style={{display:'flex', gap:'20px', justifyContent:'center', margin:'10px 0'}}>
+             <div style={{textAlign:'center'}}>
+                <div style={{fontSize:'30px', color:'#FF9F43', fontWeight:'bold'}}>{config.targetChar}</div>
+                <small>正解</small>
+             </div>
+             <div style={{textAlign:'center'}}>
+                <div style={{fontSize:'30px', color:'#5D4037'}}>×</div>
+                <small>ハズレ（ライフ-1）</small>
+             </div>
+          </div>
           <button className="start-btn" onClick={() => {
               initGame();
               setGameState('playing');
@@ -359,7 +466,7 @@ const SnakeGame = ({ config, onComplete, onAddScore }) => {
       {gameState === 'lost' && (
         <div className="game-result-modal">
           <h2>ゲームオーバー</h2>
-          <p>間違った漢字を食べたか、壁にぶつかりました。</p>
+          <p>{gameOverReason || 'ライフがなくなっちゃった！'}</p>
           <button className="start-btn" onClick={() => {
             initGame();
             setGameState('playing');
@@ -395,7 +502,6 @@ const SnakeGame = ({ config, onComplete, onAddScore }) => {
         onTouchEnd={handleTouchEnd}
       />
       
-      {/* Mobile Controls Overlay (Optional, but swipe is implemented) */}
     </div>
   );
 };

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { GRADE1_KANJI, SIMILAR_PAIRS } from '../../data/kanjiData';
-import { playOK1Sound, playNGSound, playHappy2Sound, playCollisionSound } from '../../utils/soundPlayer';
+import { playOK1Sound, playNGSound, playHappy2Sound, playCollisionSound, playHappy1Sound } from '../../utils/soundPlayer';
 
 const SIZES = [30, 45, 60]; // Small, Medium, Large
 
@@ -18,7 +18,8 @@ const CatchGame = ({ config, onComplete, onAddScore }) => {
 
   const getCatcherWidth = (currentScore) => {
     // 70% of 300 is 210
-    return currentScore >= 210 ? 110 : 80;
+    // Make it a bit wider initially for easier gameplay
+    return currentScore >= 210 ? 120 : 100;
   };
 
   const stateRef = useRef({
@@ -29,7 +30,9 @@ const CatchGame = ({ config, onComplete, onAddScore }) => {
     spawnRate: 1000, // ms
     combo: 0,
     isGameOver: false,
-    score: 0
+    score: 0,
+    lives: 3,
+    shake: 0
   });
 
   const initGame = () => {
@@ -41,7 +44,9 @@ const CatchGame = ({ config, onComplete, onAddScore }) => {
       spawnRate: 1000,
       combo: 0,
       isGameOver: false,
-      score: 0
+      score: 0,
+      lives: 3,
+      shake: 0
     };
     setScore(0);
   };
@@ -55,8 +60,15 @@ const CatchGame = ({ config, onComplete, onAddScore }) => {
       let color = '#FF9F43';
       let size = SIZES[Math.floor(Math.random() * SIZES.length)];
 
-      // Increase probability of bad/similar items to 60%
-      if (typeRand < 0.6) {
+      // 5% Chance for Heart (Life up)
+      if (typeRand < 0.05) {
+        type = 'heart';
+        char = '❤';
+        color = '#FF5252';
+        size = 40;
+      } 
+      // 55% Chance for Bad/Similar items (Difficulty)
+      else if (typeRand < 0.6) {
         type = 'bad';
         color = '#5D4037';
         // Choose distractor
@@ -103,8 +115,8 @@ const CatchGame = ({ config, onComplete, onAddScore }) => {
         rotSpeed: (Math.random() - 0.5) * 0.05
       });
       stateRef.current.lastSpawn = now;
-      // Increase difficulty
-      stateRef.current.spawnRate = Math.max(400, stateRef.current.spawnRate - 10);
+      // Increase difficulty cap
+      stateRef.current.spawnRate = Math.max(500, stateRef.current.spawnRate - 5);
     }
   };
 
@@ -121,6 +133,17 @@ const CatchGame = ({ config, onComplete, onAddScore }) => {
     }
   };
 
+  const handleLifeLost = () => {
+      stateRef.current.lives--;
+      stateRef.current.shake = 20;
+      stateRef.current.combo = 0;
+      playNGSound();
+      if (stateRef.current.lives <= 0) {
+          stateRef.current.isGameOver = true;
+          setGameState('lost');
+      }
+  };
+
   const update = () => {
     if (gameState !== 'playing' || stateRef.current.isGameOver) return;
     
@@ -128,6 +151,8 @@ const CatchGame = ({ config, onComplete, onAddScore }) => {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     const state = stateRef.current;
+
+    if (state.shake > 0) state.shake--;
 
     spawnItem();
 
@@ -163,15 +188,18 @@ const CatchGame = ({ config, onComplete, onAddScore }) => {
           setScore(state.score);
           createParticles(item.x, item.y, '#FFD700', 15);
           playHappy2Sound();
+        } else if (item.type === 'heart') {
+            state.lives = Math.min(5, state.lives + 1);
+            createParticles(item.x, item.y, '#FF5252', 10);
+            playHappy1Sound();
         } else {
           // Bad item
+          handleLifeLost();
           const points = -10;
           onAddScore(points);
           state.score = Math.max(0, state.score + points);
           setScore(state.score);
-          state.combo = 0;
           createParticles(item.x, item.y, '#555', 5);
-          playNGSound();
         }
         return false; // Remove item
       }
@@ -179,8 +207,8 @@ const CatchGame = ({ config, onComplete, onAddScore }) => {
       // Missed (Floor)
       if (item.y > CANVAS_HEIGHT) {
         if (item.type === 'target') {
-          state.combo = 0; // Combo break on miss
-          playCollisionSound();
+          handleLifeLost(); // Missing target is bad now
+          createParticles(item.x, CANVAS_HEIGHT - 10, '#333', 5);
         }
         return false;
       }
@@ -193,6 +221,7 @@ const CatchGame = ({ config, onComplete, onAddScore }) => {
       state.isGameOver = true;
       setGameState('won');
       onComplete(true);
+      playHappy2Sound();
     }
 
     // Update Particles
@@ -204,15 +233,27 @@ const CatchGame = ({ config, onComplete, onAddScore }) => {
     });
 
     draw(ctx, state);
-    // Loop continues with the same function instance
     requestRef.current = requestAnimationFrame(update);
   };
 
   const draw = (ctx, state) => {
     ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
+    // Shake Effect
+    ctx.save();
+    if (state.shake > 0) {
+        const dx = (Math.random() - 0.5) * state.shake;
+        const dy = (Math.random() - 0.5) * state.shake;
+        ctx.translate(dx, dy);
+    }
+
     // Background (Sky)
-    ctx.fillStyle = config.bg || '#E0F7FA';
+    // Gradient
+    const gradient = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
+    gradient.addColorStop(0, '#E0F7FA'); // Light Blue
+    gradient.addColorStop(1, '#B2EBF2'); // Slightly darker
+    ctx.fillStyle = config.bg || gradient;
+    if (typeof config.bg === 'string') ctx.fillStyle = config.bg;
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
     // Catcher (Basket)
@@ -227,7 +268,6 @@ const CatchGame = ({ config, onComplete, onAddScore }) => {
     ctx.fill();
 
     // Basket Body
-    // Change color if powered up
     ctx.fillStyle = currentCatcherWidth > 80 ? '#A1887F' : '#8D6E63';
     ctx.beginPath();
     ctx.moveTo(cx - currentCatcherWidth/2, cy + 10);
@@ -245,14 +285,6 @@ const CatchGame = ({ config, onComplete, onAddScore }) => {
     ctx.quadraticCurveTo(cx, cy + 35, cx + currentCatcherWidth/2 - 5, cy + 30);
     ctx.stroke();
 
-    // Handle (Front)
-    // ctx.strokeStyle = '#5D4037';
-    // ctx.lineWidth = 4;
-    // ctx.beginPath();
-    // ctx.moveTo(cx - CATCHER_WIDTH/2 + 10, cy + 10);
-    // ctx.bezierCurveTo(cx - CATCHER_WIDTH/2, cy - 40, cx + CATCHER_WIDTH/2, cy - 40, cx + CATCHER_WIDTH/2 - 10, cy + 10);
-    // ctx.stroke();
-    
     // Items
     state.items.forEach(item => {
       ctx.save();
@@ -270,9 +302,15 @@ const CatchGame = ({ config, onComplete, onAddScore }) => {
         ctx.shadowColor = "white";
         ctx.shadowBlur = 10;
         ctx.fillText(item.char, 0, 0);
+      } else if (item.type === 'heart') {
+          // Heart
+        ctx.fillStyle = '#FF5252';
+        ctx.font = `${item.size}px Arial`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(item.char, 0, 0);
       } else {
-        // Kanji (Target or Bad)
-        // No bubble, just text as requested, but maybe with outline for readability
+        // Kanji
         ctx.font = `bold ${item.size}px 'Zen Maru Gothic', sans-serif`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
@@ -283,19 +321,13 @@ const CatchGame = ({ config, onComplete, onAddScore }) => {
         ctx.strokeText(item.char, 0, 0);
         
         // Fill
-        // Unified color for target and bad items to force reading
         ctx.fillStyle = '#5D4037'; 
         ctx.fillText(item.char, 0, 0);
       }
       ctx.restore();
     });
 
-    // Draw Basket Front Lip (to make items look like they fall inside)
-    ctx.fillStyle = '#A1887F';
-    ctx.beginPath();
-    ctx.ellipse(cx, cy + 10, currentCatcherWidth/2, 8, 0, 0, Math.PI, 2*Math.PI); // Semi-circle? No, just thin rim
-    // Actually just redraw the top rim for depth if needed, but simple is ok.
-    // Let's draw a rim
+    // Draw Basket Front Lip
     ctx.strokeStyle = '#4E342E';
     ctx.lineWidth = 3;
     ctx.beginPath();
@@ -318,10 +350,18 @@ const CatchGame = ({ config, onComplete, onAddScore }) => {
     ctx.textAlign = "left";
     ctx.fillText(`スコア: ${state.score} / 300`, 20, 40);
     
+    // Lives
+    let hearts = "";
+    for(let i=0; i<state.lives; i++) hearts += "❤ ";
+    ctx.fillStyle = "#ff4757";
+    ctx.fillText(hearts, 20, 70);
+
     if (state.combo > 1) {
       ctx.fillStyle = "#FF9F43";
-      ctx.fillText(`${state.combo} コンボ!`, 20, 70);
+      ctx.fillText(`${state.combo} コンボ!`, 20, 100);
     }
+    
+    ctx.restore(); // Restore shake
   };
 
   const handleMouseMove = (e) => {
@@ -350,7 +390,6 @@ const CatchGame = ({ config, onComplete, onAddScore }) => {
     if(canvas) {
         canvas.width = CANVAS_WIDTH;
         canvas.height = CANVAS_HEIGHT;
-        // Initial draw
         const ctx = canvas.getContext('2d');
         draw(ctx, stateRef.current);
     }
@@ -363,7 +402,7 @@ const CatchGame = ({ config, onComplete, onAddScore }) => {
       requestRef.current = requestAnimationFrame(update);
     }
     return () => cancelAnimationFrame(requestRef.current);
-  }, [gameState]); // Removed score dependency to prevent loop restart
+  }, [gameState]);
 
   return (
     <div className="game-area catch-game" style={{ background: '#E0F7FA', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
@@ -371,7 +410,28 @@ const CatchGame = ({ config, onComplete, onAddScore }) => {
         <div className="game-instruction-overlay">
           <h3>{config.title || 'キャッチゲーム'}</h3>
           <p>{config.instruction || '落ちてくる文字をカゴでキャッチしよう！'}</p>
+          <div className="instruction-icons" style={{display:'flex', gap:'20px', justifyContent:'center', margin:'10px 0'}}>
+             <div style={{textAlign:'center'}}>
+                <div style={{fontSize:'30px', color:'#5D4037', fontWeight:'bold'}}>{config.targetChar}</div>
+                <small>正解</small>
+             </div>
+             <div style={{textAlign:'center'}}>
+                <div style={{fontSize:'30px', color:'#5D4037'}}>×</div>
+                <small>ハズレ（ライフ-1）</small>
+             </div>
+          </div>
           <button className="start-btn" onClick={() => setGameState('playing')}>スタート！</button>
+        </div>
+      )}
+
+      {gameState === 'lost' && (
+        <div className="game-result-modal">
+          <h2>ざんねん...</h2>
+          <p>ライフがなくなっちゃった！</p>
+          <button className="start-btn" onClick={() => {
+            initGame();
+            setGameState('playing');
+          }}>リトライ</button>
         </div>
       )}
       
