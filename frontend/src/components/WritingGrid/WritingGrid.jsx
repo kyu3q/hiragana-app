@@ -83,7 +83,7 @@ const WritingGrid = ({ character, onClose, type = 'HIRAGANA' }) => {
       setGridItems(updatedGridItems);
 
       // 認証されている場合のみ保存を試みる
-      if (isAuthenticated) {
+      if (isAuthenticated && character.id) {
         const strokeData = {
           position: position,
           strokes: strokes,
@@ -201,4 +201,4 @@ const WritingGrid = ({ character, onClose, type = 'HIRAGANA' }) => {
   );
 };
 
-export default WritingGrid; 
+export default WritingGrid;

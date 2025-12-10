@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import './KanjiDisplay.css';
 import { kanjiByGrade } from '../../data/kanjiData';
 import KanjiGameContainer from '../KanjiGames/KanjiGameContainer';
+import WritingGrid from '../WritingGrid/WritingGrid';
 
 const randomPick = (arr, count = 1) => {
   const shuffled = [...arr].sort(() => 0.5 - Math.random());
@@ -27,8 +28,10 @@ const KanjiDisplay = () => {
   const [grade, setGrade] = useState(1);
   const [selected, setSelected] = useState(null);
   const [gameTarget, setGameTarget] = useState(null);
+  const [writingTarget, setWritingTarget] = useState(null);
   const [activeGameMode, setActiveGameMode] = useState(false);
   const [displayMode, setDisplayMode] = useState('detail'); // 'detail' or 'game'
+  const [searchTerm, setSearchTerm] = useState('');
   
   const [quizQuestion, setQuizQuestion] = useState(null);
   const [quizOptions, setQuizOptions] = useState([]);
@@ -40,6 +43,18 @@ const KanjiDisplay = () => {
   const [miniOptions, setMiniOptions] = useState([]);
 
   const data = useMemo(() => kanjiByGrade.find((g) => g.grade === grade), [grade]);
+
+  const filteredItems = useMemo(() => {
+    if (!data) return [];
+    if (!searchTerm) return data.items;
+    const lower = searchTerm.toLowerCase();
+    return data.items.filter(item => 
+      item.char.includes(lower) ||
+      (item.kunyomi && item.kunyomi.includes(lower)) ||
+      (item.onyomi && item.onyomi.includes(lower)) ||
+      (item.meaning && item.meaning.includes(lower))
+    );
+  }, [data, searchTerm]);
 
   const refreshQuiz = () => {
     if (!data) return;
@@ -133,16 +148,29 @@ const KanjiDisplay = () => {
             </button>
           </div>
         </div>
-        <div className="grade-tabs">
-          {kanjiByGrade.map((g) => (
-            <button
-              key={g.grade}
-              className={`grade-tab ${grade === g.grade ? 'active' : ''}`}
-              onClick={() => setGrade(g.grade)}
-            >
-              {g.grade}年
-            </button>
-          ))}
+        
+        <div className="controls-row">
+          <div className="search-box">
+            <span className="search-icon">🔍</span>
+            <input
+              type="text"
+              className="kanji-search-input"
+              placeholder="漢字、読み、意味でさがす..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <div className="grade-tabs">
+            {kanjiByGrade.map((g) => (
+              <button
+                key={g.grade}
+                className={`grade-tab ${grade === g.grade ? 'active' : ''}`}
+                onClick={() => setGrade(g.grade)}
+              >
+                {g.grade}年
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -151,16 +179,22 @@ const KanjiDisplay = () => {
           <h2>{grade}年の漢字ワールド</h2>
           <p className="sub">漢字をえらんで冒険をはじめよう！</p>
         </div>
-        <div className="kanji-grid">
-          {data?.items.map((item) => (
-            <KanjiCard
-              key={item.char}
-              item={item}
-              themeColor={data.themeColor}
-              onClick={handleCardClick}
-            />
-          ))}
-        </div>
+        {filteredItems.length === 0 ? (
+          <div className="no-results">
+            <p>「{searchTerm}」は見つかりませんでした。</p>
+          </div>
+        ) : (
+          <div className="kanji-grid">
+            {filteredItems.map((item) => (
+              <KanjiCard
+                key={item.char}
+                item={item}
+                themeColor={data.themeColor}
+                onClick={handleCardClick}
+              />
+            ))}
+          </div>
+        )}
       </section>
 
       <section className="quiz-section">
@@ -208,11 +242,30 @@ const KanjiDisplay = () => {
             <p className="story-example">例: {selected.example || '—'}</p>
             <div className="modal-actions">
               <button className="secondary" onClick={() => setSelected(null)}>閉じる</button>
+              <button className="accent" onClick={() => {
+                setSelected(null);
+                setWritingTarget(selected);
+              }}>
+                ✎ かきかた
+              </button>
               <button className="primary" onClick={() => {
                 setSelected(null);
                 handleGameStart(selected);
-              }}>ゲームであそぶ</button>
+              }}>🎮 ゲームであそぶ</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Writing Practice Modal */}
+      {writingTarget && (
+        <div className="writing-modal-overlay">
+          <div className="writing-modal-content">
+            <WritingGrid 
+              character={writingTarget} 
+              onClose={() => setWritingTarget(null)} 
+              type="KANJI"
+            />
           </div>
         </div>
       )}
