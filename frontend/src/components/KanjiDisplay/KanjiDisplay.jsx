@@ -3,6 +3,7 @@ import './KanjiDisplay.css';
 import { kanjiByGrade } from '../../data/kanjiData';
 import KanjiGameContainer from '../KanjiGames/KanjiGameContainer';
 import WritingGrid from '../WritingGrid/WritingGrid';
+import KanjiChart from '../KanjiChart/KanjiChart';
 
 const randomPick = (arr, count = 1) => {
   const shuffled = [...arr].sort(() => 0.5 - Math.random());
@@ -29,6 +30,7 @@ const KanjiDisplay = () => {
   const [selected, setSelected] = useState(null);
   const [gameTarget, setGameTarget] = useState(null);
   const [writingTarget, setWritingTarget] = useState(null);
+  const [showChart, setShowChart] = useState(false);
   const [activeGameMode, setActiveGameMode] = useState(false);
   const [displayMode, setDisplayMode] = useState('detail'); // 'detail' or 'game'
   const [searchTerm, setSearchTerm] = useState('');
@@ -134,6 +136,13 @@ const KanjiDisplay = () => {
         <div className="header-row">
           <h1 className="title kanji-stylish-title">漢字であそぼう！</h1>
           <div className="mode-toggle-inline">
+            <button 
+              className="kanji-mode-btn chart-btn"
+              onClick={() => setShowChart(true)}
+              style={{ borderColor: '#795548', color: '#795548' }}
+            >
+              📊 漢字表
+            </button>
             <button 
               className={`kanji-mode-btn ${displayMode === 'detail' ? 'active' : ''}`}
               onClick={() => setDisplayMode('detail')}
@@ -268,6 +277,14 @@ const KanjiDisplay = () => {
             />
           </div>
         </div>
+      )}
+
+      {/* Kanji Chart Modal */}
+      {showChart && (
+        <KanjiChart 
+          onClose={() => setShowChart(false)} 
+          initialGrade={grade}
+        />
       )}
 
       {/* Fallback Legacy Mini Game Modal (Only if no gameType) */}
