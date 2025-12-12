@@ -2,8 +2,9 @@ import React, { useMemo, useState, useEffect } from 'react';
 import './KanjiDisplay.css';
 import { kanjiByGrade } from '../../data/kanjiData';
 import KanjiGameContainer from '../KanjiGames/KanjiGameContainer';
-import WritingGrid from '../WritingGrid/WritingGrid';
 import KanjiChart from '../KanjiChart/KanjiChart';
+import MemoryGame from '../Games/MemoryGame';
+import '../Games/GameMode.css';
 
 const randomPick = (arr, count = 1) => {
   const shuffled = [...arr].sort(() => 0.5 - Math.random());
@@ -27,12 +28,11 @@ const KanjiCard = ({ item, themeColor, onClick }) => (
 
 const KanjiDisplay = () => {
   const [grade, setGrade] = useState(1);
-  const [selected, setSelected] = useState(null);
   const [gameTarget, setGameTarget] = useState(null);
-  const [writingTarget, setWritingTarget] = useState(null);
   const [showChart, setShowChart] = useState(false);
+  const [showMemoryGame, setShowMemoryGame] = useState(false);
+  const [gameKey, setGameKey] = useState(0);
   const [activeGameMode, setActiveGameMode] = useState(false);
-  const [displayMode, setDisplayMode] = useState('detail'); // 'detail' or 'game'
   const [searchTerm, setSearchTerm] = useState('');
   
   const [quizQuestion, setQuizQuestion] = useState(null);
@@ -110,17 +110,37 @@ const KanjiDisplay = () => {
   };
 
   const handleCardClick = (item) => {
-    if (displayMode === 'game') {
-      handleGameStart(item);
-    } else {
-      setSelected(item);
-    }
+    handleGameStart(item);
   };
 
   const closeGame = () => {
     setGameTarget(null);
     setActiveGameMode(false);
   };
+
+  const handleRetry = () => {
+    setGameKey(prev => prev + 1);
+  };
+
+  if (showMemoryGame) {
+    return (
+      <div className="kanji-full-game-wrapper" style={{ height: '100vh', padding: 0 }}>
+        <div className="game-header-buttons" style={{ position: 'absolute' }}>
+          <button className="game-button" onClick={handleRetry}>
+            リセット
+          </button>
+          <button className="game-button" onClick={() => setShowMemoryGame(false)}>
+            終了
+          </button>
+        </div>
+        <div className="game-container">
+          <div className="game-content">
+            <MemoryGame key={gameKey} onClose={() => setShowMemoryGame(false)} type="kanji" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (activeGameMode && gameTarget) {
     return (
@@ -137,23 +157,16 @@ const KanjiDisplay = () => {
           <h1 className="title kanji-stylish-title">漢字であそぼう！</h1>
           <div className="mode-toggle-inline">
             <button 
+              className="kanji-mode-btn game-btn"
+              onClick={() => setShowMemoryGame(true)}
+            >
+              🎮 ゲーム
+            </button>
+            <button 
               className="kanji-mode-btn chart-btn"
               onClick={() => setShowChart(true)}
-              style={{ borderColor: '#795548', color: '#795548' }}
             >
               📊 漢字表
-            </button>
-            <button 
-              className={`kanji-mode-btn ${displayMode === 'detail' ? 'active' : ''}`}
-              onClick={() => setDisplayMode('detail')}
-            >
-              くわしく
-            </button>
-            <button 
-              className={`kanji-mode-btn ${displayMode === 'game' ? 'active' : ''}`}
-              onClick={() => setDisplayMode('game')}
-            >
-              ゲーム
             </button>
           </div>
         </div>
@@ -233,51 +246,6 @@ const KanjiDisplay = () => {
         )}
       </section>
 
-      {/* Story Modal */}
-      {selected && (
-        <div className="story-modal" onClick={() => setSelected(null)}>
-          <div className="story-card" onClick={(e) => e.stopPropagation()}>
-            <div className="story-head">
-              <div>
-                <p className="pill">ストーリー</p>
-                <h3>{selected.char} の世界</h3>
-              </div>
-              <button className="ghost" onClick={() => setSelected(null)}>×</button>
-            </div>
-            <p className="story-reading">訓: {selected.kunyomi || '—'} / 音: {selected.onyomi || '—'}</p>
-            <p className="story-meaning">{selected.meaning}</p>
-            <p className="story-hint">ヒント: {selected.hint}</p>
-            <p className="story-text">{selected.story}</p>
-            <p className="story-example">例: {selected.example || '—'}</p>
-            <div className="modal-actions">
-              <button className="secondary" onClick={() => setSelected(null)}>閉じる</button>
-              <button className="accent" onClick={() => {
-                setSelected(null);
-                setWritingTarget(selected);
-              }}>
-                ✎ かきかた
-              </button>
-              <button className="primary" onClick={() => {
-                setSelected(null);
-                handleGameStart(selected);
-              }}>🎮 ゲームであそぶ</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Writing Practice Modal */}
-      {writingTarget && (
-        <div className="writing-modal-overlay">
-          <div className="writing-modal-content">
-            <WritingGrid 
-              character={writingTarget} 
-              onClose={() => setWritingTarget(null)} 
-              type="KANJI"
-            />
-          </div>
-        </div>
-      )}
 
       {/* Kanji Chart Modal */}
       {showChart && (

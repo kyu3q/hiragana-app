@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import './MemoryGame.css';
 import { playMemoryOKSound, playMemoryNGSound, playHappy1Sound } from '../../utils/soundPlayer';
+import { kanjiByGrade } from '../../data/kanjiData';
 
 const MemoryGame = ({ onClose, type }) => {
   const [cards, setCards] = useState([]);
   const [flippedCards, setFlippedCards] = useState([]);
   const [matchedPairs, setMatchedPairs] = useState([]);
   const [isChecking, setIsChecking] = useState(false);
-  const [selectedType, setSelectedType] = useState('main'); // 'main', 'dakuon', 'youon'
+  // typeがkanjiの場合はデフォルトを1年生(1)にする、それ以外は'main'
+  const [selectedType, setSelectedType] = useState(type === 'kanji' ? 1 : 'main');
   const [isBattleMode, setIsBattleMode] = useState(true);
   const [currentPlayer, setCurrentPlayer] = useState('lion'); // 'lion' or 'dog'
   const [playerPairs, setPlayerPairs] = useState({ lion: 0, dog: 0 });
@@ -63,6 +65,14 @@ const MemoryGame = ({ onClose, type }) => {
 
   // 文字の種類に応じて文字を取得
   const getCharacters = (type) => {
+    if (type === 'kanji') {
+      const gradeData = kanjiByGrade.find(g => g.grade === Number(selectedType));
+      if (gradeData) {
+        return gradeData.items.map(item => item.char);
+      }
+      return [];
+    }
+
     let characters = [];
     const table = type === 'hiragana' ? 
       { main: hiraganaMainTable, dakuon: hiraganaDakuonTable, youon: hiraganaYouonTable } :
@@ -239,28 +249,47 @@ const MemoryGame = ({ onClose, type }) => {
       ) : (
         <>
           <div className="game-header">
-            <h2>文字記憶ゲーム</h2>
+            <h2>{type === 'kanji' ? '漢字記憶ゲーム' : '文字記憶ゲーム'}</h2>
             <div className="character-type-selector">
-              <button
-                className={`type-button ${selectedType === 'main' ? 'active' : ''}`}
-                onClick={() => setSelectedType('main')}
-              >
-                清音
-              </button>
-              <button
-                className={`type-button ${selectedType === 'dakuon' ? 'active' : ''}`}
-                onClick={() => setSelectedType('dakuon')}
-              >
-                濁音・半濁音
-              </button>
-              <button
-                className={`type-button ${selectedType === 'youon' ? 'active' : ''}`}
-                onClick={() => setSelectedType('youon')}
-              >
-                拗音
-              </button>
+              {type === 'kanji' ? (
+                // 漢字の場合は学年選択ボタンを表示
+                kanjiByGrade.map((g) => (
+                  <button
+                    key={g.grade}
+                    className={`type-button ${selectedType === g.grade ? 'active' : ''}`}
+                    onClick={() => setSelectedType(g.grade)}
+                  >
+                    {g.grade}年生
+                  </button>
+                ))
+              ) : (
+                // ひらがな・カタカナの場合は従来通り
+                <>
+                  <button
+                    className={`type-button ${selectedType === 'main' ? 'active' : ''}`}
+                    onClick={() => setSelectedType('main')}
+                  >
+                    清音
+                  </button>
+                  <button
+                    className={`type-button ${selectedType === 'dakuon' ? 'active' : ''}`}
+                    onClick={() => setSelectedType('dakuon')}
+                  >
+                    濁音・半濁音
+                  </button>
+                  <button
+                    className={`type-button ${selectedType === 'youon' ? 'active' : ''}`}
+                    onClick={() => setSelectedType('youon')}
+                  >
+                    拗音
+                  </button>
+                </>
+              )}
               <button className="battle-mode-button" onClick={handleBattleModeToggle}>
                 {isBattleMode ? 'ひとりで遊び' : '対決'}
+              </button>
+              <button className="close-button" onClick={onClose} style={{ marginLeft: 'auto', background: 'transparent', border: 'none', fontSize: '1.5rem', cursor: 'pointer' }}>
+                ✖
               </button>
             </div>
           </div>
