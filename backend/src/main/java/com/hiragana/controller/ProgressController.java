@@ -52,13 +52,23 @@ public class ProgressController {
             @PathVariable Long characterId,
             @RequestParam Integer score) {
         Optional<User> user = userService.getUserById(userId);
-        Optional<Character> character = characterService.getCharacterByTypeAndCharacter(
-                CharacterType.HIRAGANA, // TODO: 文字タイプの指定方法を検討
-                "あ" // TODO: 文字の指定方法を検討
-        );
+        Optional<Character> character = characterService.getCharacterById(characterId);
 
         if (user.isPresent() && character.isPresent()) {
             return ResponseEntity.ok(progressService.updateProgress(user.get(), character.get(), score));
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+    @PostMapping("/user/{userId}/character/{characterId}/complete")
+    public ResponseEntity<Progress> completeProgress(
+            @PathVariable Long userId,
+            @PathVariable Long characterId) {
+        Optional<User> user = userService.getUserById(userId);
+        Optional<Character> character = characterService.getCharacterById(characterId);
+
+        if (user.isPresent() && character.isPresent()) {
+            return ResponseEntity.ok(progressService.markAsCompleted(user.get(), character.get()));
         }
         return ResponseEntity.notFound().build();
     }
@@ -68,4 +78,4 @@ public class ProgressController {
         progressService.deleteProgress(id);
         return ResponseEntity.ok().build();
     }
-} 
+}

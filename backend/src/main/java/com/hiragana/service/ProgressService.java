@@ -60,7 +60,27 @@ public class ProgressService {
         return progressRepository.save(progress);
     }
 
+    public Progress markAsCompleted(User user, Character character) {
+        Progress progress = progressRepository.findByUserAndCharacter(user, character)
+                .orElse(new Progress());
+
+        if (progress.getId() == null) {
+            progress.setUser(user);
+            progress.setCharacter(character);
+            progress.setPracticeCount(0);
+            progress.setCorrectCount(0);
+            progress.setTotalScore(0);
+            progress.setHighestScore(0);
+            progress.setMasteryLevel(1);
+        }
+
+        progress.setIsCompleted(true);
+        progress.setLastPracticed(LocalDateTime.now());
+        
+        return progressRepository.save(progress);
+    }
+
     public void deleteProgress(Long id) {
         progressRepository.deleteById(id);
     }
-} 
+}

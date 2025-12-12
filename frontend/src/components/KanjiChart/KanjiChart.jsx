@@ -3,6 +3,7 @@ import './KanjiChart.css';
 import WritingGrid from '../WritingGrid/WritingGrid';
 import { useAuth } from '../../context/AuthContext';
 import { characterService } from '../../api/characterService';
+import { progressService } from '../../api/progressService';
 import ProgressStack from '../HiraganaChart/ProgressStack';
 import HanamaruSVG from '../HiraganaChart/HanamaruSVG';
 import { kanjiByGrade } from '../../data/kanjiData';
@@ -12,7 +13,7 @@ const PAGE_SIZE = 40;
 const KanjiChart = ({ onClose, initialGrade }) => {
   const [selectedChar, setSelectedChar] = useState(null);
   const [showWritingGrid, setShowWritingGrid] = useState(false);
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, currentUser: user } = useAuth();
   const [progressData, setProgressData] = useState({});
   const [kanjiMap, setKanjiMap] = useState({}); // char -> id mapping
   const [page, setPage] = useState(0);
@@ -46,47 +47,43 @@ const KanjiChart = ({ onClose, initialGrade }) => {
   // Fetch progress data for current page items
   useEffect(() => {
     const fetchProgressData = async () => {
-      if (!isAuthenticated || Object.keys(kanjiMap).length === 0) return;
+      if (!isAuthenticated || !user || Object.keys(kanjiMap).length === 0) return;
       
       try {
+        // 全漢字の進捗を一度に取得（ページングしても良いが、データ量がそれほど多くなければ一括取得が楽）
+        const progressList = await progressService.getUserProgressByType(user.id, 'KANJI');
+        
         const progressDataTemp = {};
         
-        for (const item of currentItems) {
-          const char = item.char;
-          const id = kanjiMap[char];
-          if (id) {
-            try {
-              const results = await characterService.getAllStrokeResults(id);
-              if (results && Array.isArray(results)) {
-                const goodScoresCount = results.filter(r => r.score >= 60).length;
-                const totalResults = results.length;
-                
-                progressDataTemp[char] = {
-                  total: totalResults,
-                  goodCount: goodScoresCount,
-                  status: getProgressStatus(goodScoresCount, totalResults)
-                };
-              }
-            } catch (error) {
-              // Silent fail
-            }
-          }
+        // 進捗リストをマップに変換
+        if (progressList && Array.isArray(progressList)) {
+          progressList.forEach(progress => {
+            const charId = progress.character.id;
+            const char = progress.character.character;
+            
+            progressDataTemp[char] = {
+              total: progress.practiceCount,
+              goodCount: progress.correctCount,
+              status: progress.isCompleted ? 'completed' : (progress.practiceCount > 0 ? 'in-progress' : 'not-started'),
+              isCompleted: progress.isCompleted
+            };
+          });
         }
         
-        setProgressData(prev => ({...prev, ...progressDataTemp}));
+        setProgressData(progressDataTemp);
       } catch (error) {
         console.error('Failed to fetch progress data:', error);
       }
     };
     
     fetchProgressData();
-  }, [isAuthenticated, kanjiMap, initialGrade, page]); // Depend on page to fetch for new items
+  }, [isAuthenticated, user, kanjiMap, initialGrade]); // ページ依存を削除（一括取得のため）
 
-  const getProgressStatus = (goodScoresCount, totalResults) => {
-    if (totalResults === 0) return 'not-started';
-    if (goodScoresCount === 0) return 'attempted';
-    if (goodScoresCount >= 9) return 'completed';
-    return 'in-progress';
+  const getProgressStatus = (progress) => {
+    if (!progress) return 'not-started';
+    if (progress.isCompleted) return 'completed';
+    if (progress.total > 0) return 'in-progress';
+    return 'not-started';
   };
 
   const handleCharClick = (item) => {
@@ -101,25 +98,25 @@ const KanjiChart = ({ onClose, initialGrade }) => {
   const handleCloseWritingGrid = () => {
     setShowWritingGrid(false);
     
-    if (isAuthenticated && selectedChar && selectedChar.id) {
+    // 練習終了時に進捗を再取得して画面を更新
+    if (isAuthenticated && user) {
       const fetchCharProgress = async () => {
         try {
-          const id = selectedChar.id;
-          const char = selectedChar.char;
-          const results = await characterService.getAllStrokeResults(id);
+          // 全進捗を再取得するのが確実
+          const progressList = await progressService.getUserProgressByType(user.id, 'KANJI');
           
-          if (results && Array.isArray(results)) {
-            const goodScoresCount = results.filter(r => r.score >= 60).length;
-            const totalResults = results.length;
-            
-            setProgressData(prev => ({
-              ...prev,
-              [char]: {
-                total: totalResults,
-                goodCount: goodScoresCount,
-                status: getProgressStatus(goodScoresCount, totalResults)
-              }
-            }));
+           if (progressList && Array.isArray(progressList)) {
+            const progressDataTemp = {};
+             progressList.forEach(progress => {
+              const char = progress.character.character;
+              progressDataTemp[char] = {
+                total: progress.practiceCount,
+                goodCount: progress.correctCount,
+                status: progress.isCompleted ? 'completed' : (progress.practiceCount > 0 ? 'in-progress' : 'not-started'),
+                isCompleted: progress.isCompleted
+              };
+            });
+            setProgressData(progressDataTemp);
           }
         } catch (error) {
           console.error('Char progress update error:', error);
@@ -170,8 +167,9 @@ const KanjiChart = ({ onClose, initialGrade }) => {
                   <tr key={i}>
                     {row.map((item, j) => {
                       const progress = progressData[item.char];
-                      const status = progress ? progress.status : '';
+                      const status = progress ? progress.status : 'not-started';
                       const progressClass = `char-cell progress-${status}`;
+                      const isCompleted = progress ? progress.isCompleted : false;
                       
                       return (
                         <td 
@@ -180,7 +178,7 @@ const KanjiChart = ({ onClose, initialGrade }) => {
                           onClick={() => handleCharClick(item)}
                         >
                           <div className="cell-content">
-                            {status === 'completed' && (
+                            {isCompleted && (
                               <HanamaruSVG className="hanamaru-overlay" />
                             )}
                             <div className="kanji-char-box">{item.char}</div>

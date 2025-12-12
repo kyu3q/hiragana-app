@@ -44,3 +44,20 @@ CREATE TABLE stroke_points (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (stroke_id) REFERENCES strokes(id)
 );
+
+CREATE TABLE progress (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    character_id BIGINT NOT NULL,
+    practice_count INTEGER NOT NULL,
+    correct_count INTEGER NOT NULL,
+    total_score INTEGER NOT NULL,
+    highest_score INTEGER NOT NULL,
+    last_practiced TIMESTAMP,
+    mastery_level INTEGER,
+    is_completed BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (character_id) REFERENCES characters(id)
+);

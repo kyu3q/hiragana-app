@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './WritingGrid.css';
 import WritingPractice from '../WritingPractice/WritingPractice';
 import { characterService } from '../../api/characterService';
+import { progressService } from '../../api/progressService';
 import { useAuth } from '../../context/AuthContext';
 
 const PRACTICE_CANVAS_SIZE = 300; // 練習用キャンバスのサイズ
@@ -15,10 +16,36 @@ const WritingGrid = ({ character, onClose, type = 'HIRAGANA' }) => {
     comment: '',
     isEditing: false
   })));
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, currentUser: user } = useAuth();
+  const [characterId, setCharacterId] = useState(character.id);
+
+  useEffect(() => {
+    setCharacterId(character.id);
+  }, [character]);
+
+  useEffect(() => {
+    const ensureCharacterId = async () => {
+      if (type === 'KANJI' && isAuthenticated && !characterId && character.char) {
+        try {
+          // IDがない場合（KanjiChartの読み込みタイミングの問題など）は文字からIDを取得を試みる
+          const charData = await characterService.getCharacterByTypeAndCharacter('KANJI', character.char);
+          if (charData && charData.id) {
+            console.log('Fetched missing character ID:', charData.id);
+            setCharacterId(charData.id);
+          }
+        } catch (error) {
+          console.error('Failed to fetch character ID:', error);
+        }
+      }
+    };
+    ensureCharacterId();
+  }, [type, isAuthenticated, character, characterId]);
 
   useEffect(() => {
     const fetchStrokeResults = async () => {
+      // 漢字の場合はストローク結果を取得しない
+      if (type === 'KANJI') return;
+
       try {
         if (!isAuthenticated) {
           console.log('ユーザーが認証されていません');
@@ -26,33 +53,33 @@ const WritingGrid = ({ character, onClose, type = 'HIRAGANA' }) => {
         }
 
         // すべてのなぞり書き結果を取得
-        const results = await characterService.getAllStrokeResults(character.id);
-        if (results && Array.isArray(results)) {
-          const newGridItems = Array(9).fill(null).map((_, index) => {
-            const strokeResult = results.find(r => r.position === index);
-            return strokeResult ? {
-              strokes: strokeResult.strokes || [],
-              score: strokeResult.score || 0,
-              comment: strokeResult.comment || '',
-              isEditing: false
-            } : {
-              strokes: [],
-              score: 0,
-              comment: '',
-              isEditing: false
-            };
-          });
-          setGridItems(newGridItems);
+        if (characterId) {
+          const results = await characterService.getAllStrokeResults(characterId);
+          if (results && Array.isArray(results)) {
+            const newGridItems = Array(9).fill(null).map((_, index) => {
+              const strokeResult = results.find(r => r.position === index);
+              return strokeResult ? {
+                strokes: strokeResult.strokes || [],
+                score: strokeResult.score || 0,
+                comment: strokeResult.comment || '',
+                isEditing: false
+              } : {
+                strokes: [],
+                score: 0,
+                comment: '',
+                isEditing: false
+              };
+            });
+            setGridItems(newGridItems);
+          }
         }
       } catch (error) {
         console.error('Error fetching stroke results:', error);
       }
     };
 
-    if (character && character.id) {
-      fetchStrokeResults();
-    }
-  }, [character, isAuthenticated]);
+    fetchStrokeResults();
+  }, [characterId, isAuthenticated, type]);
 
   const handleGridItemClick = (index) => {
     const newGridItems = [...gridItems];
@@ -61,6 +88,43 @@ const WritingGrid = ({ character, onClose, type = 'HIRAGANA' }) => {
       isEditing: true
     };
     setGridItems(newGridItems);
+  };
+
+  const handleClose = async () => {
+    if (type === 'KANJI' && isAuthenticated && user) {
+      let targetId = characterId;
+      
+      // IDがまだない場合は取得を試みる（フォールバック）
+      if (!targetId && character.char) {
+        try {
+           const charData = await characterService.getCharacterByTypeAndCharacter('KANJI', character.char);
+           if (charData && charData.id) {
+             targetId = charData.id;
+           }
+        } catch (e) {
+          console.error('Failed to fetch character ID in handleClose:', e);
+        }
+      }
+
+      if (targetId) {
+        // 9文字すべてが埋まっているかチェック（strokesがあるか、または編集済みか）
+        const allFilled = gridItems.every(item => item.strokes && item.strokes.length > 0);
+        
+        if (allFilled) {
+          try {
+            await progressService.markAsCompleted(user.id, targetId);
+            console.log('漢字練習完了を保存しました');
+          } catch (error) {
+            console.error('漢字練習完了の保存に失敗しました:', error);
+          }
+        } else {
+            console.log('全てのグリッドが埋まっていません。完了判定をスキップします。');
+        }
+      } else {
+          console.error('Character ID could not be determined. Saving skipped.');
+      }
+    }
+    onClose();
   };
 
   const handleWritingComplete = async (strokes, score, comment, position) => {
@@ -82,15 +146,20 @@ const WritingGrid = ({ character, onClose, type = 'HIRAGANA' }) => {
       );
       setGridItems(updatedGridItems);
 
+      // 漢字の場合はストローク結果をDBに保存しない
+      if (type === 'KANJI') {
+        return;
+      }
+
       // 認証されている場合のみ保存を試みる
-      if (isAuthenticated && character.id) {
+      if (isAuthenticated && characterId) {
         const strokeData = {
           position: position,
           strokes: strokes,
           score: score || 0,
           comment: comment || ''
         };
-        await characterService.saveStrokeResult(character.id, strokeData);
+        await characterService.saveStrokeResult(characterId, strokeData);
       } else {
         console.log('ログインしていないため、結果は保存されません。');
       }
@@ -188,7 +257,7 @@ const WritingGrid = ({ character, onClose, type = 'HIRAGANA' }) => {
     <div className="writing-grid-container">
       <div className="writing-grid-header">
         <h2>{character.char}を練習しよう！</h2>
-        <button className="close-button" onClick={onClose}>×</button>
+        <button className="close-button" onClick={handleClose}>×</button>
       </div>
       <div className="writing-grid">
         {gridItems.map((item, index) => (

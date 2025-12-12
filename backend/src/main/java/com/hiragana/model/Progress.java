@@ -38,6 +38,9 @@ public class Progress {
     @Column(name = "mastery_level")
     private Integer masteryLevel; // 習熟度（1-5）
 
+    @Column(name = "is_completed")
+    private Boolean isCompleted; // コンプリート済み（花丸）
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
@@ -53,10 +56,13 @@ public class Progress {
         totalScore = 0;
         highestScore = 0;
         masteryLevel = 1;
+        if (isCompleted == null) {
+            isCompleted = false;
+        }
     }
 
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
-} 
+}
