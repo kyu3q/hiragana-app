@@ -1,0 +1,218 @@
+.quiz-game-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+/* Title Font Styling (Matching Memory Game) */
+.quiz-game-container h2 {
+  font-family: 'M PLUS Rounded 1c', sans-serif;
+  font-size: 1.8rem;
+  color: #2c3e50;
+  margin: 0 0 0.5rem 0;
+  font-weight: 500;
+}
+
+.quiz-sentence-area {
+  background: white;
+  padding: 30px;
+  border-radius: 24px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+  margin-bottom: 30px;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.quiz-sentence {
+  font-size: 2.2rem;
+  font-weight: bold;
+  line-height: 1.6;
+  color: #1f2937;
+  font-family: 'M PLUS Rounded 1c', sans-serif;
+}
+
+.quiz-blank {
+  display: inline-block;
+  min-width: 80px;
+  border-bottom: 4px solid #3b82f6;
+  color: #3b82f6;
+  padding: 0 10px;
+  font-weight: 900;
+}
+
+/* Single Player Grid */
+.quiz-options-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+  width: 100%;
+  margin-bottom: 30px;
+}
+
+@media (min-width: 600px) {
+  .quiz-options-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Battle Mode Split Layout */
+.battle-area {
+  display: flex;
+  width: 100%;
+  gap: 20px;
+  justify-content: space-between;
+}
+
+.player-zone {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 20px;
+  padding: 15px;
+  border: 2px solid transparent;
+  transition: all 0.3s;
+}
+
+.player-zone.lion { border-color: #fbbc5d; background: #fffbf5; }
+.player-zone.dog { border-color: #5eb5fc; background: #f0f9ff; }
+
+.player-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.player-avatar {
+  font-size: 3rem;
+  transition: transform 0.2s;
+}
+
+.player-score-display {
+  font-size: 2rem;
+  font-weight: 900;
+  color: #333;
+}
+
+.battle-options-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  width: 100%;
+}
+
+.quiz-option-btn {
+  background: white;
+  border: 3px solid #e5e7eb;
+  border-radius: 20px;
+  padding: 15px;
+  font-size: 2.5rem;
+  cursor: pointer;
+  transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: 'M PLUS Rounded 1c', sans-serif;
+  color: #1f2937;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1;
+  width: 100%;
+}
+
+.quiz-option-btn:hover:not(:disabled) {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.12);
+  border-color: #3b82f6;
+  background: #eff6ff;
+  color: #3b82f6;
+}
+
+.quiz-option-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.quiz-option-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  background: #e5e7eb;
+  border-color: #d1d5db;
+  color: #9ca3af;
+  transform: none;
+}
+
+/* Specific styling for correctness in single player or result */
+.quiz-option-btn.correct {
+  background: #d1fae5;
+  border-color: #10b981;
+  color: #059669;
+  transform: scale(1.05);
+}
+
+.quiz-option-btn.incorrect {
+  background: #fee2e2;
+  border-color: #ef4444;
+  color: #b91c1c;
+  opacity: 0.5;
+}
+
+.quiz-feedback {
+  font-size: 3rem;
+  font-weight: 900;
+  height: 60px;
+  margin-bottom: 20px;
+  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.quiz-feedback.correct { color: #10b981; }
+.quiz-feedback.incorrect { color: #ef4444; }
+
+@keyframes popIn {
+  from { transform: scale(0.5); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-10px) rotate(-5deg); }
+  50% { transform: translateX(10px) rotate(5deg); }
+  75% { transform: translateX(-10px) rotate(-5deg); }
+}
+
+.shake-damage {
+  animation: shake 0.4s ease-in-out;
+  filter: grayscale(0.5) sepia(0.5) hue-rotate(-50deg) saturate(3); /* Red tint */
+}
+
+.cooldown-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  font-weight: bold;
+  color: #ef4444;
+  border-radius: 20px;
+  z-index: 10;
+  animation: fadeIn 0.2s;
+}
+
+.player-zone {
+  position: relative;
+}
+
+.game-header {
+  margin-bottom: 20px;
+  width: 100%;
+}

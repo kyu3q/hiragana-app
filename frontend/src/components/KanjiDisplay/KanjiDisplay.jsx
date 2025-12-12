@@ -4,6 +4,7 @@ import { kanjiByGrade } from '../../data/kanjiData';
 import KanjiGameContainer from '../KanjiGames/KanjiGameContainer';
 import KanjiChart from '../KanjiChart/KanjiChart';
 import MemoryGame from '../Games/MemoryGame';
+import KanjiQuizGame from '../Games/KanjiQuizGame';
 import '../Games/GameMode.css';
 
 const randomPick = (arr, count = 1) => {
@@ -30,7 +31,7 @@ const KanjiDisplay = () => {
   const [grade, setGrade] = useState(1);
   const [gameTarget, setGameTarget] = useState(null);
   const [showChart, setShowChart] = useState(false);
-  const [showMemoryGame, setShowMemoryGame] = useState(false);
+  const [activeGameType, setActiveGameType] = useState(null); // 'memory' | 'quiz'
   const [gameKey, setGameKey] = useState(0);
   const [activeGameMode, setActiveGameMode] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -122,20 +123,32 @@ const KanjiDisplay = () => {
     setGameKey(prev => prev + 1);
   };
 
-  if (showMemoryGame) {
+  const handleGameSwitch = () => {
+    setActiveGameType(prev => prev === 'memory' ? 'quiz' : 'memory');
+    setGameKey(0);
+  };
+
+  if (activeGameType) {
     return (
       <div className="kanji-full-game-wrapper" style={{ height: '100vh', padding: 0 }}>
         <div className="game-header-buttons" style={{ position: 'absolute' }}>
           <button className="game-button" onClick={handleRetry}>
             リセット
           </button>
-          <button className="game-button" onClick={() => setShowMemoryGame(false)}>
+          <button className="game-button" onClick={handleGameSwitch}>
+            ゲーム切替
+          </button>
+          <button className="game-button" onClick={() => setActiveGameType(null)}>
             終了
           </button>
         </div>
         <div className="game-container">
           <div className="game-content">
-            <MemoryGame key={gameKey} onClose={() => setShowMemoryGame(false)} type="kanji" />
+            {activeGameType === 'memory' ? (
+              <MemoryGame key={gameKey} onClose={() => setActiveGameType(null)} type="kanji" grade={grade} />
+            ) : (
+              <KanjiQuizGame key={gameKey} onClose={() => setActiveGameType(null)} type="kanji" grade={grade} />
+            )}
           </div>
         </div>
       </div>
@@ -158,7 +171,7 @@ const KanjiDisplay = () => {
           <div className="mode-toggle-inline">
             <button 
               className="kanji-mode-btn game-btn"
-              onClick={() => setShowMemoryGame(true)}
+              onClick={() => setActiveGameType('memory')}
             >
               🎮 ゲーム
             </button>

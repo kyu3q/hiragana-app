@@ -3,13 +3,13 @@ import './MemoryGame.css';
 import { playMemoryOKSound, playMemoryNGSound, playHappy1Sound } from '../../utils/soundPlayer';
 import { kanjiByGrade } from '../../data/kanjiData';
 
-const MemoryGame = ({ onClose, type }) => {
+const MemoryGame = ({ onClose, type, grade }) => {
   const [cards, setCards] = useState([]);
   const [flippedCards, setFlippedCards] = useState([]);
   const [matchedPairs, setMatchedPairs] = useState([]);
   const [isChecking, setIsChecking] = useState(false);
-  // typeがkanjiの場合はデフォルトを1年生(1)にする、それ以外は'main'
-  const [selectedType, setSelectedType] = useState(type === 'kanji' ? 1 : 'main');
+  // typeがkanjiの場合はgradeを使用、それ以外は'main'
+  const [selectedType, setSelectedType] = useState(type === 'kanji' ? grade : 'main');
   const [isBattleMode, setIsBattleMode] = useState(true);
   const [currentPlayer, setCurrentPlayer] = useState('lion'); // 'lion' or 'dog'
   const [playerPairs, setPlayerPairs] = useState({ lion: 0, dog: 0 });
@@ -66,7 +66,9 @@ const MemoryGame = ({ onClose, type }) => {
   // 文字の種類に応じて文字を取得
   const getCharacters = (type) => {
     if (type === 'kanji') {
-      const gradeData = kanjiByGrade.find(g => g.grade === Number(selectedType));
+      // propのgradeを使用 (selectedType stateは使用しないか、初期値として使用)
+      const targetGrade = grade || Number(selectedType);
+      const gradeData = kanjiByGrade.find(g => g.grade === targetGrade);
       if (gradeData) {
         return gradeData.items.map(item => item.char);
       }
@@ -127,7 +129,7 @@ const MemoryGame = ({ onClose, type }) => {
 
   useEffect(() => {
     setCards(createCardPairs());
-  }, [selectedType, type]);
+  }, [selectedType, type, grade]);
 
   const handleBattleModeToggle = () => {
     setIsBattleMode((prev) => !prev);
@@ -251,18 +253,7 @@ const MemoryGame = ({ onClose, type }) => {
           <div className="game-header">
             <h2>{type === 'kanji' ? '漢字記憶ゲーム' : '文字記憶ゲーム'}</h2>
             <div className="character-type-selector">
-              {type === 'kanji' ? (
-                // 漢字の場合は学年選択ボタンを表示
-                kanjiByGrade.map((g) => (
-                  <button
-                    key={g.grade}
-                    className={`type-button ${selectedType === g.grade ? 'active' : ''}`}
-                    onClick={() => setSelectedType(g.grade)}
-                  >
-                    {g.grade}年生
-                  </button>
-                ))
-              ) : (
+              {type !== 'kanji' && (
                 // ひらがな・カタカナの場合は従来通り
                 <>
                   <button
@@ -287,9 +278,6 @@ const MemoryGame = ({ onClose, type }) => {
               )}
               <button className="battle-mode-button" onClick={handleBattleModeToggle}>
                 {isBattleMode ? 'ひとりで遊び' : '対決'}
-              </button>
-              <button className="close-button" onClick={onClose} style={{ marginLeft: 'auto', background: 'transparent', border: 'none', fontSize: '1.5rem', cursor: 'pointer' }}>
-                ✖
               </button>
             </div>
           </div>
