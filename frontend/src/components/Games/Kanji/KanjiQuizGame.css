@@ -217,3 +217,26 @@
   margin-bottom: 20px;
   width: 100%;
 }
+
+/* Match Battle Button style with Kanji Memory Game */
+.quiz-game-container .battle-mode-button {
+  font-family: 'Zen Maru Gothic', sans-serif;
+  font-weight: 700;
+  padding: 0.4rem 1.5rem;
+  font-size: 1.2rem;
+  border-width: 3px;
+  border-radius: 12px;
+  color: #a83ce7;
+  background-color: white;
+  border-style: solid;
+  border-color: #a83ce7;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.quiz-game-container .battle-mode-button:hover {
+  background-color: #a83ce7;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(231, 76, 60, 0.2);
+}

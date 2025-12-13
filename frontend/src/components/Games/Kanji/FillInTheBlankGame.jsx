@@ -13,6 +13,7 @@ const FillInTheBlankGame = ({ onClose }) => {
   const [gameState, setGameState] = useState('loading'); // loading, playing, won, finished
   const [feedback, setFeedback] = useState(null); // null, 'correct', 'incorrect'
   const [score, setScore] = useState(0);
+  const [solvedCount, setSolvedCount] = useState(0);
 
   // Derived state for checking if a card is placed
   const isCardPlaced = (cardId) => Object.values(placedCards).includes(cardId);
@@ -157,10 +158,22 @@ const FillInTheBlankGame = ({ onClose }) => {
   };
 
   const handleNext = () => {
-    if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(prev => prev + 1);
-    } else {
+    let nextSolvedCount = solvedCount;
+    if (gameState === 'won') {
+      nextSolvedCount = solvedCount + 1;
+      setSolvedCount(nextSolvedCount);
+    }
+
+    if (nextSolvedCount >= 10) {
       setGameState('finished');
+    } else {
+      setCurrentQuestionIndex(prev => {
+        if (prev < questions.length - 1) {
+          return prev + 1;
+        } else {
+          return 0; // Loop back to start if questions run out
+        }
+      });
     }
   };
 
@@ -174,6 +187,7 @@ const FillInTheBlankGame = ({ onClose }) => {
       setQuestions(shuffled);
       setCurrentQuestionIndex(0);
       setScore(0);
+      setSolvedCount(0);
       setGameState('playing');
   };
 
@@ -232,7 +246,7 @@ const FillInTheBlankGame = ({ onClose }) => {
       <div className="progress-bar-container">
         <div 
           className="progress-bar-fill" 
-          style={{ width: `${((currentQuestionIndex) / questions.length) * 100}%` }}
+          style={{ width: `${(solvedCount / 10) * 100}%` }}
         ></div>
       </div>
       
@@ -268,7 +282,7 @@ const FillInTheBlankGame = ({ onClose }) => {
           <h2>🎉 正解！おめでとう！ 🎉</h2>
           <div className="result-buttons">
              <button className="next-button" onClick={handleNext}>
-               {currentQuestionIndex < questions.length - 1 ? '次の問題へ' : '結果を見る'}
+               {solvedCount < 9 ? '次の問題へ' : '結果を見る'}
              </button>
           </div>
         </div>
