@@ -8,7 +8,7 @@ import { playSound, playCorrectSound, playCheerSound, playStarSound, playWrongSo
 import { triggerConfetti, triggerColorfulConfetti, triggerFireworks } from '../../utils/confettiEffect';
 import WritingGrid from '../WritingGrid/WritingGrid';
 import KatakanaChart from '../KatakanaChart';
-import GameMode from '../Games/GameMode';
+import GameMode from '../Games/Kana/GameMode';
 
 const KatakanaDisplay = ({ showGameMode, setShowGameMode }) => {
   const [selectedChar, setSelectedChar] = useState(null);
@@ -430,4 +430,4 @@ const KatakanaDisplay = ({ showGameMode, setShowGameMode }) => {
   );
 };
 
-export default KatakanaDisplay; 
+export default KatakanaDisplay;

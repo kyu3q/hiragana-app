@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { playCorrectSound, playNGSound, playFinishSound } from '../../utils/soundPlayer';
-import { SIMILAR_PAIRS } from '../../data/kanjiData';
+import { playCorrectSound, playNGSound, playFinishSound } from '../../../utils/soundPlayer';
+import { SIMILAR_PAIRS } from '../../../data/kanjiData';
 
 const BattleGame = ({ config, onComplete, onAddScore }) => {
   const [playerHp, setPlayerHp] = useState(100);

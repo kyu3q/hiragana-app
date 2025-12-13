@@ -1,11 +1,12 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import './KanjiDisplay.css';
 import { kanjiByGrade } from '../../data/kanjiData';
-import KanjiGameContainer from '../KanjiGames/KanjiGameContainer';
+import KanjiGameContainer from '../Games/KanjiCard/KanjiGameContainer';
 import KanjiChart from '../KanjiChart/KanjiChart';
-import MemoryGame from '../Games/MemoryGame';
-import KanjiQuizGame from '../Games/KanjiQuizGame';
-import '../Games/GameMode.css';
+import MemoryGame from '../Games/Common/MemoryGame';
+import KanjiQuizGame from '../Games/Kanji/KanjiQuizGame';
+import FillInTheBlankGame from '../Games/Kanji/FillInTheBlankGame';
+import '../Games/Kana/GameMode.css';
 
 const randomPick = (arr, count = 1) => {
   const shuffled = [...arr].sort(() => 0.5 - Math.random());
@@ -124,7 +125,11 @@ const KanjiDisplay = () => {
   };
 
   const handleGameSwitch = () => {
-    setActiveGameType(prev => prev === 'memory' ? 'quiz' : 'memory');
+    setActiveGameType(prev => {
+      if (prev === 'memory') return 'quiz';
+      if (prev === 'quiz') return 'fillInBlank';
+      return 'memory';
+    });
     setGameKey(0);
   };
 
@@ -146,8 +151,10 @@ const KanjiDisplay = () => {
           <div className="game-content">
             {activeGameType === 'memory' ? (
               <MemoryGame key={gameKey} onClose={() => setActiveGameType(null)} type="kanji" grade={grade} />
-            ) : (
+            ) : activeGameType === 'quiz' ? (
               <KanjiQuizGame key={gameKey} onClose={() => setActiveGameType(null)} type="kanji" grade={grade} />
+            ) : (
+              <FillInTheBlankGame key={gameKey} onClose={() => setActiveGameType(null)} />
             )}
           </div>
         </div>

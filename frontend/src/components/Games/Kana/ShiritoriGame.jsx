@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import './ShiritoriGame.css';
-import { shiritoriData as hiraganaData } from '../../data/shiritoriHiragana';
-import { shiritoriData as katakanaData } from '../../data/shiritoriKatakana';
-import { playHappy1Sound, playOK1Sound } from '../../utils/soundPlayer';
+import { shiritoriData as hiraganaData } from '../../../data/shiritoriHiragana';
+import { shiritoriData as katakanaData } from '../../../data/shiritoriKatakana';
+import { playHappy1Sound, playOK1Sound } from '../../../utils/soundPlayer';
 
 const ShiritoriGame = ({ onClose, type }) => {
   const [currentWord, setCurrentWord] = useState('');

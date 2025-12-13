@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './MemoryGame.css';
-import { playMemoryOKSound, playMemoryNGSound, playHappy1Sound } from '../../utils/soundPlayer';
-import { kanjiByGrade } from '../../data/kanjiData';
+import { playMemoryOKSound, playMemoryNGSound, playHappy1Sound } from '../../../utils/soundPlayer';
+import { kanjiByGrade } from '../../../data/kanjiData';
 
 const MemoryGame = ({ onClose, type, grade }) => {
   const [cards, setCards] = useState([]);

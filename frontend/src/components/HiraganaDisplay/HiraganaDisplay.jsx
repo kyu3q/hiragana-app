@@ -8,7 +8,7 @@ import { playSound, playCorrectSound, playCheerSound, playStarSound, playWrongSo
 import { triggerConfetti, triggerColorfulConfetti, triggerFireworks } from '../../utils/confettiEffect';
 import WritingGrid from '../WritingGrid/WritingGrid';
 import HiraganaChart from '../HiraganaChart/HiraganaChart';
-import GameMode from '../Games/GameMode';
+import GameMode from '../Games/Kana/GameMode';
 
 const HiraganaDisplay = ({ showGameMode, setShowGameMode }) => {
   const [selectedChar, setSelectedChar] = useState(null);
@@ -418,4 +418,4 @@ const HiraganaDisplay = ({ showGameMode, setShowGameMode }) => {
   );
 };
 
-export default HiraganaDisplay; 
+export default HiraganaDisplay;

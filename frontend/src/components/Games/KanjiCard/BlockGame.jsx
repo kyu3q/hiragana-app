@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { playOK1Sound, playNGSound, playCollisionSound, playHappy1Sound, playHappy2Sound } from '../../utils/soundPlayer';
+import { playOK1Sound, playNGSound, playCollisionSound, playHappy1Sound, playHappy2Sound } from '../../../utils/soundPlayer';
 
 const BlockGame = ({ config, onComplete, onAddScore }) => {
   const canvasRef = useRef(null);

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { GRADE1_KANJI, SIMILAR_PAIRS } from '../../data/kanjiData';
-import { playOK1Sound, playNGSound, playHappy2Sound, playCollisionSound, playHappy1Sound } from '../../utils/soundPlayer';
+import { GRADE1_KANJI, SIMILAR_PAIRS } from '../../../data/kanjiData';
+import { playOK1Sound, playNGSound, playHappy2Sound, playCollisionSound, playHappy1Sound } from '../../../utils/soundPlayer';
 
 const SIZES = [30, 45, 60]; // Small, Medium, Large
 

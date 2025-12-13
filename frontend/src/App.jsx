@@ -6,10 +6,10 @@ import StartScreen from './components/StartScreen';
 import AuthPage from './components/auth/AuthPage';
 import Header from './components/Header/Header';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import GameMode from './components/Games/GameMode';
+import GameMode from './components/Games/Kana/GameMode';
 import KanjiDisplay from './components/KanjiDisplay';
 import './App.css';
-import ShiritoriGame from './components/Games/ShiritoriGame';
+import ShiritoriGame from './components/Games/Kana/ShiritoriGame';
 
 // 認証が必要なルート用コンポーネント
 function PrivateRoute({ children }) {

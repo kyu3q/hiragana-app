@@ -6,7 +6,7 @@ import BlockGame from './BlockGame';
 import JumpGame from './JumpGame';
 import AirplaneGame from './AirplaneGame';
 import BattleGame from './BattleGame';
-import { playFinishSound } from '../../utils/soundPlayer';
+import { playFinishSound } from '../../../utils/soundPlayer';
 
 const KanjiGameContainer = ({ kanji, onClose }) => {
   const [score, setScore] = useState(0);

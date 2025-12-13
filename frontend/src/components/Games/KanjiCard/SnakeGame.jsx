@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { GRADE1_KANJI, SIMILAR_PAIRS } from '../../data/kanjiData';
-import { playOK2Sound, playNGSound, playHappy1Sound, playHappy2Sound } from '../../utils/soundPlayer';
+import { GRADE1_KANJI, SIMILAR_PAIRS } from '../../../data/kanjiData';
+import { playOK2Sound, playNGSound, playHappy1Sound, playHappy2Sound } from '../../../utils/soundPlayer';
 
 const SnakeGame = ({ config, onComplete, onAddScore }) => {
   const canvasRef = useRef(null);

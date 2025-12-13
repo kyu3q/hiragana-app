@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import './GameMode.css';
 import ShiritoriGame from './ShiritoriGame';
-import MemoryGame from './MemoryGame';
+import MemoryGame from '../Common/MemoryGame';
 
 // ゲームの設定を管理するオブジェクト
 const GAMES = {
@@ -16,10 +16,8 @@ const GAMES = {
 };
 
 const GameMode = ({ onClose, type = 'hiragana' }) => {
-  const [selectedGame, setSelectedGame] = useState(() => {
-    const gameKeys = Object.keys(GAMES);
-    return gameKeys[Math.floor(Math.random() * gameKeys.length)];
-  });
+  // 最初のゲームは固定（リストの最初）
+  const [selectedGame, setSelectedGame] = useState(Object.keys(GAMES)[0]);
   const gameRef = useRef(null);
 
   const handleRetry = () => {
@@ -62,4 +60,4 @@ const GameMode = ({ onClose, type = 'hiragana' }) => {
   );
 };
 
-export default GameMode; 
+export default GameMode;

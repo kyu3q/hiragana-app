@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import './MemoryGame.css'; // Reusing header styles
+import '../Common/MemoryGame.css'; // Reusing header styles
 import './KanjiQuizGame.css';
-import { kanjiByGrade } from '../../data/kanjiData';
-import { playMemoryOKSound, playMemoryNGSound, playHappy1Sound, playWrongSound } from '../../utils/soundPlayer';
+import { kanjiByGrade } from '../../../data/kanjiData';
+import { playMemoryOKSound, playMemoryNGSound, playHappy1Sound, playWrongSound } from '../../../utils/soundPlayer';
 
 const KanjiQuizGame = ({ onClose, type, grade }) => {
   // State

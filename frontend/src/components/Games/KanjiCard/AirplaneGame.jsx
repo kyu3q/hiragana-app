@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { playJumpSound, playOK1Sound, playNGSound, playHappy1Sound, playFinishSound } from '../../utils/soundPlayer';
+import { playJumpSound, playOK1Sound, playNGSound, playHappy1Sound, playFinishSound } from '../../../utils/soundPlayer';
 
 const AirplaneGame = ({ config, onComplete, onAddScore }) => {
   const canvasRef = useRef(null);
