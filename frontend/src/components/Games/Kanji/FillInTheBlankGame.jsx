@@ -1,53 +1,43 @@
 import React, { useState, useEffect } from 'react';
 import { playOK1Sound, playNGSound, playFinishSound } from '../../../utils/soundPlayer';
-import '../KanjiCard/KanjiGames.css'; // Re-use styles
-
-const QUESTIONS = [
-  {
-    id: 1,
-    title: '文作り（１）',
-    instruction: '正しい言葉を選んで、文を完成させよう！',
-    text: '私は{0}で{1}を書いて、{2}に{3}を送りました。{4}が届くといいな。',
-    words: ['鉛筆', '手紙', '先生', '感謝', '返事']
-  },
-  {
-    id: 2,
-    title: '文作り（２）',
-    instruction: '空欄に言葉を入れてみよう',
-    text: '日曜日は{0}へ行って、{1}を見ました。とても{2}かったです。帰りに{3}を食べて、{4}しました。',
-    words: ['公園', '花', '美し', 'アイス', '満足']
-  },
-  {
-    id: 3,
-    title: '文作り（３）',
-    instruction: '言葉を選んでね',
-    text: '朝起きて、{0}を洗い、{1}を食べました。それから{2}を持って、{3}へ行きました。{4}遅刻しそうでした。',
-    words: ['顔', '朝ご飯', '教科書', '学校', '危うく']
-  }
-];
+import { QUESTIONS } from '../../../data/fillInTheBlankQuestions';
+import '../KanjiCard/KanjiGames.css'; // Re-use common styles
+import './FillInTheBlankGame.css'; // Specific styles
 
 const FillInTheBlankGame = ({ onClose }) => {
+  const [questions, setQuestions] = useState([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedCard, setSelectedCard] = useState(null);
   const [placedCards, setPlacedCards] = useState({}); // { blankIndex: cardId }
   const [cards, setCards] = useState([]);
-  const [gameState, setGameState] = useState('playing'); // playing, won
+  const [gameState, setGameState] = useState('loading'); // loading, playing, won, finished
   const [feedback, setFeedback] = useState(null); // null, 'correct', 'incorrect'
   const [score, setScore] = useState(0);
 
-  const config = QUESTIONS[currentQuestionIndex];
-
+  // Initialize questions (shuffle)
   useEffect(() => {
-    initGame();
-  }, [currentQuestionIndex]);
+    const shuffled = [...QUESTIONS].sort(() => Math.random() - 0.5);
+    setQuestions(shuffled);
+    setGameState('playing');
+  }, []);
+
+  const config = questions[currentQuestionIndex];
+
+  // Reset game state when config changes
+  useEffect(() => {
+    if (config) {
+      initGame();
+    }
+  }, [config]);
 
   const initGame = () => {
+    if (!config) return;
     setPlacedCards({});
     setSelectedCard(null);
     setGameState('playing');
     setFeedback(null);
     
-    if (config && config.words) {
+    if (config.words) {
       const initialCards = config.words.map((word, index) => ({
         id: index,
         text: word,
@@ -133,13 +123,22 @@ const FillInTheBlankGame = ({ onClose }) => {
   };
 
   const handleNext = () => {
-    if (currentQuestionIndex < QUESTIONS.length - 1) {
+    if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
     } else {
-      // Loop back to start or randomize? Let's loop for now
-      setCurrentQuestionIndex(0);
+      setGameState('finished');
     }
   };
+
+  const handleRestart = () => {
+      const shuffled = [...QUESTIONS].sort(() => Math.random() - 0.5);
+      setQuestions(shuffled);
+      setCurrentQuestionIndex(0);
+      setScore(0);
+      setGameState('playing');
+  };
+
+  if (!config || gameState === 'loading') return <div>Loading...</div>;
 
   const renderSentence = () => {
     if (!config.text) return null;
@@ -173,9 +172,18 @@ const FillInTheBlankGame = ({ onClose }) => {
   return (
     <div className="fill-blank-game">
       <div className="game-header-info">
-        <h2>{config.title}</h2>
+        <button className="exit-button" onClick={onClose}>やめる</button>
         <div className="score">Score: {score}</div>
       </div>
+
+      <div className="progress-bar-container">
+        <div 
+          className="progress-bar-fill" 
+          style={{ width: `${((currentQuestionIndex) / questions.length) * 100}%` }}
+        ></div>
+      </div>
+      
+      <h2>{config.title}</h2>
       
       <div className="game-instruction">
         {config.instruction}
@@ -198,112 +206,26 @@ const FillInTheBlankGame = ({ onClose }) => {
       </div>
 
       {gameState === 'won' && (
-        <div className="game-result-modal" style={{position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: 'white', padding: '20px', borderRadius: '10px', boxShadow: '0 0 20px rgba(0,0,0,0.2)', textAlign: 'center', zIndex: 100}}>
+        <div className="game-result-overlay">
           <h2>🎉 正解！おめでとう！ 🎉</h2>
-          <div style={{marginTop: '20px'}}>
-             <button className="start-btn" onClick={handleNext}>次の問題へ</button>
+          <div className="result-buttons">
+             <button className="next-button" onClick={handleNext}>
+               {currentQuestionIndex < questions.length - 1 ? '次の問題へ' : '結果を見る'}
+             </button>
           </div>
         </div>
       )}
 
-      <style>{`
-        .fill-blank-game {
-          padding: 20px;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 20px;
-          max-width: 800px;
-          margin: 0 auto;
-          position: relative;
-          min-height: 500px;
-        }
-        .game-header-info {
-          display: flex;
-          justify-content: space-between;
-          width: 100%;
-          align-items: center;
-          margin-bottom: 10px;
-        }
-        .sentence-area {
-          font-size: 1.5rem;
-          line-height: 2.5;
-          background: white;
-          padding: 30px;
-          border-radius: 15px;
-          box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-          width: 100%;
-          text-align: left;
-        }
-        .blank-slot {
-          display: inline-block;
-          min-width: 80px;
-          height: 2.2rem;
-          border-bottom: 3px solid #ccc;
-          margin: 0 5px;
-          text-align: center;
-          cursor: pointer;
-          color: #333;
-          transition: all 0.3s;
-          padding: 0 10px;
-          background: #f5f5f5;
-          border-radius: 4px;
-        }
-        .blank-slot.highlight {
-          border-bottom-color: #4ECDC4;
-          background: #e0f2f1;
-        }
-        .blank-slot.filled {
-          border-bottom-color: #FF9F43;
-          background: #FFF3E0;
-          font-weight: bold;
-        }
-        .cards-area {
-          display: flex;
-          gap: 15px;
-          flex-wrap: wrap;
-          justify-content: center;
-          padding: 20px;
-          background: rgba(255,255,255,0.5);
-          border-radius: 12px;
-          width: 100%;
-        }
-        .cards-area.incorrect {
-          animation: shake 0.5s;
-        }
-        .word-card {
-          background: white;
-          border: 2px solid #ddd;
-          padding: 10px 20px;
-          border-radius: 8px;
-          cursor: pointer;
-          font-size: 1.2rem;
-          font-weight: bold;
-          box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-          transition: transform 0.2s, border-color 0.2s;
-        }
-        .word-card:hover {
-          transform: translateY(-2px);
-        }
-        .word-card.selected {
-          border-color: #4ECDC4;
-          background-color: #E0F7FA;
-          transform: scale(1.1);
-          box-shadow: 0 4px 10px rgba(78, 205, 196, 0.3);
-        }
-        .word-card.placed {
-          opacity: 0.3;
-          cursor: default;
-          transform: none;
-          pointer-events: none;
-        }
-        @keyframes shake {
-          0% { transform: translateX(0); }
-          25% { transform: translateX(-10px); }
-          75% { transform: translateX(10px); }
-          100% { transform: translateX(0); }
-        }
-      `}</style>
+      {gameState === 'finished' && (
+        <div className="game-result-overlay">
+          <h2>🏆 全問クリア！ 🏆</h2>
+          <p style={{fontSize: '1.5rem', marginBottom: '20px'}}>スコア: {score}</p>
+          <div className="result-buttons">
+             <button className="next-button" onClick={handleRestart}>もう一度遊ぶ</button>
+             <button className="exit-button" onClick={onClose} style={{fontSize: '1.2rem', padding: '10px 30px', borderRadius: '50px'}}>メニューへ戻る</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
