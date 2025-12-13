@@ -39,18 +39,29 @@
 }
 
 .blank-slot {
-  display: inline-block;
-  min-width: 80px;
-  height: 2.2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 50px;
+  height: 2.5rem;
   border-bottom: 3px solid #ccc;
   margin: 0 5px;
-  text-align: center;
   cursor: pointer;
   color: #333;
   transition: all 0.3s;
   padding: 0 10px;
   background: #f5f5f5;
   border-radius: 4px;
+  vertical-align: middle;
+}
+
+.blank-slot .draggable-word {
+  cursor: grab;
+  font-weight: bold;
+}
+
+.blank-slot .draggable-word:active {
+  cursor: grabbing;
 }
 
 .blank-slot.highlight {
@@ -93,6 +104,15 @@
 
 .word-card:hover {
   transform: translateY(-2px);
+}
+
+/* Draggable specific styles */
+.word-card[draggable="true"] {
+  cursor: grab;
+}
+
+.word-card[draggable="true"]:active {
+  cursor: grabbing;
 }
 
 .word-card.selected {

@@ -14,6 +14,9 @@ const FillInTheBlankGame = ({ onClose }) => {
   const [feedback, setFeedback] = useState(null); // null, 'correct', 'incorrect'
   const [score, setScore] = useState(0);
 
+  // Derived state for checking if a card is placed
+  const isCardPlaced = (cardId) => Object.values(placedCards).includes(cardId);
+
   // Initialize questions (shuffle)
   useEffect(() => {
     const shuffled = [...QUESTIONS].sort(() => Math.random() - 0.5);
@@ -41,7 +44,7 @@ const FillInTheBlankGame = ({ onClose }) => {
       const initialCards = config.words.map((word, index) => ({
         id: index,
         text: word,
-        isPlaced: false
+        // isPlaced removed from state object, derived instead
       }));
       // Shuffle cards
       setCards(initialCards.sort(() => Math.random() - 0.5));
@@ -50,7 +53,7 @@ const FillInTheBlankGame = ({ onClose }) => {
 
   const handleCardClick = (card) => {
     if (gameState !== 'playing') return;
-    if (card.isPlaced) return;
+    if (isCardPlaced(card.id)) return;
 
     if (selectedCard && selectedCard.id === card.id) {
       setSelectedCard(null); // Deselect
@@ -60,45 +63,76 @@ const FillInTheBlankGame = ({ onClose }) => {
     }
   };
 
-  const handleBlankClick = (blankIndex) => {
+  const handlePlaceCard = (blankIndex, cardId) => {
     if (gameState !== 'playing') return;
 
-    // If a card is already placed here, remove it and return it to the pool
-    if (placedCards[blankIndex] !== undefined) {
-      const removedCardId = placedCards[blankIndex];
-      setPlacedCards(prev => {
-        const newPlaced = { ...prev };
-        delete newPlaced[blankIndex];
-        return newPlaced;
-      });
-      setCards(prev => prev.map(c => 
-        c.id === removedCardId ? { ...c, isPlaced: false } : c
-      ));
-      return; 
+    const newPlacedCards = { ...placedCards };
+
+    // Remove card from previous slot if any (move operation)
+    const oldKey = Object.keys(newPlacedCards).find(key => newPlacedCards[key] === cardId);
+    if (oldKey) {
+      delete newPlacedCards[oldKey];
     }
 
-    if (!selectedCard) return;
+    // Assign to new slot
+    newPlacedCards[blankIndex] = cardId;
 
-    // Place the selected card
-    setPlacedCards(prev => ({
-      ...prev,
-      [blankIndex]: selectedCard.id
-    }));
-    
-    setCards(prev => prev.map(c => 
-      c.id === selectedCard.id ? { ...c, isPlaced: true } : c
-    ));
-    
+    setPlacedCards(newPlacedCards);
     setSelectedCard(null);
     playOK1Sound();
 
     // Check if all blanks are filled
     const totalBlanks = (config.text.match(/\{(\d+)\}/g) || []).length;
-    const newPlacedCards = { ...placedCards, [blankIndex]: selectedCard.id };
     
     if (Object.keys(newPlacedCards).length === totalBlanks) {
       checkResult(newPlacedCards);
     }
+  };
+
+  const handleBlankClick = (blankIndex) => {
+    if (gameState !== 'playing') return;
+
+    const existingCardId = placedCards[blankIndex];
+
+    if (selectedCard) {
+        // Place selected card (replaces if exists)
+        handlePlaceCard(blankIndex, selectedCard.id);
+    } else if (existingCardId !== undefined) {
+        // Remove existing card
+        setPlacedCards(prev => {
+            const newPlaced = { ...prev };
+            delete newPlaced[blankIndex];
+            return newPlaced;
+        });
+    }
+  };
+
+  // Drag and Drop Handlers
+  const handleDragStart = (e, cardId) => {
+    if (gameState !== 'playing') {
+        e.preventDefault();
+        return;
+    }
+    e.dataTransfer.setData("text/plain", cardId.toString());
+    e.dataTransfer.effectAllowed = "move";
+    // Optionally highlight drop zones
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault(); // Necessary to allow dropping
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDrop = (e, blankIndex) => {
+    e.preventDefault();
+    const cardIdStr = e.dataTransfer.getData("text/plain");
+    if (!cardIdStr) return;
+    const cardId = parseInt(cardIdStr);
+    
+    // Validate card exists
+    if (!cards.find(c => c.id === cardId)) return;
+
+    handlePlaceCard(blankIndex, cardId);
   };
 
   const checkResult = (currentPlacedCards) => {
@@ -158,8 +192,19 @@ const FillInTheBlankGame = ({ onClose }) => {
                 key={index} 
                 className={`blank-slot ${placedCard ? 'filled' : ''} ${selectedCard ? 'highlight' : ''}`}
                 onClick={() => handleBlankClick(blankIndex)}
+                onDragOver={handleDragOver}
+                onDrop={(e) => handleDrop(e, blankIndex)}
               >
-                {placedCard ? placedCard.text : '____'}
+                {placedCard ? (
+                  <span 
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, placedCard.id)}
+                    className="draggable-word"
+                    style={{ cursor: 'grab', display: 'inline-block', width: '100%' }}
+                  >
+                    {placedCard.text}
+                  </span>
+                ) : ' '}
               </span>
             );
           }
@@ -194,15 +239,20 @@ const FillInTheBlankGame = ({ onClose }) => {
       </div>
 
       <div className={`cards-area ${feedback}`}>
-        {cards.map(card => (
-          <div
-            key={card.id}
-            className={`word-card ${card.isPlaced ? 'placed' : ''} ${selectedCard?.id === card.id ? 'selected' : ''}`}
-            onClick={() => handleCardClick(card)}
-          >
-            {card.text}
-          </div>
-        ))}
+        {cards.map(card => {
+          const placed = isCardPlaced(card.id);
+          return (
+            <div
+              key={card.id}
+              className={`word-card ${placed ? 'placed' : ''} ${selectedCard?.id === card.id ? 'selected' : ''}`}
+              onClick={() => handleCardClick(card)}
+              draggable={!placed}
+              onDragStart={(e) => handleDragStart(e, card.id)}
+            >
+              {card.text}
+            </div>
+          );
+        })}
       </div>
 
       {gameState === 'won' && (
