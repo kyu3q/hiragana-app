@@ -10,7 +10,7 @@ const MemoryGame = ({ onClose, type, grade }) => {
   const [isChecking, setIsChecking] = useState(false);
   // typeがkanjiの場合はgradeを使用、それ以外は'main'
   const [selectedType, setSelectedType] = useState(type === 'kanji' ? grade : 'main');
-  const [isBattleMode, setIsBattleMode] = useState(true);
+  const [isBattleMode, setIsBattleMode] = useState(false);
   const [currentPlayer, setCurrentPlayer] = useState('lion'); // 'lion' or 'dog'
   const [playerPairs, setPlayerPairs] = useState({ lion: 0, dog: 0 });
   const [showResult, setShowResult] = useState(false);
@@ -219,7 +219,7 @@ const MemoryGame = ({ onClose, type, grade }) => {
   };
 
   return (
-    <div className="memory-game">
+    <div className={`memory-game ${type === 'kanji' ? 'kanji-mode' : ''}`}>
       {showResult ? (
         <div className="memory-result-area">
           <div className="result-content">

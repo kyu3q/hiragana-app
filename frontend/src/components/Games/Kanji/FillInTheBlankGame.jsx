@@ -164,6 +164,11 @@ const FillInTheBlankGame = ({ onClose }) => {
     }
   };
 
+  const handleSkip = () => {
+    playNGSound();
+    handleNext();
+  };
+
   const handleRestart = () => {
       const shuffled = [...QUESTIONS].sort(() => Math.random() - 0.5);
       setQuestions(shuffled);
@@ -217,7 +222,10 @@ const FillInTheBlankGame = ({ onClose }) => {
   return (
     <div className="fill-blank-game">
       <div className="game-header-info">
-        <button className="exit-button" onClick={onClose}>やめる</button>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button className="exit-button" onClick={onClose}>やめる</button>
+          <button className="skip-button" onClick={handleSkip}>スキップ</button>
+        </div>
         <div className="score">Score: {score}</div>
       </div>
 

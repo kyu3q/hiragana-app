@@ -6,7 +6,7 @@ import { playMemoryOKSound, playMemoryNGSound, playHappy1Sound, playWrongSound }
 
 const KanjiQuizGame = ({ onClose, type, grade }) => {
   // State
-  const [isBattleMode, setIsBattleMode] = useState(true);
+  const [isBattleMode, setIsBattleMode] = useState(false);
   
   const [currentQuestion, setCurrentQuestion] = useState(null);
   
