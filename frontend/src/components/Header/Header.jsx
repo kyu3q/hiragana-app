@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import './Header.css';
 
 const Header = ({ currentType, onTypeChange }) => {
-  const { currentUser } = useAuth();
+  const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
 
   console.log('Header - currentUser:', currentUser);
@@ -53,6 +53,7 @@ const Header = ({ currentType, onTypeChange }) => {
           <div className="user-info">
             <span className="user-name">{currentUser.username}</span>
             <button className="fullscreen-btn" onClick={handleFullScreen}>全画面</button>
+            <button className="logout-btn" onClick={logout}>ログアウト</button>
           </div>
         )}
       </div>
@@ -60,4 +61,4 @@ const Header = ({ currentType, onTypeChange }) => {
   );
 };
 
-export default Header; 
+export default Header;
