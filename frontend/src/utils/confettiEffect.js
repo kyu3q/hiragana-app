@@ -5,7 +5,8 @@ export const triggerConfetti = () => {
   confetti({
     particleCount: 100,
     spread: 70,
-    origin: { y: 0.6 }
+    origin: { y: 0.6 },
+    zIndex: 2000
   });
 };
 
@@ -18,7 +19,8 @@ export const triggerColorfulConfetti = () => {
     spread: 100,
     origin: { y: 0.6 },
     colors: colors,
-    ticks: 200
+    ticks: 200,
+    zIndex: 2000
   });
 };
 
@@ -48,7 +50,8 @@ export const triggerFireworks = () => {
       origin: {
         x: randomInRange(0.1, 0.9),
         y: Math.random() - 0.2
-      }
+      },
+      zIndex: 2000
     });
   }, 250);
-}; 
+};

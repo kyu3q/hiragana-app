@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { playOK1Sound, playNGSound, playFinishSound } from '../../../utils/soundPlayer';
+import { triggerConfetti, triggerFireworks } from '../../../utils/confettiEffect';
 import { QUESTIONS } from '../../../data/fillInTheBlankQuestions';
 import '../KanjiCard/KanjiGames.css'; // Re-use common styles
 import './FillInTheBlankGame.css'; // Specific styles
@@ -148,6 +149,7 @@ const FillInTheBlankGame = ({ onClose }) => {
     if (isCorrect) {
       setGameState('won');
       playFinishSound();
+      triggerConfetti();
       setFeedback('correct');
       setScore(prev => prev + 100);
     } else {
@@ -166,6 +168,7 @@ const FillInTheBlankGame = ({ onClose }) => {
 
     if (nextSolvedCount >= 10) {
       setGameState('finished');
+      triggerFireworks();
     } else {
       setCurrentQuestionIndex(prev => {
         if (prev < questions.length - 1) {
