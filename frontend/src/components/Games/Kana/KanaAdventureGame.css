@@ -1,0 +1,300 @@
+.kana-adventure-game {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  font-family: "M PLUS Rounded 1c", sans-serif;
+  background: linear-gradient(180deg, #87CEEB 0%, #B2EBF2 50%, #E0F7FA 100%);
+}
+
+/* Scrollable Container */
+.adventure-scroll-container {
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+  position: relative;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.adventure-scroll-container::-webkit-scrollbar {
+  display: none;
+}
+
+/* Tall container holding the path */
+.adventure-path-container {
+  width: 100%;
+  min-height: 1650px; 
+  position: relative;
+  padding: 100px 0 150px 0;
+  display: flex;
+  flex-direction: column-reverse; /* Start from bottom */
+  align-items: center;
+}
+
+/* Background Mountain Graphic */
+.mountain-bg {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  background: 
+    linear-gradient(to top, #66BB6A 0%, #A5D6A7 40%, #E0F7FA 80%, #FFFFFF 100%);
+  opacity: 0.8;
+}
+
+/* Decorative Clouds */
+.cloud-decoration {
+  position: absolute;
+  background: white;
+  border-radius: 50%;
+  opacity: 0.8;
+  animation: floatCloud 20s linear infinite;
+}
+@keyframes floatCloud {
+  0% { transform: translateX(-100px); }
+  100% { transform: translateX(100vw); }
+}
+
+/* The Winding Path Line */
+.winding-path-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1));
+}
+
+/* Individual Stage/Question Node */
+.stage-node {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  height: 140px; 
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Positioning content Left or Right */
+.stage-content {
+  position: absolute;
+  transition: all 0.5s ease;
+  width: auto; /* Auto width to fit content */
+  min-width: 200px;
+  /* Removed max-width to allow growth for longer text */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.stage-node.left .stage-content {
+  left: 5%;
+  justify-content: flex-start;
+}
+
+.stage-node.right .stage-content {
+  right: 5%;
+  justify-content: flex-end;
+}
+
+/* Active Quiz Container */
+.quiz-active-container {
+  text-align: center;
+  animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative; 
+  z-index: 20;
+  width: auto; /* Allow growth */
+}
+
+.quiz-header-simple {
+  font-size: 1.2rem;
+  color: #E65100;
+  font-weight: bold;
+  margin-bottom: 5px;
+  text-shadow: 1px 1px 0 rgba(255,255,255,0.8);
+  background: rgba(255,255,255,0.8);
+  padding: 2px 10px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+.quiz-question-text {
+  font-size: 5rem; /* Fixed large size */
+  color: #333;
+  line-height: 1;
+  font-weight: bold;
+  text-shadow: 
+    3px 3px 0 #FFF,
+    -1px -1px 0 #FFF,  
+    1px -1px 0 #FFF,
+    -1px 1px 0 #FFF,
+    1px 1px 0 #FFF;
+  margin-bottom: 10px;
+  white-space: nowrap; /* Keep text on one line, container will grow */
+}
+
+.quiz-options-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  width: 100%;
+}
+
+.quiz-option-btn {
+  background: white;
+  border: 3px solid #DDD;
+  border-radius: 16px;
+  padding: 0.8rem;
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #555;
+  cursor: pointer;
+  transition: all 0.1s;
+  box-shadow: 0 4px 0 #BBB;
+  font-family: inherit;
+  min-width: 80px;
+  white-space: nowrap;
+  width: auto; /* Allow growth */
+}
+
+.quiz-option-btn:active {
+  transform: translateY(4px);
+  box-shadow: none;
+}
+
+.quiz-option-btn.correct {
+  background: #DCEDC8;
+  border-color: #8BC34A;
+  color: #33691E;
+  box-shadow: 0 4px 0 #689F38;
+}
+
+.quiz-option-btn.incorrect {
+  background: #FFCDD2;
+  border-color: #EF5350;
+  color: #B71C1C;
+  box-shadow: 0 4px 0 #C62828;
+}
+
+/* Inactive/Locked/Cleared States */
+.stage-marker {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.8rem;
+  font-weight: bold;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+  transition: all 0.3s;
+  position: relative;
+  background: white;
+  z-index: 5;
+}
+
+.stage-node.locked .stage-marker {
+  background: rgba(236, 239, 241, 0.6);
+  color: #B0BEC5;
+  border: 2px solid #CFD8DC;
+}
+
+.stage-node.cleared .stage-marker {
+  background: #FFF59D;
+  color: #FBC02D;
+  border: 2px solid #FBC02D;
+}
+
+/* Flag pole for cleared */
+.stage-node.cleared .stage-marker::after {
+  content: '';
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  width: 3px;
+  height: 20px;
+  background: #795548;
+  z-index: -1;
+}
+
+/* Avatar */
+.player-avatar {
+  position: absolute;
+  width: 70px;
+  height: 70px;
+  font-size: 3.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 30;
+  filter: drop-shadow(0 5px 5px rgba(0,0,0,0.3));
+  transition: all 0.5s ease;
+  top: -50px; 
+}
+
+/* Result Screen Overlay */
+.adventure-result-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255,255,255,0.95);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  animation: fadeIn 0.5s;
+}
+
+.result-title {
+  font-size: 3rem;
+  color: #FF6F00;
+  margin-bottom: 2rem;
+  text-shadow: 2px 2px 0 #FFF3E0;
+}
+
+.result-score {
+  font-size: 2.5rem;
+  color: #3E2723;
+  margin-bottom: 2rem;
+}
+
+.game-button {
+  background: linear-gradient(to bottom, #FFCA28, #FF6F00);
+  color: white;
+  border: none;
+  border-radius: 50px;
+  box-shadow: 0 5px 0 #E65100;
+  cursor: pointer;
+  transition: transform 0.1s;
+  font-family: inherit;
+  font-weight: bold;
+}
+
+.game-button:active {
+  transform: translateY(5px);
+  box-shadow: none;
+}
+
+@keyframes popIn {
+  from { transform: scale(0.5); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

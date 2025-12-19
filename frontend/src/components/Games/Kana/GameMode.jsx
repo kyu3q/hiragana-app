@@ -2,9 +2,14 @@ import React, { useState, useRef } from 'react';
 import './GameMode.css';
 import ShiritoriGame from './ShiritoriGame';
 import MemoryGame from '../Common/MemoryGame';
+import KanaAdventureGame from './KanaAdventureGame';
 
 // ゲームの設定を管理するオブジェクト
 const GAMES = {
+  adventure: {
+    component: KanaAdventureGame,
+    name: 'かな冒険クイズ'
+  },
   shiritori: {
     component: ShiritoriGame,
     name: 'しりとりゲーム'
