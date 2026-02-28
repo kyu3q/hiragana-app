@@ -113,6 +113,10 @@ const KanjiChart = ({ onClose, initialGrade }) => {
 
   const handleCharClick = (item) => {
     const id = kanjiMap[item.char];
+    console.log('漢字クリック:', { char: item.char, id, kanjiMapSize: Object.keys(kanjiMap).length });
+    if (!id) {
+      console.warn('この漢字のIDが見つかりません:', item.char);
+    }
     setSelectedChar({
       ...item,
       id: id // Add ID if available

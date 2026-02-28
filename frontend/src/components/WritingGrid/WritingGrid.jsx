@@ -210,8 +210,31 @@ const WritingGrid = ({ character, onClose, type = 'HIRAGANA' }) => {
   };
 
   const handleSave = async (index) => {
-    if (!isAuthenticated || !user || !characterId) {
+    console.log('保存開始:', { isAuthenticated, user, characterId, character });
+    if (!isAuthenticated || !user) {
       console.error('保存エラー: ログインしていません');
+      return;
+    }
+
+    // characterIdがない場合、character.charから取得を試みる
+    let targetCharacterId = characterId;
+    if (!targetCharacterId && character.char) {
+      try {
+        console.log('characterIdを取得中:', character.char);
+        const charData = await characterService.getCharacterByTypeAndCharacter('KANJI', character.char);
+        if (charData && charData.id) {
+          targetCharacterId = charData.id;
+          setCharacterId(charData.id);
+          console.log('characterIDを取得しました:', targetCharacterId);
+        }
+      } catch (error) {
+        console.error('characterID取得エラー:', error);
+        return;
+      }
+    }
+
+    if (!targetCharacterId) {
+      console.error('保存エラー: characterIDが取得できません');
       return;
     }
 
@@ -224,21 +247,21 @@ const WritingGrid = ({ character, onClose, type = 'HIRAGANA' }) => {
     setSavingPosition(index);
 
     try {
-      const existingCheck = await checkHandwritingExists(user.id, characterId);
+      const existingCheck = await checkHandwritingExists(user.id, targetCharacterId);
 
       if (existingCheck.exists) {
         // 確認なしで上書き保存
         await updateHandwriting(
           existingCheck.handwritingId,
           user.id,
-          characterId,
+          targetCharacterId,
           index,
           JSON.stringify(item.strokes)
         );
       } else {
         await saveHandwriting(
           user.id,
-          characterId,
+          targetCharacterId,
           index,
           JSON.stringify(item.strokes)
         );

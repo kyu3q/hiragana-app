@@ -377,7 +377,7 @@ const WritingPractice = ({ character, onComplete, initialStrokes, type = 'HIRAGA
   return (
     <div className="writing-practice">
       <div className="writing-header">
-        <h2>{character.char}（{type === 'KATAKANA' ? 'カタカナ' : 'ひらがな'}）</h2>
+        <h2>{character.char}（{type === 'KANJI' ? (character.kunyomi?.split('・')[0] || character.onyomi?.split('・')[0] || '') : (type === 'KATAKANA' ? 'カタカナ' : 'ひらがな')}）</h2>
       </div>
       <div className="writing-canvas-container">
         <canvas
