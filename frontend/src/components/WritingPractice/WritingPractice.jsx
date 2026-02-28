@@ -9,7 +9,7 @@ const WritingPractice = ({ character, onComplete, initialStrokes, type = 'HIRAGA
   const [isDrawing, setIsDrawing] = useState(false);
   const [lastX, setLastX] = useState(0);
   const [lastY, setLastY] = useState(0);
-  const [strokeColor, setStrokeColor] = useState('#FF6B6B');
+  const [strokeColor] = useState('#3f51b5');
   const [strokeWidth, setStrokeWidth] = useState(8);
   const [currentStroke, setCurrentStroke] = useState([]);
   const [allStrokes, setAllStrokes] = useState([]);
@@ -398,20 +398,6 @@ const WritingPractice = ({ character, onComplete, initialStrokes, type = 'HIRAGA
         <button className="cancel-button" onClick={clearCanvas}>
           消す
         </button>
-        <div className="color-picker">
-          <button 
-            className="color-button red"
-            onClick={() => setStrokeColor('#FF6B6B')}
-          />
-          <button 
-            className="color-button blue"
-            onClick={() => setStrokeColor('#4ECDC4')}
-          />
-          <button 
-            className="color-button green"
-            onClick={() => setStrokeColor('#45B7D1')}
-          />
-        </div>
         <button className="complete-button" onClick={handleComplete}>
           完了
         </button>

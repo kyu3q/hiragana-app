@@ -4,7 +4,7 @@ import WritingPractice from '../WritingPractice/WritingPractice';
 import { characterService } from '../../api/characterService';
 import { progressService } from '../../api/progressService';
 import { useAuth } from '../../context/AuthContext';
-import { saveHandwriting, checkHandwritingExists, updateHandwriting } from '../../api/handwritingService';
+import { saveHandwriting, checkHandwritingExists, updateHandwriting, getUserHandwritings } from '../../api/handwritingService';
 
 const PRACTICE_CANVAS_SIZE = 300; // 練習用キャンバスのサイズ
 const GRID_CANVAS_SIZE = 180;     // グリッド用キャンバスのサイズ
@@ -85,20 +85,36 @@ const WritingGrid = ({ character, onClose, type = 'HIRAGANA' }) => {
   }, [characterId, isAuthenticated, type]);
 
   useEffect(() => {
-    const fetchSavedPosition = async () => {
+    const fetchSavedHandwriting = async () => {
       if (type !== 'KANJI' || !isAuthenticated || !user || !characterId) return;
 
       try {
         const result = await checkHandwritingExists(user.id, characterId);
         if (result.exists) {
           setSavedPosition(result.position || null);
+
+          // 保存済みのストロークデータを取得して中央のマス（インデックス4）に表示
+          const handwritings = await getUserHandwritings(user.id);
+          const savedHandwriting = handwritings.find(hw => hw.characterId === characterId);
+
+          if (savedHandwriting && savedHandwriting.strokes) {
+            const strokes = JSON.parse(savedHandwriting.strokes);
+            const newGridItems = [...gridItems];
+            newGridItems[4] = {
+              strokes: strokes,
+              score: 0,
+              comment: '',
+              isEditing: false
+            };
+            setGridItems(newGridItems);
+          }
         }
       } catch (error) {
-        console.error('保存状態の確認エラー:', error);
+        console.error('保存データの取得エラー:', error);
       }
     };
 
-    fetchSavedPosition();
+    fetchSavedHandwriting();
   }, [characterId, isAuthenticated, user, type]);
 
   const handleGridItemClick = (index) => {
@@ -289,7 +305,7 @@ const WritingGrid = ({ character, onClose, type = 'HIRAGANA' }) => {
                         stroke.points.forEach(point => {
                           ctx.lineTo(point.x * scale, point.y * scale);
                         });
-                        ctx.strokeStyle = '#FF6B6B';
+                        ctx.strokeStyle = '#3f51b5';
                         ctx.lineWidth = 4 * scale;
                         ctx.lineCap = 'round';
                         ctx.lineJoin = 'round';
