@@ -75,4 +75,4 @@ package-lock.json
 ### Environment ###
 .env
 .env.local
-.env.*.local 
+.env.*.local .worktrees/
