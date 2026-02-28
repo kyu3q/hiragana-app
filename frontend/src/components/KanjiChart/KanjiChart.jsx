@@ -270,7 +270,9 @@ const KanjiChart = ({ onClose, initialGrade }) => {
                                     }
                                   }}
                                 />
-                              ) : null}
+                              ) : (
+                                <ProgressStack count={progress ? progress.goodCount : 0} icon="⭐" />
+                              )}
                             </div>
                           </div>
                         </td>

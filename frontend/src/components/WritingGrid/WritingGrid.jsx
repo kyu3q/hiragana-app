@@ -316,7 +316,7 @@ const WritingGrid = ({ character, onClose, type = 'HIRAGANA' }) => {
                 <div className="comment">{item.comment}</div>
               </div>
             )}
-            {type === 'KANJI' && (
+            {type === 'KANJI' && item.strokes.length > 0 && (
               <button
                 className={`save-button ${savedPosition === index ? 'saved' : ''}`}
                 onClick={(e) => {
