@@ -306,7 +306,7 @@ const WritingGrid = ({ character, onClose, type = 'HIRAGANA' }) => {
                           ctx.lineTo(point.x * scale, point.y * scale);
                         });
                         ctx.strokeStyle = '#3f51b5';
-                        ctx.lineWidth = 4 * scale;
+                        ctx.lineWidth = 6 * scale;
                         ctx.lineCap = 'round';
                         ctx.lineJoin = 'round';
                         ctx.stroke();

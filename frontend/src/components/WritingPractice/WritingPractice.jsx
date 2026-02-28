@@ -9,8 +9,8 @@ const WritingPractice = ({ character, onComplete, initialStrokes, type = 'HIRAGA
   const [isDrawing, setIsDrawing] = useState(false);
   const [lastX, setLastX] = useState(0);
   const [lastY, setLastY] = useState(0);
-  const [strokeColor] = useState('#3f51b5');
-  const [strokeWidth, setStrokeWidth] = useState(8);
+  const [strokeColor] = useState('#5c6bc0');
+  const [strokeWidth, setStrokeWidth] = useState(10);
   const [currentStroke, setCurrentStroke] = useState([]);
   const [allStrokes, setAllStrokes] = useState([]);
   const GUIDE_FONT_FAMILY = "'HG教科書体', 'HGKyokashotai', 'Yu Kyokasho', 'YuKyokasho', 'やさしさゴシック手書き', 'YasashisaGothic', 'AnzuMoji', 'あんずもじ', 'Yu Mincho', '游明朝', 'Noto Serif JP', 'M PLUS Rounded 1c', sans-serif";
