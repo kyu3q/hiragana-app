@@ -5,7 +5,6 @@ import { useAuth } from '../../context/AuthContext';
 import { characterService } from '../../api/characterService';
 import { progressService } from '../../api/progressService';
 import ProgressStack from '../HiraganaChart/ProgressStack';
-import HanamaruSVG from '../HiraganaChart/HanamaruSVG';
 import { kanjiByGrade } from '../../data/kanjiData';
 import { getUserHandwritings } from '../../api/handwritingService';
 
@@ -178,13 +177,6 @@ const KanjiChart = ({ onClose, initialGrade }) => {
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, size, size);
 
-    ctx.fillStyle = '#f9fafb';
-    ctx.fillRect(0, 0, size, size);
-
-    ctx.strokeStyle = '#e5e7eb';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(0, 0, size, size);
-
     const scale = size / 300;
 
     strokes.forEach(stroke => {
@@ -194,7 +186,7 @@ const KanjiChart = ({ onClose, initialGrade }) => {
         stroke.points.forEach(point => {
           ctx.lineTo(point.x * scale, point.y * scale);
         });
-        ctx.strokeStyle = '#FF6B6B';
+        ctx.strokeStyle = '#FFB3B3';
         ctx.lineWidth = 3 * scale;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
@@ -253,9 +245,6 @@ const KanjiChart = ({ onClose, initialGrade }) => {
                           onClick={() => handleCharClick(item)}
                         >
                           <div className="cell-content">
-                            {isCompleted && (
-                              <HanamaruSVG className="hanamaru-overlay" />
-                            )}
                             <div className="kanji-char-box">{item.char}</div>
                             <div className="kanji-reading-box">{item.kunyomi?.split('・')[0] || item.onyomi?.split('・')[0] || ''}</div>
                             <div className="kanji-bento-box">

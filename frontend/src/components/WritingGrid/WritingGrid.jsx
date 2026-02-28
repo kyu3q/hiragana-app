@@ -195,13 +195,13 @@ const WritingGrid = ({ character, onClose, type = 'HIRAGANA' }) => {
 
   const handleSave = async (index) => {
     if (!isAuthenticated || !user || !characterId) {
-      alert('ログインしてください');
+      console.error('保存エラー: ログインしていません');
       return;
     }
 
     const item = gridItems[index];
     if (!item.strokes || item.strokes.length === 0) {
-      alert('保存する手書きデータがありません');
+      console.error('保存エラー: 手書きデータがありません');
       return;
     }
 
@@ -211,15 +211,7 @@ const WritingGrid = ({ character, onClose, type = 'HIRAGANA' }) => {
       const existingCheck = await checkHandwritingExists(user.id, characterId);
 
       if (existingCheck.exists) {
-        const confirmed = window.confirm(
-          'この漢字は既に保存されています。上書きしますか？'
-        );
-
-        if (!confirmed) {
-          setSavingPosition(null);
-          return;
-        }
-
+        // 確認なしで上書き保存
         await updateHandwriting(
           existingCheck.handwritingId,
           user.id,
@@ -237,10 +229,8 @@ const WritingGrid = ({ character, onClose, type = 'HIRAGANA' }) => {
       }
 
       setSavedPosition(index);
-      alert('保存しました！');
     } catch (error) {
       console.error('保存エラー:', error);
-      alert('保存に失敗しました。もう一度お試しください。');
     } finally {
       setSavingPosition(null);
     }
