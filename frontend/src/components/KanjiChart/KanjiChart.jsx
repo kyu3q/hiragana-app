@@ -7,6 +7,7 @@ import { progressService } from '../../api/progressService';
 import ProgressStack from '../HiraganaChart/ProgressStack';
 import HanamaruSVG from '../HiraganaChart/HanamaruSVG';
 import { kanjiByGrade } from '../../data/kanjiData';
+import { getUserHandwritings } from '../../api/handwritingService';
 
 const PAGE_SIZE = 40;
 
@@ -17,6 +18,7 @@ const KanjiChart = ({ onClose, initialGrade }) => {
   const [progressData, setProgressData] = useState({});
   const [kanjiMap, setKanjiMap] = useState({}); // char -> id mapping
   const [page, setPage] = useState(0);
+  const [handwritingData, setHandwritingData] = useState({});
 
   // Fetch Kanji IDs from backend
   useEffect(() => {
@@ -79,6 +81,30 @@ const KanjiChart = ({ onClose, initialGrade }) => {
     fetchProgressData();
   }, [isAuthenticated, user, kanjiMap, initialGrade]); // ページ依存を削除（一括取得のため）
 
+  useEffect(() => {
+    const fetchHandwritingData = async () => {
+      if (!isAuthenticated || !user) return;
+
+      try {
+        const handwritings = await getUserHandwritings(user.id, initialGrade);
+
+        const handwritingMap = {};
+        handwritings.forEach(hw => {
+          handwritingMap[hw.character] = {
+            strokes: JSON.parse(hw.strokes),
+            position: hw.position
+          };
+        });
+
+        setHandwritingData(handwritingMap);
+      } catch (error) {
+        console.error('手書きデータ取得エラー:', error);
+      }
+    };
+
+    fetchHandwritingData();
+  }, [isAuthenticated, user, initialGrade]);
+
   const getProgressStatus = (progress) => {
     if (!progress) return 'not-started';
     if (progress.isCompleted) return 'completed';
@@ -123,9 +149,58 @@ const KanjiChart = ({ onClose, initialGrade }) => {
         }
       };
       fetchCharProgress();
+
+      // Add this after the existing progress fetch
+      const fetchHandwritings = async () => {
+        try {
+          const handwritings = await getUserHandwritings(user.id, initialGrade);
+          const handwritingMap = {};
+          handwritings.forEach(hw => {
+            handwritingMap[hw.character] = {
+              strokes: JSON.parse(hw.strokes),
+              position: hw.position
+            };
+          });
+          setHandwritingData(handwritingMap);
+        } catch (error) {
+          console.error('手書きデータ更新エラー:', error);
+        }
+      };
+      fetchHandwritings();
     }
-    
+
     setSelectedChar(null);
+  };
+
+  const drawHandwriting = (canvas, strokes, size) => {
+    if (!canvas || !strokes || strokes.length === 0) return;
+
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, size, size);
+
+    ctx.fillStyle = '#f9fafb';
+    ctx.fillRect(0, 0, size, size);
+
+    ctx.strokeStyle = '#e5e7eb';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(0, 0, size, size);
+
+    const scale = size / 300;
+
+    strokes.forEach(stroke => {
+      if (stroke.points && stroke.points.length > 0) {
+        ctx.beginPath();
+        ctx.moveTo(stroke.points[0].x * scale, stroke.points[0].y * scale);
+        stroke.points.forEach(point => {
+          ctx.lineTo(point.x * scale, point.y * scale);
+        });
+        ctx.strokeStyle = '#FF6B6B';
+        ctx.lineWidth = 3 * scale;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.stroke();
+      }
+    });
   };
 
   const chunkItems = (items, size) => {
@@ -184,7 +259,18 @@ const KanjiChart = ({ onClose, initialGrade }) => {
                             <div className="kanji-char-box">{item.char}</div>
                             <div className="kanji-reading-box">{item.kunyomi?.split('・')[0] || item.onyomi?.split('・')[0] || ''}</div>
                             <div className="kanji-bento-box">
-                              <ProgressStack count={progress ? progress.goodCount : 0} icon="⭐" />
+                              {handwritingData[item.char] ? (
+                                <canvas
+                                  className="saved-handwriting-preview"
+                                  width={50}
+                                  height={50}
+                                  ref={canvas => {
+                                    if (canvas && handwritingData[item.char]) {
+                                      drawHandwriting(canvas, handwritingData[item.char].strokes, 50);
+                                    }
+                                  }}
+                                />
+                              ) : null}
                             </div>
                           </div>
                         </td>

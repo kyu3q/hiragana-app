@@ -4,6 +4,7 @@ import WritingPractice from '../WritingPractice/WritingPractice';
 import { characterService } from '../../api/characterService';
 import { progressService } from '../../api/progressService';
 import { useAuth } from '../../context/AuthContext';
+import { saveHandwriting, checkHandwritingExists, updateHandwriting } from '../../api/handwritingService';
 
 const PRACTICE_CANVAS_SIZE = 300; // 練習用キャンバスのサイズ
 const GRID_CANVAS_SIZE = 180;     // グリッド用キャンバスのサイズ
@@ -18,6 +19,8 @@ const WritingGrid = ({ character, onClose, type = 'HIRAGANA' }) => {
   })));
   const { isAuthenticated, currentUser: user } = useAuth();
   const [characterId, setCharacterId] = useState(character.id);
+  const [savedPosition, setSavedPosition] = useState(null);
+  const [savingPosition, setSavingPosition] = useState(null);
 
   useEffect(() => {
     setCharacterId(character.id);
@@ -80,6 +83,23 @@ const WritingGrid = ({ character, onClose, type = 'HIRAGANA' }) => {
 
     fetchStrokeResults();
   }, [characterId, isAuthenticated, type]);
+
+  useEffect(() => {
+    const fetchSavedPosition = async () => {
+      if (type !== 'KANJI' || !isAuthenticated || !user || !characterId) return;
+
+      try {
+        const result = await checkHandwritingExists(user.id, characterId);
+        if (result.exists) {
+          setSavedPosition(result.position || null);
+        }
+      } catch (error) {
+        console.error('保存状態の確認エラー:', error);
+      }
+    };
+
+    fetchSavedPosition();
+  }, [characterId, isAuthenticated, user, type]);
 
   const handleGridItemClick = (index) => {
     const newGridItems = [...gridItems];
@@ -173,6 +193,59 @@ const WritingGrid = ({ character, onClose, type = 'HIRAGANA' }) => {
     }
   };
 
+  const handleSave = async (index) => {
+    if (!isAuthenticated || !user || !characterId) {
+      alert('ログインしてください');
+      return;
+    }
+
+    const item = gridItems[index];
+    if (!item.strokes || item.strokes.length === 0) {
+      alert('保存する手書きデータがありません');
+      return;
+    }
+
+    setSavingPosition(index);
+
+    try {
+      const existingCheck = await checkHandwritingExists(user.id, characterId);
+
+      if (existingCheck.exists) {
+        const confirmed = window.confirm(
+          'この漢字は既に保存されています。上書きしますか？'
+        );
+
+        if (!confirmed) {
+          setSavingPosition(null);
+          return;
+        }
+
+        await updateHandwriting(
+          existingCheck.handwritingId,
+          user.id,
+          characterId,
+          index,
+          JSON.stringify(item.strokes)
+        );
+      } else {
+        await saveHandwriting(
+          user.id,
+          characterId,
+          index,
+          JSON.stringify(item.strokes)
+        );
+      }
+
+      setSavedPosition(index);
+      alert('保存しました！');
+    } catch (error) {
+      console.error('保存エラー:', error);
+      alert('保存に失敗しました。もう一度お試しください。');
+    } finally {
+      setSavingPosition(null);
+    }
+  };
+
   const drawGuideCharacter = (ctx, char, width, height) => {
     // 拗音の場合は文字サイズを大きくする
     const fontSize = char.length > 1 ? width * 0.55 : width * 0.7;
@@ -242,6 +315,19 @@ const WritingGrid = ({ character, onClose, type = 'HIRAGANA' }) => {
                 <div className="score">{item.score}点</div>
                 <div className="comment">{item.comment}</div>
               </div>
+            )}
+            {type === 'KANJI' && (
+              <button
+                className={`save-button ${savedPosition === index ? 'saved' : ''}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleSave(index);
+                }}
+                disabled={savingPosition === index || savedPosition === index}
+              >
+                {savingPosition === index ? '保存中...' :
+                 savedPosition === index ? '保存済み ✓' : '📌 保存する'}
+              </button>
             )}
           </>
         ) : (
