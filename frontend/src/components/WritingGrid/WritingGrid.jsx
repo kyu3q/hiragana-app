@@ -310,13 +310,13 @@ const WritingGrid = ({ character, onClose, type = 'HIRAGANA' }) => {
                 }}
               />
             </div>
-            {item.score > 0 && (
+            {item.score > 0 && type !== 'KANJI' && (
               <div className="score-display">
                 <div className="score">{item.score}点</div>
                 <div className="comment">{item.comment}</div>
               </div>
             )}
-            {type === 'KANJI' && item.strokes.length > 0 && (
+            {type === 'KANJI' && (
               <button
                 className={`save-button ${savedPosition === index ? 'saved' : ''}`}
                 onClick={(e) => {

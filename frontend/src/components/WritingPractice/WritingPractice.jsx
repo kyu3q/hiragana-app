@@ -281,6 +281,17 @@ const WritingPractice = ({ character, onComplete, initialStrokes, type = 'HIRAGA
 
   const handleComplete = async () => {
     try {
+      // 漢字の場合は採点をスキップ
+      if (type === 'KANJI') {
+        const strokesArray = allStrokes.map(stroke => ({
+          points: stroke.points,
+          score: 0,
+          comment: ''
+        }));
+        onComplete(strokesArray, 0, '');
+        return;
+      }
+
       const { score, comment } = evaluateDrawing();
       console.log('採点結果:', { score, comment });
       const strokesArray = allStrokes.map(stroke => ({
@@ -320,7 +331,9 @@ const WritingPractice = ({ character, onComplete, initialStrokes, type = 'HIRAGA
   };
 
   const handleTouchStart = (e) => {
-    e.preventDefault();
+    if (e.cancelable) {
+      e.preventDefault();
+    }
     const canvas = canvasRef.current;
     const touch = e.touches[0];
     const { x, y } = getTouchPos(touch, canvas);
@@ -332,7 +345,9 @@ const WritingPractice = ({ character, onComplete, initialStrokes, type = 'HIRAGA
 
   const handleTouchMove = (e) => {
     if (!isDrawing) return;
-    e.preventDefault();
+    if (e.cancelable) {
+      e.preventDefault();
+    }
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     const touch = e.touches[0];
