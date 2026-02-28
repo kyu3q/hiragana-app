@@ -53,7 +53,8 @@ public class SecurityConfig {
             .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             .and()
             .authorizeRequests()
-                .antMatchers("/api/auth/**", "/api/users", "/api/users/**").permitAll()
+                .antMatchers("/api/auth/**").permitAll()
+                .antMatchers("/api/users").permitAll()  // ユーザー登録のみ認証不要
                 .antMatchers("/api/characters/**").permitAll()
                 .antMatchers("/h2-console/**").permitAll()
                 .anyRequest().authenticated()

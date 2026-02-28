@@ -7,9 +7,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.http.HttpStatus;
 
 import java.util.Optional;
 
@@ -39,17 +36,7 @@ public class UserController {
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getUser(@PathVariable Long id) {
-        // ログインユーザーチェック
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        boolean isAuthenticated = authentication != null && authentication.isAuthenticated() 
-                              && !authentication.getName().equals("anonymousUser");
-        
-        if (!isAuthenticated) {
-            logger.warn("Unauthenticated access attempt to user info: {}", id);
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("認証が必要です");
-        }
-        
-        // 認証済みユーザーの場合、通常の処理を行う
+        logger.info("Getting user info for id: {}", id);
         Optional<User> user = userService.getUserById(id);
         return user.map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
