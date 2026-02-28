@@ -186,8 +186,8 @@ const KanjiChart = ({ onClose, initialGrade }) => {
         stroke.points.forEach(point => {
           ctx.lineTo(point.x * scale, point.y * scale);
         });
-        ctx.strokeStyle = '#FFB3B3';
-        ctx.lineWidth = 3 * scale;
+        ctx.strokeStyle = '#3f51b5';
+        ctx.lineWidth = 2.5;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
         ctx.stroke();
