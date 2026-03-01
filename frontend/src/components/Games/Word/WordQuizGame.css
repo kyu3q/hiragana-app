@@ -1,0 +1,379 @@
+/* 単語クイズゲームのスタイル */
+
+.word-quiz-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.word-quiz-content {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ヘッダー */
+.quiz-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.quiz-info h2 {
+  margin: 0 0 10px 0;
+  color: #4ECDC4;
+  font-size: 1.5rem;
+}
+
+.quiz-stats {
+  display: flex;
+  gap: 20px;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+/* 閉じるボタンは既存のスタイルを使用 */
+
+/* ボディ */
+.quiz-body {
+  padding: 30px 20px;
+}
+
+/* ドロップゾーン */
+.drop-zones-container {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-bottom: 40px;
+  flex-wrap: wrap;
+}
+
+.drop-zone {
+  width: 80px;
+  height: 80px;
+  border: 3px dashed #ccc;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: bold;
+  background: white;
+  transition: all 0.3s;
+  cursor: pointer;
+  position: relative;
+}
+
+.drop-zone.empty {
+  background: #f5f5f5;
+}
+
+.drop-zone.filled {
+  border: 3px solid #4ECDC4;
+  background: #e0f7f5;
+}
+
+.drop-zone.locked {
+  border: 3px solid #999;
+  background: #e0e0e0;
+  cursor: not-allowed;
+}
+
+.drop-zone.drag-over {
+  border-color: #4ECDC4;
+  background: #b3f0ea;
+  transform: scale(1.05);
+}
+
+.drop-zone.correct {
+  border-color: #4caf50;
+  background: #c8e6c9;
+  animation: correctPulse 0.5s ease-out;
+}
+
+.drop-zone.incorrect {
+  border-color: #f44336;
+  background: #ffcdd2;
+  animation: shake 0.5s ease-out;
+}
+
+@keyframes correctPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-10px); }
+  75% { transform: translateX(10px); }
+}
+
+.drop-zone-placeholder {
+  color: #ccc;
+  font-size: 2.5rem;
+}
+
+.drop-zone-content {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.remove-hint {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: #ff6b6b;
+  color: white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.drop-zone.filled:hover .remove-hint {
+  opacity: 1;
+}
+
+/* 説明テキストは削除 */
+
+/* フィードバック */
+.feedback-message {
+  text-align: center;
+  padding: 20px;
+  margin: 20px 0;
+  border-radius: 15px;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.feedback-message.correct {
+  background: linear-gradient(135deg, #a5d6a7 0%, #81c784 100%);
+  color: white;
+}
+
+.feedback-message.incorrect {
+  background: linear-gradient(135deg, #ef9a9a 0%, #e57373 100%);
+  color: white;
+}
+
+.feedback-icon {
+  font-size: 3rem;
+  margin-bottom: 10px;
+}
+
+.feedback-text {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 15px;
+}
+
+.correct-word {
+  margin-top: 20px;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 10px;
+  color: #333;
+}
+
+.word-display {
+  font-size: 2rem;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.word-reading {
+  font-size: 1.2rem;
+  color: #666;
+  margin-bottom: 10px;
+}
+
+.word-hint {
+  font-size: 1rem;
+  color: #888;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* 選択肢エリア */
+.choices-container {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+
+/* ドラッグ可能な漢字カード */
+.draggable-kanji-card {
+  width: 70px;
+  height: 70px;
+  background: white;
+  border: 2px solid #4ECDC4;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: bold;
+  cursor: move;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.draggable-kanji-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(78, 205, 196, 0.3);
+}
+
+.draggable-kanji-card.dragging {
+  opacity: 0.5;
+  transform: scale(0.9);
+}
+
+.draggable-kanji-card.used {
+  opacity: 0.3;
+  cursor: not-allowed;
+  border-color: #ccc;
+}
+
+.draggable-kanji-card.used:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+/* 完了画面 */
+.quiz-complete {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.quiz-complete h2 {
+  color: #4ECDC4;
+  font-size: 2rem;
+  margin-bottom: 30px;
+}
+
+.final-score {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 30px;
+  border-radius: 15px;
+  margin-bottom: 30px;
+}
+
+.final-score p {
+  font-size: 1.5rem;
+  margin: 10px 0;
+}
+
+.answered-words {
+  background: #f5f5f5;
+  padding: 20px;
+  border-radius: 15px;
+  margin-bottom: 30px;
+}
+
+.answered-words h3 {
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.word-item {
+  padding: 15px;
+  background: white;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  text-align: left;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.word-kanji {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #4ECDC4;
+  margin-right: 10px;
+}
+
+.word-reading {
+  font-size: 1rem;
+  color: #666;
+}
+
+/* 閉じるボタンは既存のスタイルを使用 */
+
+/* レスポンシブ対応 */
+@media (max-width: 600px) {
+  .word-quiz-content {
+    max-width: 100%;
+    border-radius: 0;
+  }
+
+  .quiz-header {
+    padding: 15px;
+  }
+
+  .quiz-body {
+    padding: 20px 15px;
+  }
+
+  .kanji-large {
+    font-size: 2rem;
+  }
+
+  .drop-zone {
+    width: 60px;
+    height: 60px;
+    font-size: 1.5rem;
+  }
+
+  .draggable-kanji-card {
+    width: 60px;
+    height: 60px;
+    font-size: 1.5rem;
+  }
+
+  .choices-container {
+    gap: 10px;
+  }
+
+  .drop-zones-container {
+    gap: 10px;
+  }
+}

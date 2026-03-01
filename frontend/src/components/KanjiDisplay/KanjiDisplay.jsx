@@ -6,6 +6,8 @@ import KanjiChart from '../KanjiChart/KanjiChart';
 import MemoryGame from '../Games/Common/MemoryGame';
 import KanjiQuizGame from '../Games/Kanji/KanjiQuizGame';
 import FillInTheBlankGame from '../Games/Kanji/FillInTheBlankGame';
+import WordQuizGame from '../Games/Word/WordQuizGame';
+import { grade2WordData } from '../../data/wordData';
 import '../Games/Kana/GameMode.css';
 
 const randomPick = (arr, count = 1) => {
@@ -36,6 +38,7 @@ const KanjiDisplay = () => {
   const [gameKey, setGameKey] = useState(0);
   const [activeGameMode, setActiveGameMode] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showWordQuiz, setShowWordQuiz] = useState(false);
   
   const [quizQuestion, setQuizQuestion] = useState(null);
   const [quizOptions, setQuizOptions] = useState([]);
@@ -112,7 +115,13 @@ const KanjiDisplay = () => {
   };
 
   const handleCardClick = (item) => {
-    handleGameStart(item);
+    // 2年生の漢字で単語データがある場合は単語クイズを起動
+    if (grade === 2 && grade2WordData[item.char]) {
+      setGameTarget(item);
+      setShowWordQuiz(true);
+    } else {
+      handleGameStart(item);
+    }
   };
 
   const closeGame = () => {
@@ -275,8 +284,19 @@ const KanjiDisplay = () => {
         />
       )}
 
+      {/* Word Quiz Game Modal */}
+      {showWordQuiz && gameTarget && (
+        <WordQuizGame
+          selectedKanji={gameTarget.char}
+          onClose={() => {
+            setShowWordQuiz(false);
+            setGameTarget(null);
+          }}
+        />
+      )}
+
       {/* Fallback Legacy Mini Game Modal (Only if no gameType) */}
-      {!activeGameMode && gameTarget && (
+      {!activeGameMode && !showWordQuiz && gameTarget && (
         <div className="story-modal" onClick={() => setGameTarget(null)}>
           <div className="story-card" onClick={(e) => e.stopPropagation()}>
             <div className="story-head">
