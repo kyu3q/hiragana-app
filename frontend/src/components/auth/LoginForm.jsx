@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { login } from '../../api/authService';
 import { useAuth } from '../../context/AuthContext';
 import './AuthForms.css';
 
 const LoginForm = ({ onSuccess, onRegisterClick }) => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -37,7 +39,13 @@ const LoginForm = ({ onSuccess, onRegisterClick }) => {
       if (onSuccess) onSuccess(userData.user);
     } catch (err) {
       console.error('ログインエラー:', err);
-      setError(err.message || 'ログインに失敗しました。もう一度お試しください。');
+
+      // メール未確認エラーをチェック
+      if (err.response?.data?.needsVerification) {
+        setError('メールアドレスが未確認です。確認メールをご確認ください。');
+      } else {
+        setError(err.message || 'ログインに失敗しました。もう一度お試しください。');
+      }
     } finally {
       setLoading(false);
     }
@@ -96,6 +104,16 @@ const LoginForm = ({ onSuccess, onRegisterClick }) => {
       </form>
       
       <div className="auth-form-footer">
+        <div className="mt-4 text-center">
+          <button
+            type="button"
+            onClick={() => navigate('/forgot-password')}
+            className="text-button"
+            style={{ marginBottom: '8px' }}
+          >
+            パスワードを忘れた方はこちら
+          </button>
+        </div>
         <p>アカウントをお持ちでないですか？</p>
         <button onClick={onRegisterClick} className="text-button">
           新規登録はこちら
