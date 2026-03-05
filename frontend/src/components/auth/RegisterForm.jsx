@@ -60,10 +60,13 @@ const RegisterForm = ({ onSuccess, onLoginClick }) => {
     try {
       // ユーザー登録
       await register(formData.email, formData.nickname, formData.password);
-      
+
+      // 登録成功メッセージを表示
+      alert('登録が完了しました。確認メールを送信しましたので、メールをご確認ください。');
+
       // 自動ログインしてトークンを取得
       const loginData = await login(formData.email, formData.password);
-      
+
       setCurrentUser(loginData.user);
       if (onSuccess) onSuccess(loginData.user);
     } catch (err) {
