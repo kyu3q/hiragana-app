@@ -13,6 +13,7 @@ import ShiritoriGame from './components/Games/Kana/ShiritoriGame';
 import VerifyEmail from './pages/VerifyEmail';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import RegisterSuccess from './pages/RegisterSuccess';
 
 // 認証が必要なルート用コンポーネント
 function PrivateRoute({ children }) {
@@ -36,6 +37,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<AuthPage />} />
+      <Route path="/register-success" element={<RegisterSuccess />} />
       <Route path="/verify" element={<VerifyEmail />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />

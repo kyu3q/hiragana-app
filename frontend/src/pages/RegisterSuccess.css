@@ -1,0 +1,377 @@
+.register-success-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+  font-family: "M PLUS Rounded 1c", "Meiryo", sans-serif;
+}
+
+/* 背景のアニメーション */
+.success-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.floating-char {
+  position: absolute;
+  font-size: 4rem;
+  font-weight: bold;
+  color: rgba(255, 255, 255, 0.4);
+  animation: float 6s ease-in-out infinite;
+  user-select: none;
+}
+
+.char-1 { top: 10%; left: 10%; animation-delay: 0s; }
+.char-2 { top: 20%; right: 15%; animation-delay: 1.2s; }
+.char-3 { bottom: 15%; left: 15%; animation-delay: 2.4s; }
+.char-4 { bottom: 25%; right: 10%; animation-delay: 3.6s; }
+.char-5 { top: 50%; left: 5%; animation-delay: 4.8s; }
+
+@keyframes float {
+  0% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-20px) rotate(5deg); }
+  100% { transform: translateY(0) rotate(0deg); }
+}
+
+/* コンテンツ */
+.success-content {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 600px;
+  animation: slideUp 0.6s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* カード */
+.success-card {
+  background-color: rgba(255, 255, 255, 0.95);
+  border-radius: 24px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  padding: 40px;
+  border: 4px solid #fff;
+  text-align: center;
+}
+
+/* 成功アイコン */
+.success-icon-large {
+  width: 140px;
+  height: 140px;
+  margin: 0 auto 24px;
+  animation: bounceIn 0.8s ease-out;
+}
+
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.success-title {
+  color: #ff7043;
+  font-size: 2.5rem;
+  margin: 0 0 8px;
+  font-weight: bold;
+}
+
+.success-subtitle {
+  color: #795548;
+  font-size: 1.2rem;
+  margin: 0 0 32px;
+  font-weight: bold;
+}
+
+/* メールアドレス表示 */
+.email-display {
+  background: linear-gradient(135deg, #ffe0b2 0%, #ffccbc 100%);
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 32px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  animation: fadeIn 0.6s ease-out 0.3s both;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.email-icon {
+  font-size: 2rem;
+}
+
+.email-text {
+  color: #5d4037;
+  font-size: 1.1rem;
+  font-weight: bold;
+  word-break: break-all;
+}
+
+/* 説明セクション */
+.instructions {
+  text-align: left;
+  margin-bottom: 24px;
+  animation: fadeIn 0.6s ease-out 0.4s both;
+}
+
+.instructions-title {
+  color: #ff7043;
+  font-size: 1.5rem;
+  margin-bottom: 20px;
+  text-align: center;
+  border-bottom: 2px dashed #ffe0b2;
+  padding-bottom: 12px;
+}
+
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.step {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.step-number {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(45deg, #ff7043, #ff8a65);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  font-weight: bold;
+  box-shadow: 0 4px 6px rgba(255, 112, 67, 0.3);
+}
+
+.step-content h3 {
+  color: #5d4037;
+  font-size: 1.1rem;
+  margin: 0 0 4px;
+}
+
+.step-content p {
+  color: #795548;
+  font-size: 0.95rem;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* 注意事項 */
+.notice-box {
+  background: linear-gradient(135deg, #fff9c4 0%, #fff59d 100%);
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 24px;
+  display: flex;
+  gap: 12px;
+  text-align: left;
+  animation: fadeIn 0.6s ease-out 0.5s both;
+}
+
+.notice-icon {
+  font-size: 2rem;
+  flex-shrink: 0;
+}
+
+.notice-content {
+  flex: 1;
+}
+
+.notice-title {
+  color: #f57f17;
+  font-weight: bold;
+  font-size: 1rem;
+  margin: 0 0 8px;
+}
+
+.notice-list {
+  color: #795548;
+  font-size: 0.9rem;
+  margin: 0;
+  padding-left: 20px;
+  line-height: 1.6;
+}
+
+.notice-list li {
+  margin-bottom: 4px;
+}
+
+/* 再送信メッセージ */
+.resend-message {
+  padding: 12px 16px;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  font-weight: bold;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.resend-message.success {
+  background-color: #c8e6c9;
+  color: #2e7d32;
+  border: 2px solid #81c784;
+}
+
+.resend-message.error {
+  background-color: #ffcdd2;
+  color: #c62828;
+  border: 2px solid #ef5350;
+}
+
+/* ボタン */
+.button-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: fadeIn 0.6s ease-out 0.6s both;
+}
+
+.success-button {
+  padding: 14px 32px;
+  border: none;
+  border-radius: 30px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  width: 100%;
+}
+
+.success-button.primary {
+  background: linear-gradient(45deg, #ff7043, #ff8a65);
+  color: white;
+  box-shadow: 0 4px 6px rgba(255, 112, 67, 0.3);
+}
+
+.success-button.primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(255, 112, 67, 0.4);
+}
+
+.success-button.secondary {
+  background: linear-gradient(45deg, #ffe0b2, #ffccbc);
+  color: #6d4c41;
+  box-shadow: 0 4px 6px rgba(255, 171, 145, 0.2);
+}
+
+.success-button.secondary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(255, 171, 145, 0.3);
+}
+
+.success-button:active {
+  transform: translateY(0);
+}
+
+.success-button:disabled {
+  background: #bdbdbd;
+  box-shadow: none;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* レスポンシブ */
+@media (max-width: 768px) {
+  .success-card {
+    padding: 24px;
+  }
+
+  .success-title {
+    font-size: 2rem;
+  }
+
+  .success-subtitle {
+    font-size: 1rem;
+  }
+
+  .floating-char {
+    font-size: 3rem;
+  }
+
+  .success-icon-large {
+    width: 120px;
+    height: 120px;
+  }
+
+  .email-text {
+    font-size: 0.95rem;
+  }
+
+  .instructions-title {
+    font-size: 1.3rem;
+  }
+
+  .step-number {
+    width: 36px;
+    height: 36px;
+    font-size: 1.1rem;
+  }
+
+  .step-content h3 {
+    font-size: 1rem;
+  }
+
+  .step-content p {
+    font-size: 0.9rem;
+  }
+
+  .success-button {
+    font-size: 1rem;
+    padding: 12px 24px;
+  }
+}
+
+/* アクセシビリティ */
+@media (prefers-reduced-motion: reduce) {
+  .floating-char,
+  .success-icon-large,
+  .success-content {
+    animation: none;
+  }
+}

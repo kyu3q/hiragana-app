@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import apiClient from '../api/client';
+import './VerifyEmail.css';
 
 const VerifyEmail = () => {
   const [searchParams] = useSearchParams();
@@ -47,54 +48,89 @@ const VerifyEmail = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
-        <h1 className="text-3xl font-bold text-center mb-6 text-indigo-600">
-          メール確認
-        </h1>
+    <div className="verify-email-page">
+      {/* 背景のアニメーション */}
+      <div className="verify-background">
+        <div className="floating-char char-1">あ</div>
+        <div className="floating-char char-2">か</div>
+        <div className="floating-char char-3">さ</div>
+        <div className="floating-char char-4">た</div>
+        <div className="floating-char char-5">な</div>
+      </div>
 
-        {status === 'verifying' && (
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">確認中...</p>
-          </div>
-        )}
+      {/* コンテンツ */}
+      <div className="verify-content">
+        <div className="verify-card">
+          <h1 className="verify-title">メール確認</h1>
 
-        {status === 'success' && (
-          <div>
-            <div className="text-center mb-6">
-              <div className="text-green-500 text-6xl mb-4">✓</div>
-              <p className="text-lg text-gray-700">{message}</p>
+          {status === 'verifying' && (
+            <div className="verify-status verifying">
+              <div className="spinner"></div>
+              <p className="status-text">確認中...</p>
+              <div className="hiragana-spin">あ</div>
             </div>
-            <button
-              onClick={() => navigate('/login')}
-              className="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg hover:bg-indigo-700 transition duration-200"
-            >
-              ログインする
-            </button>
-          </div>
-        )}
+          )}
 
-        {status === 'error' && (
-          <div>
-            <div className="text-center mb-6">
-              <div className="text-red-500 text-6xl mb-4">✗</div>
-              <p className="text-lg text-gray-700 mb-4">{message}</p>
+          {status === 'success' && (
+            <div className="verify-status success">
+              <div className="success-icon">
+                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="50" cy="50" r="45" fill="#4caf50" opacity="0.2"/>
+                  <circle cx="50" cy="50" r="35" fill="#4caf50" opacity="0.4"/>
+                  <path
+                    d="M 30 50 L 45 65 L 70 35"
+                    stroke="#fff"
+                    strokeWidth="6"
+                    fill="none"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </div>
+              <p className="status-message">{message}</p>
+              <p className="status-sub">これでログインできます！</p>
+              <button
+                onClick={() => navigate('/login')}
+                className="verify-button primary"
+              >
+                ログインする
+              </button>
             </div>
-            <button
-              onClick={handleResendEmail}
-              className="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg hover:bg-indigo-700 transition duration-200 mb-3"
-            >
-              確認メールを再送信
-            </button>
-            <button
-              onClick={() => navigate('/login')}
-              className="w-full bg-gray-300 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-400 transition duration-200"
-            >
-              ログイン画面に戻る
-            </button>
-          </div>
-        )}
+          )}
+
+          {status === 'error' && (
+            <div className="verify-status error">
+              <div className="error-icon">
+                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="50" cy="50" r="45" fill="#f44336" opacity="0.2"/>
+                  <circle cx="50" cy="50" r="35" fill="#f44336" opacity="0.4"/>
+                  <path
+                    d="M 35 35 L 65 65 M 65 35 L 35 65"
+                    stroke="#fff"
+                    strokeWidth="6"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </div>
+              <p className="status-message">{message}</p>
+              <p className="status-sub">もう一度お試しください</p>
+              <div className="button-group">
+                <button
+                  onClick={handleResendEmail}
+                  className="verify-button primary"
+                >
+                  確認メールを再送信
+                </button>
+                <button
+                  onClick={() => navigate('/login')}
+                  className="verify-button secondary"
+                >
+                  ログイン画面に戻る
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

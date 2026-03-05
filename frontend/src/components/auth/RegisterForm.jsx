@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { register, login } from '../../api/authService';
-import { useAuth } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { register } from '../../api/authService';
 import './AuthForms.css';
 
 const RegisterForm = ({ onSuccess, onLoginClick }) => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: '',
     nickname: '',
@@ -12,7 +13,6 @@ const RegisterForm = ({ onSuccess, onLoginClick }) => {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { setCurrentUser } = useAuth();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -51,24 +51,20 @@ const RegisterForm = ({ onSuccess, onLoginClick }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
-    
+
     setLoading(true);
     setError('');
-    
+
     try {
       // ユーザー登録
       await register(formData.email, formData.nickname, formData.password);
 
-      // 登録成功メッセージを表示
-      alert('登録が完了しました。確認メールを送信しましたので、メールをご確認ください。');
-
-      // 自動ログインしてトークンを取得
-      const loginData = await login(formData.email, formData.password);
-
-      setCurrentUser(loginData.user);
-      if (onSuccess) onSuccess(loginData.user);
+      // 登録完了画面に遷移（メールアドレスを渡す）
+      navigate('/register-success', {
+        state: { email: formData.email }
+      });
     } catch (err) {
       console.error('登録エラー:', err);
       setError(err.toString() || '登録に失敗しました。もう一度お試しください。');

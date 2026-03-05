@@ -1,0 +1,258 @@
+.verify-email-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+  font-family: "M PLUS Rounded 1c", "Meiryo", sans-serif;
+}
+
+/* Background Animation - 浮遊するひらがな */
+.verify-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.floating-char {
+  position: absolute;
+  font-size: 4rem;
+  font-weight: bold;
+  color: rgba(255, 255, 255, 0.4);
+  animation: float 6s ease-in-out infinite;
+  user-select: none;
+}
+
+.char-1 { top: 10%; left: 10%; animation-delay: 0s; }
+.char-2 { top: 20%; right: 15%; animation-delay: 1.2s; }
+.char-3 { bottom: 15%; left: 15%; animation-delay: 2.4s; }
+.char-4 { bottom: 25%; right: 10%; animation-delay: 3.6s; }
+.char-5 { top: 50%; left: 5%; animation-delay: 4.8s; }
+
+@keyframes float {
+  0% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-20px) rotate(5deg); }
+  100% { transform: translateY(0) rotate(0deg); }
+}
+
+/* コンテンツ */
+.verify-content {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 500px;
+}
+
+/* カード */
+.verify-card {
+  background-color: rgba(255, 255, 255, 0.95);
+  border-radius: 24px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  padding: 40px;
+  border: 4px solid #fff;
+}
+
+.verify-title {
+  text-align: center;
+  margin-bottom: 32px;
+  color: #ff7043;
+  font-size: 2rem;
+  border-bottom: 2px dashed #ffe0b2;
+  padding-bottom: 16px;
+}
+
+/* ステータス共通 */
+.verify-status {
+  text-align: center;
+  padding: 20px;
+}
+
+/* 確認中 */
+.verify-status.verifying {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.spinner {
+  width: 60px;
+  height: 60px;
+  border: 6px solid #ffe0b2;
+  border-top: 6px solid #ff7043;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.status-text {
+  color: #6d4c41;
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.hiragana-spin {
+  font-size: 3rem;
+  color: #ff8a65;
+  animation: spinHiragana 2s ease-in-out infinite;
+}
+
+@keyframes spinHiragana {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) scale(1.2); }
+}
+
+/* 成功 */
+.verify-status.success {
+  animation: slideUp 0.5s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.success-icon, .error-icon {
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 24px;
+  animation: scaleIn 0.5s ease-out;
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.status-message {
+  color: #5d4037;
+  font-size: 1.3rem;
+  font-weight: bold;
+  margin: 16px 0 8px;
+}
+
+.status-sub {
+  color: #795548;
+  font-size: 1rem;
+  margin-bottom: 24px;
+}
+
+/* ボタン */
+.verify-button {
+  padding: 14px 32px;
+  border: none;
+  border-radius: 30px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  width: 100%;
+  margin-top: 12px;
+}
+
+.verify-button.primary {
+  background: linear-gradient(45deg, #ff7043, #ff8a65);
+  color: white;
+  box-shadow: 0 4px 6px rgba(255, 112, 67, 0.3);
+}
+
+.verify-button.primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(255, 112, 67, 0.4);
+}
+
+.verify-button.secondary {
+  background: linear-gradient(45deg, #ffe0b2, #ffccbc);
+  color: #6d4c41;
+  box-shadow: 0 4px 6px rgba(255, 171, 145, 0.2);
+}
+
+.verify-button.secondary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(255, 171, 145, 0.3);
+}
+
+.verify-button:active {
+  transform: translateY(0);
+}
+
+.button-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+/* エラー */
+.verify-status.error {
+  animation: shake 0.5s ease-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-10px); }
+  75% { transform: translateX(10px); }
+}
+
+/* レスポンシブ */
+@media (max-width: 768px) {
+  .verify-card {
+    padding: 24px;
+  }
+
+  .verify-title {
+    font-size: 1.6rem;
+  }
+
+  .floating-char {
+    font-size: 3rem;
+  }
+
+  .success-icon, .error-icon {
+    width: 100px;
+    height: 100px;
+  }
+
+  .status-message {
+    font-size: 1.1rem;
+  }
+
+  .verify-button {
+    font-size: 1rem;
+    padding: 12px 24px;
+  }
+}
+
+/* アクセシビリティ */
+@media (prefers-reduced-motion: reduce) {
+  .floating-char,
+  .spinner,
+  .hiragana-spin,
+  .success-icon,
+  .error-icon {
+    animation: none;
+  }
+}
