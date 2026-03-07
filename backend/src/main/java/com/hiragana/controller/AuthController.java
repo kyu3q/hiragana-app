@@ -104,8 +104,8 @@ public class AuthController {
         if (newPassword == null || newPassword.trim().isEmpty()) {
             return ResponseEntity.badRequest().body("新しいパスワードが必要です");
         }
-        if (newPassword.length() < 8) {
-            return ResponseEntity.badRequest().body("パスワードは8文字以上で設定してください");
+        if (newPassword.length() < 6) {
+            return ResponseEntity.badRequest().body("パスワードは6文字以上で設定してください");
         }
 
         boolean success = userService.resetPassword(token, newPassword);
