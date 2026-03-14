@@ -76,8 +76,8 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
     while (currentX < levelLength) {
       const type = Math.random();
       
-      // Determine Target Character vs Distractor
-      const isTarget = Math.random() < 0.5;
+      // Determine Target Character vs Distractor (70% correct, 30% wrong)
+      const isTarget = Math.random() < 0.8;
       let char = config.targetChar;
       
       if (!isTarget) {
@@ -604,18 +604,20 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
     state.items.forEach(item => {
         if (!item.active) return;
         const bob = Math.sin(Date.now() / 300) * 5;
-        
-        ctx.fillStyle = item.type === 'target' ? '#FFF59D' : '#E0E0E0';
+
+        // 正解は明るい黄色、間違いは暗いグレー
+        ctx.fillStyle = item.type === 'target' ? '#FFF59D' : '#757575';
         ctx.beginPath();
-        ctx.arc(item.x + item.w/2, item.y + item.h/2 + bob, item.w/2 + 2, 0, Math.PI * 2);
+        const itemSize = item.type === 'target' ? item.w/2 + 2 : item.w/2 - 2;
+        ctx.arc(item.x + item.w/2, item.y + item.h/2 + bob, itemSize, 0, Math.PI * 2);
         ctx.fill();
-        
-        ctx.strokeStyle = item.type === 'target' ? '#FBC02D' : '#9E9E9E';
-        ctx.lineWidth = 3;
+
+        ctx.strokeStyle = item.type === 'target' ? '#FBC02D' : '#424242';
+        ctx.lineWidth = item.type === 'target' ? 3 : 2;
         ctx.stroke();
 
-        ctx.font = `bold ${item.w * 0.7}px "Zen Maru Gothic", serif`;
-        ctx.fillStyle = item.type === 'target' ? '#F57F17' : '#616161';
+        ctx.font = `bold ${item.w * (item.type === 'target' ? 0.7 : 0.6)}px "Zen Maru Gothic", serif`;
+        ctx.fillStyle = item.type === 'target' ? '#F57F17' : '#212121';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(item.char, item.x + item.w/2, item.y + item.h/2 + bob + 2); // +2 for baseline adjustment
@@ -774,19 +776,19 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
         <div className="game-instruction-overlay">
           <h3>{config.title || '漢字ランナー'}</h3>
           <p>{config.instruction || '正しい漢字を集めてゴールを目指せ！'}</p>
-          
+
           <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'20px', margin:'20px 0', textAlign:'left', background:'rgba(255,255,255,0.1)', padding:'15px', borderRadius:'8px'}}>
              <div>
-                <span style={{fontSize:'24px'}}>🎯 {config.targetChar}</span> <br/>
-                <small>正解（コンボをつなげ！）</small>
+                <span style={{fontSize:'24px'}}>✨ {config.targetChar}</span> <br/>
+                <small style={{color:'#FFD700'}}>正解の漢字（明るい黄色）</small>
              </div>
              <div>
-                <span style={{fontSize:'24px'}}>❌ 漢字</span> <br/>
-                <small>間違い（ダメージ）</small>
+                <span style={{fontSize:'24px'}}>❌ 灰色</span> <br/>
+                <small style={{color:'#ff4757'}}>間違い漢字（ダメージ）</small>
              </div>
              <div>
                 <span style={{fontSize:'24px'}}>🧲</span> <br/>
-                <small>漢字をすいよせる</small>
+                <small>正しい漢字を引きよせる</small>
              </div>
              <div>
                 <span style={{fontSize:'24px'}}>🛡️</span> <br/>
@@ -794,12 +796,12 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
              </div>
              <div>
                 <span style={{fontSize:'24px'}}>❤</span> <br/>
-                <small>ライフ回復</small>
+                <small>ライフを1つ回復</small>
              </div>
           </div>
 
-          <p style={{fontSize: '0.9em'}}>画面タップでジャンプ（2回まで可能）</p>
-          <p style={{fontSize: '0.9em', color:'#FFD700'}}>敵を踏んづけて倒せるよ！</p>
+          <p style={{fontSize: '0.9em', marginTop: '10px'}}>📱 画面タップでジャンプ（2回までOK）</p>
+          <p style={{fontSize: '0.9em', color:'#FFD700', marginTop: '5px'}}>💡 敵を上から踏んで倒そう！</p>
           <button className="start-btn" onClick={() => {
               initGame();
               setGameState('playing');
