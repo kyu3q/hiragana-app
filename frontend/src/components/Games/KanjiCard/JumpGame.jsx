@@ -605,19 +605,19 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
         if (!item.active) return;
         const bob = Math.sin(Date.now() / 300) * 5;
 
-        // 正解は明るい黄色、間違いは暗いグレー
-        ctx.fillStyle = item.type === 'target' ? '#FFF59D' : '#757575';
+        // 正解は明るい黄色、間違いは明るいグレー
+        ctx.fillStyle = item.type === 'target' ? '#FFF59D' : '#E0E0E0';
         ctx.beginPath();
-        const itemSize = item.type === 'target' ? item.w/2 + 2 : item.w/2 - 2;
+        const itemSize = item.w/2 + 2; // 同じサイズに統一
         ctx.arc(item.x + item.w/2, item.y + item.h/2 + bob, itemSize, 0, Math.PI * 2);
         ctx.fill();
 
-        ctx.strokeStyle = item.type === 'target' ? '#FBC02D' : '#424242';
-        ctx.lineWidth = item.type === 'target' ? 3 : 2;
+        ctx.strokeStyle = item.type === 'target' ? '#FBC02D' : '#9E9E9E';
+        ctx.lineWidth = 3; // 同じ太さに統一
         ctx.stroke();
 
-        ctx.font = `bold ${item.w * (item.type === 'target' ? 0.7 : 0.6)}px "Zen Maru Gothic", serif`;
-        ctx.fillStyle = item.type === 'target' ? '#F57F17' : '#212121';
+        ctx.font = `bold ${item.w * 0.7}px "Zen Maru Gothic", serif`; // 同じフォントサイズに統一
+        ctx.fillStyle = item.type === 'target' ? '#F57F17' : '#616161';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(item.char, item.x + item.w/2, item.y + item.h/2 + bob + 2); // +2 for baseline adjustment
