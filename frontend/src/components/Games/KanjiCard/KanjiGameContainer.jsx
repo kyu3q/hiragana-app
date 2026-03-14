@@ -54,13 +54,9 @@ const KanjiGameContainer = ({ kanji, onClose }) => {
   return (
     <div className="kanji-game-container">
       <div className="game-header">
-        <div>
-          <button className="ghost" onClick={onClose} style={{fontSize: '1.2rem', padding: '4px 12px'}}>← もどる</button>
-          <span className="game-title" style={{marginLeft: '12px'}}>{kanji.char} のゲーム</span>
-        </div>
-        <div className="game-score">
-          {score} pt
-        </div>
+        <span className="game-kanji">{kanji.char}</span>
+        <span className="game-score">{score} pt</span>
+        <button className="game-close-btn" onClick={onClose}>×</button>
       </div>
       
       {renderGame()}

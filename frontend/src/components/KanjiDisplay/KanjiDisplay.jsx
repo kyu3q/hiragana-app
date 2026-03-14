@@ -7,6 +7,7 @@ import MemoryGame from '../Games/Common/MemoryGame';
 import KanjiQuizGame from '../Games/Kanji/KanjiQuizGame';
 import FillInTheBlankGame from '../Games/Kanji/FillInTheBlankGame';
 import WordQuizGame from '../Games/Word/WordQuizGame';
+import UnderDevelopment from '../UnderDevelopment/UnderDevelopment';
 import { grade2WordData } from '../../data/wordData';
 import '../Games/Kana/GameMode.css';
 
@@ -50,6 +51,9 @@ const KanjiDisplay = () => {
   const [miniOptions, setMiniOptions] = useState([]);
 
   const data = useMemo(() => kanjiByGrade.find((g) => g.grade === grade), [grade]);
+
+  // 3年生以上は開発中
+  const isUnderDevelopment = grade >= 3;
 
   const filteredItems = useMemo(() => {
     if (!data) return [];
@@ -184,33 +188,37 @@ const KanjiDisplay = () => {
       <div className="kanji-hero" style={{ background: `linear-gradient(135deg, ${data?.themeColor}22 0%, #ffffff 80%)` }}>
         <div className="header-row">
           <h1 className="title kanji-stylish-title">漢字であそぼう！</h1>
-          <div className="mode-toggle-inline">
-            <button 
-              className="kanji-mode-btn game-btn"
-              onClick={() => setActiveGameType('memory')}
-            >
-              🎮 ゲーム
-            </button>
-            <button 
-              className="kanji-mode-btn chart-btn"
-              onClick={() => setShowChart(true)}
-            >
-              📊 漢字表
-            </button>
-          </div>
+          {!isUnderDevelopment && (
+            <div className="mode-toggle-inline">
+              <button
+                className="kanji-mode-btn game-btn"
+                onClick={() => setActiveGameType('memory')}
+              >
+                🎮 ゲーム
+              </button>
+              <button
+                className="kanji-mode-btn chart-btn"
+                onClick={() => setShowChart(true)}
+              >
+                📊 漢字表
+              </button>
+            </div>
+          )}
         </div>
         
         <div className="controls-row">
-          <div className="search-box">
-            <span className="search-icon">🔍</span>
-            <input
-              type="text"
-              className="kanji-search-input"
-              placeholder="漢字、読み、意味でさがす..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
+          {!isUnderDevelopment && (
+            <div className="search-box">
+              <span className="search-icon">🔍</span>
+              <input
+                type="text"
+                className="kanji-search-input"
+                placeholder="漢字、読み、意味でさがす..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          )}
           <div className="grade-tabs">
             {kanjiByGrade.map((g) => (
               <button
@@ -225,55 +233,61 @@ const KanjiDisplay = () => {
         </div>
       </div>
 
-      <section className="kanji-grid-wrap">
-        <div className="section-head">
-          <h2>{grade}年の漢字ワールド</h2>
-          <p className="sub">漢字をえらんで冒険をはじめよう！</p>
-        </div>
-        {filteredItems.length === 0 ? (
-          <div className="no-results">
-            <p>「{searchTerm}」は見つかりませんでした。</p>
-          </div>
-        ) : (
-          <div className="kanji-grid">
-            {filteredItems.map((item) => (
-              <KanjiCard
-                key={item.char}
-                item={item}
-                themeColor={data.themeColor}
-                onClick={handleCardClick}
-              />
-            ))}
-          </div>
-        )}
-      </section>
+      {isUnderDevelopment ? (
+        <UnderDevelopment grade={grade} />
+      ) : (
+        <>
+          <section className="kanji-grid-wrap">
+            <div className="section-head">
+              <h2>{grade}年の漢字ワールド</h2>
+              <p className="sub">漢字をえらんで冒険をはじめよう！</p>
+            </div>
+            {filteredItems.length === 0 ? (
+              <div className="no-results">
+                <p>「{searchTerm}」は見つかりませんでした。</p>
+              </div>
+            ) : (
+              <div className="kanji-grid">
+                {filteredItems.map((item) => (
+                  <KanjiCard
+                    key={item.char}
+                    item={item}
+                    themeColor={data.themeColor}
+                    onClick={handleCardClick}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
 
-      <section className="quiz-section">
-        <div className="section-head">
-          <h2>クイッククイズ</h2>
-          <p className="sub">意味をタップして正解を当てよう（スコア: {score}）</p>
-        </div>
-        {quizQuestion && (
-          <div className="quiz-card">
-            <div className="quiz-q">
-              <span className="quiz-char">{quizQuestion.char}</span>
-              <span className="quiz-read">訓:{quizQuestion.kunyomi || '—'} / 音:{quizQuestion.onyomi || '—'}</span>
+          <section className="quiz-section">
+            <div className="section-head">
+              <h2>クイッククイズ</h2>
+              <p className="sub">意味をタップして正解を当てよう（スコア: {score}）</p>
             </div>
-            <div className="quiz-options">
-              {quizOptions.map((opt) => (
-                <button
-                  key={opt.char + opt.meaning}
-                  className="option"
-                  onClick={() => handleAnswer(opt)}
-                >
-                  {opt.meaning}
-                </button>
-              ))}
-            </div>
-            {quizResult && <p className="quiz-result">{quizResult}</p>}
-          </div>
-        )}
-      </section>
+            {quizQuestion && (
+              <div className="quiz-card">
+                <div className="quiz-q">
+                  <span className="quiz-char">{quizQuestion.char}</span>
+                  <span className="quiz-read">訓:{quizQuestion.kunyomi || '—'} / 音:{quizQuestion.onyomi || '—'}</span>
+                </div>
+                <div className="quiz-options">
+                  {quizOptions.map((opt) => (
+                    <button
+                      key={opt.char + opt.meaning}
+                      className="option"
+                      onClick={() => handleAnswer(opt)}
+                    >
+                      {opt.meaning}
+                    </button>
+                  ))}
+                </div>
+                {quizResult && <p className="quiz-result">{quizResult}</p>}
+              </div>
+            )}
+          </section>
+        </>
+      )}
 
 
       {/* Kanji Chart Modal */}
