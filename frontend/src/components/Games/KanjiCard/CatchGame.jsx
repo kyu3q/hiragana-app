@@ -141,6 +141,7 @@ const CatchGame = ({ config, onComplete, onAddScore }) => {
       if (stateRef.current.lives <= 0) {
           stateRef.current.isGameOver = true;
           setGameState('lost');
+          onComplete(false);
       }
   };
 
@@ -422,17 +423,6 @@ const CatchGame = ({ config, onComplete, onAddScore }) => {
         </div>
       )}
 
-      {gameState === 'lost' && (
-        <div className="game-result-modal">
-          <h2>ざんねん...</h2>
-          <p>ライフがなくなっちゃった！</p>
-          <button className="start-btn" onClick={() => {
-            initGame();
-            setGameState('playing');
-          }}>リトライ</button>
-        </div>
-      )}
-      
       <canvas 
         ref={canvasRef}
         style={{ width: '100%', height: '100%', maxWidth: '800px', maxHeight: '600px', aspectRatio: '4/3', border: '2px solid #ddd', borderRadius: '8px', background: 'white', touchAction: 'none' }}

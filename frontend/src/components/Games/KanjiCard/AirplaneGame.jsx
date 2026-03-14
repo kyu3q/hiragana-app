@@ -149,6 +149,7 @@ const AirplaneGame = ({ config, onComplete, onAddScore }) => {
     if (state.fuel <= 0) {
         setGameState('lost');
         playNGSound();
+        onComplete(false);
         return;
     }
 
@@ -479,18 +480,6 @@ const AirplaneGame = ({ config, onComplete, onAddScore }) => {
         </div>
       )}
 
-      {gameState === 'lost' && (
-        <div className="game-result-modal">
-          <h2>墜落...</h2>
-          <p>燃料がなくなっちゃった！</p>
-          <p>Score: {stateRef.current.score}</p>
-          <button className="start-btn" onClick={() => {
-            initGame();
-            setGameState('playing');
-          }}>リトライ</button>
-        </div>
-      )}
-      
       <canvas 
         ref={canvasRef}
         style={{ width: '100%', height: '100%', maxWidth: '800px', maxHeight: '600px', aspectRatio: '4/3', border: '2px solid #ddd', borderRadius: '8px', background: '#4FC3F7', touchAction: 'none' }}

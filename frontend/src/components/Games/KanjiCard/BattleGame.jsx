@@ -91,11 +91,9 @@ const BattleGame = ({ config, onComplete, onAddScore }) => {
           if (newPlayerHp === 0) {
             setGameOver(true);
             setMessage('目の前が真っ暗になった...');
-            // ゲームオーバー処理（リトライなど）
-            // ここでは簡易的にリトライボタンを出すなどの処理が必要だが、
-            // 今回はonComplete(false)で呼び出し元に任せるか、この場でリトライさせるか
-            // 既存のゲームに合わせて onComplete(false) は実装されていない場合が多いので
-            // このコンポーネント内でリトライを表示する
+            setTimeout(() => {
+              onComplete(false);
+            }, 1000);
           } else {
             // 次の問題へ
             setTimeout(() => {

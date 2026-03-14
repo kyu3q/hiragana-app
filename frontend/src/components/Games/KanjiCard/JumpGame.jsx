@@ -5,9 +5,7 @@ import { playJumpSound, playOK1Sound, playNGSound, playHappy1Sound, playHappy2So
 const JumpGame = ({ config, onComplete, onAddScore }) => {
   const canvasRef = useRef(null);
   const [gameState, setGameState] = useState('start'); // start, playing, won, lost
-  const [score, setScore] = useState(0);
   const [combo, setCombo] = useState(0);
-  const [gameOverReason, setGameOverReason] = useState('');
   const requestRef = useRef();
 
   // Constants
@@ -198,9 +196,7 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
       shield: false,
       items, enemies, obstacles, clouds, mountains, particles: [], powerups
     };
-    setScore(0);
     setCombo(0);
-    setGameOverReason('');
   };
 
   // --- Actions ---
@@ -235,12 +231,11 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
       // Combo Multiplier
       let multiplier = 1 + Math.floor(state.combo / 5) * 0.5; // Every 5 combo adds 0.5x
       const finalScore = Math.floor(amount * multiplier);
-      
+
       state.score += finalScore;
       state.combo++;
       state.comboTimer = 180; // Reset combo timer (3 seconds at 60fps)
-      
-      setScore(state.score);
+
       setCombo(state.combo);
       onAddScore(finalScore);
       
@@ -248,7 +243,7 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
       createParticles(state.player.x, state.player.y - 50, 5, '#FFD700', 5);
   };
 
-  const takeDamage = (reason) => {
+  const takeDamage = () => {
       const state = stateRef.current;
       if (state.invincible > 0) return;
       
@@ -265,10 +260,10 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
       state.combo = 0; // Reset combo on damage
       setCombo(0);
       playNGSound();
-      
+
       if (state.lives <= 0) {
-          setGameOverReason(reason);
           setGameState('lost');
+          onComplete(false);
       }
   };
 
@@ -320,7 +315,7 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
 
         if (rectIntersect(player.x + intendedMove, player.y, PLAYER_SIZE, PLAYER_SIZE, obs.x, obs.y, obs.w, obs.h)) {
             if (obs.type === 'spike') {
-                takeDamage('トゲに当たっちゃった！');
+                takeDamage();
             } else if (obs.type === 'block') {
                 // Top Collision
                 if (player.vy >= 0 && player.y + PLAYER_SIZE - player.vy <= obs.y + 10) {
@@ -371,7 +366,7 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
                 playHappy1Sound();
                 createParticles(enemy.x + enemy.w/2, enemy.y + enemy.h/2, 10, '#9C27B0', 4);
             } else {
-                takeDamage('敵に当たっちゃった！');
+                takeDamage();
             }
         }
     });
@@ -419,7 +414,7 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
                 playOK1Sound();
                 createParticles(item.x, item.y, 8, '#FFD700', 3);
             } else {
-                takeDamage('間違った漢字を取っちゃった！');
+                takeDamage();
             }
         }
     });
@@ -794,20 +789,6 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
         </div>
       )}
 
-      {gameState === 'lost' && (
-        <div className="game-result-modal">
-          <h2>ゲームオーバー</h2>
-          <p>{gameOverReason}</p>
-          <div style={{fontSize:'2rem', margin:'10px 0'}}>
-             スコア: {score}
-          </div>
-          <button className="start-btn" onClick={() => {
-            initGame();
-            setGameState('playing');
-          }}>リトライ</button>
-        </div>
-      )}
-      
       <canvas 
         ref={canvasRef}
         style={{ width: '100%', height: '100%', maxWidth: '800px', maxHeight: '600px', aspectRatio: '4/3', border: '2px solid #ddd', borderRadius: '8px', background: '#000', touchAction: 'none' }}
