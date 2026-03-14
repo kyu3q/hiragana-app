@@ -7,7 +7,6 @@ const MemoryGame = ({ onClose, type, grade }) => {
   const [cards, setCards] = useState([]);
   const [flippedCards, setFlippedCards] = useState([]);
   const [matchedPairs, setMatchedPairs] = useState([]);
-  const [isChecking, setIsChecking] = useState(false);
   // typeがkanjiの場合はgradeを使用、それ以外は'main'
   const [selectedType, setSelectedType] = useState(type === 'kanji' ? grade : 'main');
   const [isBattleMode, setIsBattleMode] = useState(false);
@@ -16,6 +15,7 @@ const MemoryGame = ({ onClose, type, grade }) => {
   const [showResult, setShowResult] = useState(false);
   const [winner, setWinner] = useState(null);
   const [matchedColors, setMatchedColors] = useState({}); // マッチしたカードの色を保持
+  const [clickQueue, setClickQueue] = useState([]); // クリックキュー処理用
 
   // ひらがな文字データの定義
   const hiraganaMainTable = [
@@ -63,8 +63,19 @@ const MemoryGame = ({ onClose, type, grade }) => {
     ['キョ','ギョ','ショ','ジョ','チョ','ニョ','ヒョ','ビョ','ピョ','ミョ','リョ'],
   ];
 
+  // アンパンマン画像データ（1-20まで）
+  const anpanmanImages = Array.from({ length: 20 }, (_, i) => ({
+    id: String(i + 1),
+    src: `/assets/images/memory/anpanman${i + 1}.png`
+  }));
+
   // 文字の種類に応じて文字を取得
   const getCharacters = (type) => {
+    // アンパンマンモードの場合
+    if (selectedType === 'anpanman') {
+      return anpanmanImages.map(img => img.id);
+    }
+
     if (type === 'kanji') {
       // propのgradeを使用 (selectedType stateは使用しないか、初期値として使用)
       const targetGrade = grade || Number(selectedType);
@@ -76,7 +87,7 @@ const MemoryGame = ({ onClose, type, grade }) => {
     }
 
     let characters = [];
-    const table = type === 'hiragana' ? 
+    const table = type === 'hiragana' ?
       { main: hiraganaMainTable, dakuon: hiraganaDakuonTable, youon: hiraganaYouonTable } :
       { main: katakanaMainTable, dakuon: katakanaDakuonTable, youon: katakanaYouonTable };
 
@@ -106,24 +117,26 @@ const MemoryGame = ({ onClose, type, grade }) => {
   const createCardPairs = () => {
     const allCharacters = getCharacters(type);
     const selectedCharacters = getRandomCharacters(allCharacters);
-    
+
+    const cardType = selectedType === 'anpanman' ? 'anpanman' : type;
+
     const pairs = selectedCharacters.map((char, index) => [
       {
         id: index * 2,
         value: char,
-        type: type,
+        type: cardType,
         isFlipped: false,
         isMatched: false
       },
       {
         id: index * 2 + 1,
         value: char,
-        type: type,
+        type: cardType,
         isFlipped: false,
         isMatched: false
       }
     ]).flat();
-    
+
     return pairs.sort(() => Math.random() - 0.5);
   };
 
@@ -138,74 +151,95 @@ const MemoryGame = ({ onClose, type, grade }) => {
     setCards(createCardPairs());
     setFlippedCards([]);
     setMatchedPairs([]);
+    setMatchedColors({});
+    setShowResult(false);
+    setWinner(null);
+    setClickQueue([]);
   };
 
   const handleCardClick = (clickedCard) => {
-    if (isChecking || flippedCards.length >= 2 || clickedCard.isMatched || flippedCards.includes(clickedCard)) {
+    if (
+      clickedCard.isMatched ||
+      flippedCards.includes(clickedCard) ||
+      (flippedCards.length === 1 && flippedCards[0].id === clickedCard.id)
+    ) {
       return;
     }
+    setClickQueue(prev => [...prev, clickedCard]);
+  };
 
-    const updatedCards = cards.map(card => 
-      card.id === clickedCard.id ? { ...card, isFlipped: true } : card
+  // クリックキューを監視して順次処理
+  useEffect(() => {
+    if (clickQueue.length < 1) return;
+    if (flippedCards.length >= 2) return; // 2枚めくり中は待つ
+
+    const nextCard = clickQueue[0];
+    setClickQueue(prev => prev.slice(1));
+
+    const updatedCards = cards.map(card =>
+      card.id === nextCard.id ? { ...card, isFlipped: true } : card
     );
     setCards(updatedCards);
 
-    const newFlippedCards = [...flippedCards, clickedCard];
+    const newFlippedCards = [...flippedCards, nextCard];
     setFlippedCards(newFlippedCards);
 
     if (newFlippedCards.length === 2) {
-      setIsChecking(true);
       const [first, second] = newFlippedCards;
-      
       if (first.value === second.value) {
         playMemoryOKSound();
-        const matchedCards = updatedCards.map(card => 
-          card.id === first.id || card.id === second.id ? { ...card, isMatched: true } : card
-        );
-        setCards(matchedCards);
-        setMatchedPairs([...matchedPairs, first.id, second.id]);
-        // マッチしたカードの色を保存
-        setMatchedColors(prev => ({
-          ...prev,
-          [first.id]: currentPlayer,
-          [second.id]: currentPlayer
-        }));
-        setFlippedCards([]);
-        setIsChecking(false);
-        if (isBattleMode) {
-          const newPlayerPairs = { ...playerPairs, [currentPlayer]: playerPairs[currentPlayer] + 1 };
-          setPlayerPairs(newPlayerPairs);
-          
-          if (matchedPairs.length + 2 === cards.length) {
-            const lionScore = newPlayerPairs.lion;
-            const dogScore = newPlayerPairs.dog;
-            if (lionScore > dogScore) {
-              setWinner('lion');
-            } else if (dogScore > lionScore) {
-              setWinner('dog');
-            } else {
-              setWinner('draw');
+        setTimeout(() => {
+          const matchedCards = updatedCards.map(card =>
+            card.id === first.id || card.id === second.id ? { ...card, isMatched: true } : card
+          );
+          setCards(matchedCards);
+          const newMatchedPairs = [...matchedPairs];
+          if (!newMatchedPairs.includes(first.id)) newMatchedPairs.push(first.id);
+          if (!newMatchedPairs.includes(second.id)) newMatchedPairs.push(second.id);
+          setMatchedPairs(newMatchedPairs);
+          const currentPlayerAtMatch = currentPlayer;
+          setMatchedColors(prev => ({
+            ...prev,
+            [first.id]: currentPlayerAtMatch,
+            [second.id]: currentPlayerAtMatch
+          }));
+          setFlippedCards([]);
+          if (isBattleMode) {
+            const newPlayerPairs = { ...playerPairs, [currentPlayerAtMatch]: playerPairs[currentPlayerAtMatch] + 1 };
+            setPlayerPairs(newPlayerPairs);
+            if (newMatchedPairs.length === cards.length) {
+              playHappy1Sound();
+              const lionScore = newPlayerPairs.lion;
+              const dogScore = newPlayerPairs.dog;
+              if (lionScore > dogScore) setWinner('lion');
+              else if (dogScore > lionScore) setWinner('dog');
+              else setWinner('draw');
+              setShowResult(true);
             }
-            playHappy1Sound();
-            setShowResult(true);
+          } else {
+            // シングルモードの場合も終了チェック
+            if (newMatchedPairs.length === cards.length) {
+              playHappy1Sound();
+              setWinner('single');
+              setShowResult(true);
+            }
           }
-        }
+        }, 500);
       } else {
         playMemoryNGSound();
         setTimeout(() => {
-          const resetCards = updatedCards.map(card => 
+          const resetCards = updatedCards.map(card =>
             card.id === first.id || card.id === second.id ? { ...card, isFlipped: false } : card
           );
           setCards(resetCards);
           setFlippedCards([]);
-          setIsChecking(false);
           if (isBattleMode) {
             setCurrentPlayer(prev => (prev === 'lion' ? 'dog' : 'lion'));
           }
-        }, 1000);
+        }, 700);
       }
     }
-  };
+  }, [clickQueue, flippedCards, cards, matchedPairs, isBattleMode, playerPairs, currentPlayer]);
 
   const handleRetry = () => {
     setCards(createCardPairs());
@@ -216,6 +250,7 @@ const MemoryGame = ({ onClose, type, grade }) => {
     setShowResult(false);
     setWinner(null);
     setMatchedColors({}); // マッチした色もリセット
+    setClickQueue([]); // クリックキューもリセット
   };
 
   return (
@@ -224,28 +259,35 @@ const MemoryGame = ({ onClose, type, grade }) => {
         <div className="memory-result-area">
           <div className="result-content">
             <div className="winner-emoji" style={{ fontSize: '4rem', marginBottom: '1rem', animation: 'bounce 1s infinite' }}>
-              {winner === 'draw' ? '🤝' : winner === 'lion' ? '🦁' : '🐶'}
+              {winner === 'single' ? '🎉' : winner === 'draw' ? '🤝' : winner === 'lion' ? '🦁' : '🐶'}
             </div>
             <div className="winner-announcement" style={{
-              color: winner === 'lion' ? '#fbbc5d' : winner === 'dog' ? '#5eb5fc' : '#888',
+              color: winner === 'single' ? '#5eb5fc' : winner === 'lion' ? '#fbbc5d' : winner === 'dog' ? '#5eb5fc' : '#888',
               fontSize: '2.5rem',
               fontWeight: 'bold',
               marginBottom: '1.5rem',
               letterSpacing: '0.1em',
               textShadow: '0 2px 8px #fff3'
             }}>
-              🎉{winner === 'draw' ? '引き分け！' : `${winner === 'lion' ? '🦁' : '🐶'}の勝ち！`}
+              {winner === 'single' ? '🎉クリア！' : winner === 'draw' ? '🎉引き分け！' : `🎉${winner === 'lion' ? '🦁' : '🐶'}の勝ち！`}
             </div>
-            <div className="result-scores">
-              <div className="result-score-row">
-                <span style={{ fontSize: '2rem', marginRight: '0.5rem' }}>🦁</span>
-                <span style={{ fontWeight: 'bold', color: '#fbbc5d' }}>{playerPairs.lion * 2} 枚</span>
+            {winner !== 'single' && (
+              <div className="result-scores">
+                <div className="result-score-row">
+                  <span style={{ fontSize: '2rem', marginRight: '0.5rem' }}>🦁</span>
+                  <span style={{ fontWeight: 'bold', color: '#fbbc5d' }}>{playerPairs.lion * 2} 枚</span>
+                </div>
+                <div className="result-score-row">
+                  <span style={{ fontSize: '2rem', marginRight: '0.5rem' }}>🐶</span>
+                  <span style={{ fontWeight: 'bold', color: '#5eb5fc' }}>{playerPairs.dog * 2} 枚</span>
+                </div>
               </div>
-              <div className="result-score-row">
-                <span style={{ fontSize: '2rem', marginRight: '0.5rem' }}>🐶</span>
-                <span style={{ fontWeight: 'bold', color: '#5eb5fc' }}>{playerPairs.dog * 2} 枚</span>
+            )}
+            {winner === 'single' && (
+              <div style={{ fontSize: '1.5rem', color: '#666', marginTop: '1rem' }}>
+                すべてのペアを見つけました！
               </div>
-            </div>
+            )}
           </div>
         </div>
       ) : (
@@ -274,6 +316,12 @@ const MemoryGame = ({ onClose, type, grade }) => {
                   >
                     拗音
                   </button>
+                  <button
+                    className={`type-button ${selectedType === 'anpanman' ? 'active' : ''}`}
+                    onClick={() => setSelectedType('anpanman')}
+                  >
+                    アンパンマン
+                  </button>
                 </>
               )}
               <button className="battle-mode-button" onClick={handleBattleModeToggle}>
@@ -290,7 +338,21 @@ const MemoryGame = ({ onClose, type, grade }) => {
               >
                 <div className="card-inner">
                   <div className={`card-front ${isBattleMode ? (card.isMatched ? `${matchedColors[card.id]}-turn` : `${currentPlayer}-turn`) : ''}`}>?</div>
-                  <div className={`card-back ${isBattleMode ? (card.isMatched ? `${matchedColors[card.id]}-turn` : `${currentPlayer}-turn`) : ''}`}>{card.value}</div>
+                  <div className={`card-back ${isBattleMode ? (card.isMatched ? `${matchedColors[card.id]}-turn` : `${currentPlayer}-turn`) : ''}`}>
+                    {card.type === 'anpanman' ? (
+                      <img
+                        src={anpanmanImages.find(img => img.id === card.value)?.src}
+                        alt={`アンパンマン${card.value}`}
+                        onError={(e) => {
+                          // 画像が見つからない場合は番号を表示
+                          e.target.style.display = 'none';
+                          e.target.parentElement.innerHTML = `<span style="font-size: 2rem; font-weight: bold;">🎭${card.value}</span>`;
+                        }}
+                      />
+                    ) : (
+                      card.value
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
