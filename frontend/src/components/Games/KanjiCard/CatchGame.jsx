@@ -345,20 +345,18 @@ const CatchGame = ({ config, onComplete, onAddScore }) => {
     });
 
     // UI
-    ctx.font = "bold 24px Arial";
-    ctx.fillStyle = "#333";
+    ctx.font = "30px Arial";
+    ctx.fillStyle = "#ff4757";
     ctx.textAlign = "left";
-    ctx.fillText(`スコア: ${state.score} / 300`, 20, 40);
-    
+
     // Lives
     let hearts = "";
     for(let i=0; i<state.lives; i++) hearts += "❤ ";
-    ctx.fillStyle = "#ff4757";
-    ctx.fillText(hearts, 20, 70);
+    ctx.fillText(hearts, 20, 40);
 
     if (state.combo > 1) {
       ctx.fillStyle = "#FF9F43";
-      ctx.fillText(`${state.combo} コンボ!`, 20, 100);
+      ctx.fillText(`${state.combo} コンボ!`, 20, 70);
     }
     
     ctx.restore(); // Restore shake

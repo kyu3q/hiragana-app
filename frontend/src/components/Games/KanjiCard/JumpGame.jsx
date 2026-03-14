@@ -15,7 +15,7 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
   const CANVAS_HEIGHT = 600;
   const GRAVITY = 0.6;
   const JUMP_STRENGTH = -13;
-  const MOVE_SPEED = 3.5;
+  const MOVE_SPEED = 2.5;
   const GROUND_Y = 500;
   const PLAYER_SIZE = 40;
   
@@ -470,7 +470,7 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
     ctx.save();
     // 2. Clouds (Medium Slow)
     ctx.translate(-state.cameraX * 0.5, 0);
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
     state.clouds.forEach(c => {
         const lx = c.x % (CANVAS_WIDTH * 4); // Loop clouds
         ctx.beginPath();
@@ -695,25 +695,21 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
     ctx.font = "bold 24px Arial";
     ctx.shadowColor = "black";
     ctx.shadowBlur = 4;
-    ctx.fillStyle = "white";
-    
-    // Score
-    ctx.textAlign = "right";
-    ctx.fillText(`スコア: ${state.score}`, CANVAS_WIDTH - 20, 40);
-    
+
     // Combo
     if (state.combo > 1) {
         ctx.fillStyle = "#FFD700";
         ctx.font = "bold 28px Arial";
-        ctx.fillText(`${state.combo} COMBO!`, CANVAS_WIDTH - 20, 80);
+        ctx.textAlign = "right";
+        ctx.fillText(`${state.combo} COMBO!`, CANVAS_WIDTH - 20, 40);
         ctx.font = "20px Arial";
-        ctx.fillText(`x${(1 + Math.floor(state.combo/5)*0.5).toFixed(1)}`, CANVAS_WIDTH - 20, 105);
+        ctx.fillText(`x${(1 + Math.floor(state.combo/5)*0.5).toFixed(1)}`, CANVAS_WIDTH - 20, 65);
     }
-    
+
     // Lives
     ctx.textAlign = "left";
     ctx.fillStyle = "#ff4757";
-    ctx.font = "24px Arial";
+    ctx.font = "30px Arial";
     let hearts = "";
     for(let i=0; i<state.lives; i++) hearts += "❤ ";
     ctx.fillText(hearts, 20, 40);
@@ -729,17 +725,6 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
         ctx.fillStyle = '#FF1744';
         ctx.fillText(`🧲 マグネット (${Math.ceil(state.magnetTimer/60)})`, 20, buffY);
     }
-    
-    // Target display
-    ctx.shadowBlur = 0;
-    ctx.fillStyle = "rgba(0,0,0,0.5)";
-    ctx.fillRect(CANVAS_WIDTH/2 - 70, 10, 140, 50);
-    ctx.fillStyle = "white";
-    ctx.textAlign = "center";
-    ctx.font = "20px Arial";
-    ctx.fillText(`ターゲット`, CANVAS_WIDTH/2, 30);
-    ctx.font = "bold 28px 'Zen Maru Gothic'";
-    ctx.fillText(config.targetChar, CANVAS_WIDTH/2, 55);
   };
 
   const rectIntersect = (x1, y1, w1, h1, x2, y2, w2, h2) => {

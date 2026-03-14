@@ -55,7 +55,11 @@ const KanjiGameContainer = ({ kanji, onClose }) => {
     <div className="kanji-game-container">
       <div className="game-header">
         <span className="game-kanji">{kanji.char}</span>
-        <span className="game-score">{score} pt</span>
+        <span className="game-score">
+          {kanji.gameConfig?.targetScore
+            ? `${score}/${kanji.gameConfig.targetScore}`
+            : `${score} pt`}
+        </span>
         <button className="game-close-btn" onClick={onClose}>×</button>
       </div>
       

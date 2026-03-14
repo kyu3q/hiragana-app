@@ -343,16 +343,12 @@ const SnakeGame = ({ config, onComplete, onAddScore }) => {
     ctx.restore();
     
     // Lives
-    ctx.font = "24px Arial";
+    ctx.font = "30px Arial";
     ctx.fillStyle = "#ff4757";
     ctx.textAlign = "left";
     let hearts = "";
     for(let i=0; i<state.lives; i++) hearts += "❤ ";
-    ctx.fillText(hearts, 20, 30);
-    
-    // Score
-    ctx.fillStyle = "#333";
-    ctx.fillText(`スコア: ${state.score} / 500`, 20, 60);
+    ctx.fillText(hearts, 20, 40);
 
   };
 
