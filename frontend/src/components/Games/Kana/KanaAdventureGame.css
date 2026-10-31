@@ -363,7 +363,7 @@
 .hearts-bar {
   position: fixed;
   top: 84px;
-  left: 16px;
+  left: 44px;
   z-index: 15;
   background: rgba(255, 255, 255, 0.85);
   border-radius: 16px;
