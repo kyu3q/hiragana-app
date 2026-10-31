@@ -26,7 +26,6 @@
 /* Tall container holding the path */
 .adventure-path-container {
   width: 100%;
-  min-height: 1650px; 
   position: relative;
   padding: 100px 0 150px 0;
   display: flex;
