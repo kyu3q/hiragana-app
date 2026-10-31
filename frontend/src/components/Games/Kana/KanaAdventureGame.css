@@ -30,6 +30,7 @@
   display: flex;
   flex-direction: column-reverse; /* Start from bottom */
   align-items: center;
+  box-sizing: border-box; /* JSXのpaddingがminHeightに上乗せされないようにする */
 }
 
 /* The Winding Path Line */
@@ -504,4 +505,18 @@
 .goal-peak {
   width: 90px;
   height: 80px;
+}
+
+/* 石の中心を、道が通る 20% / 80% に合わせる（問題パネルが開く現在のステージは対象外） */
+.stage-node.left.locked .stage-content,
+.stage-node.left.cleared .stage-content {
+  left: 20%;
+  transform: translateX(-50%);
+}
+
+.stage-node.right.locked .stage-content,
+.stage-node.right.cleared .stage-content {
+  right: auto;
+  left: 80%;
+  transform: translateX(-50%);
 }
