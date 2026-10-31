@@ -27,7 +27,6 @@
 .adventure-path-container {
   width: 100%;
   position: relative;
-  padding: 100px 0 150px 0;
   display: flex;
   flex-direction: column-reverse; /* Start from bottom */
   align-items: center;
@@ -470,4 +469,39 @@
 
 @keyframes avatarHop {
   50% { transform: translateY(-12px); }
+}
+
+/* ===== 月（左上に固定。道が届かない場所） ===== */
+.scene-moon {
+  position: absolute;
+  left: 6%;
+  top: 36px;
+  width: 44px;
+  height: auto;
+}
+
+/* ===== ゴール（山頂の旗） ===== */
+.adventure-goal {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.goal-label {
+  height: 20px;
+  line-height: 20px;
+  font-size: 0.95rem;
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+.goal-peak {
+  width: 90px;
+  height: 80px;
 }

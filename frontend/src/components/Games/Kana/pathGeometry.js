@@ -5,7 +5,7 @@ const START_X = 50;
 const LEFT_X = 20;
 const RIGHT_X = 80;
 
-export const buildPathD = ({ count, pathHeight, nodeHeight, paddingBottom }) => {
+export const buildPathD = ({ count, pathHeight, nodeHeight, paddingBottom, goalY }) => {
   let d = `M ${START_X} ${pathHeight}`;
   let prevX = START_X;
   let prevY = pathHeight;
@@ -17,6 +17,11 @@ export const buildPathD = ({ count, pathHeight, nodeHeight, paddingBottom }) => 
     d += ` C ${prevX} ${midY} ${x} ${midY} ${x} ${y}`;
     prevX = x;
     prevY = y;
+  }
+  // ゴールが指定されたら、最後のステージから中央上のゴールまで道を延ばす
+  if (goalY !== undefined) {
+    const midY = (prevY + goalY) / 2;
+    d += ` C ${prevX} ${midY} ${START_X} ${midY} ${START_X} ${goalY}`;
   }
   return d;
 };

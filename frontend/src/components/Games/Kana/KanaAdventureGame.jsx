@@ -15,11 +15,13 @@ import {
 } from './questionGenerator';
 import DifficultySelect from './DifficultySelect';
 import AdventureScene from './AdventureScene';
+import AdventureGoal, { GOAL_HEIGHT } from './AdventureGoal';
 import { buildPathD } from './pathGeometry';
 
 const NODE_HEIGHT = 140;
-const PATH_PADDING_TOP = 100;
+const PATH_PADDING_TOP = 260; // 上の余白（ゴールのための空間）
 const PATH_PADDING_BOTTOM = 150;
+const GOAL_Y = 120; // ゴール（山頂）の位置。マップの上端からの距離
 const FEEDBACK_MS = 1000;
 
 const KanaAdventureGame = ({ onClose, type }) => {
@@ -192,6 +194,7 @@ const KanaAdventureGame = ({ onClose, type }) => {
     pathHeight,
     nodeHeight: NODE_HEIGHT,
     paddingBottom: PATH_PADDING_BOTTOM,
+    goalY: GOAL_Y,
   });
 
   return (
@@ -205,8 +208,9 @@ const KanaAdventureGame = ({ onClose, type }) => {
 
       {/* Scrollable Map Area */}
       <div className="adventure-scroll-container">
-        <div className="adventure-path-container" style={{ minHeight: `${pathHeight}px` }}>
+        <div className="adventure-path-container" style={{ minHeight: `${pathHeight}px`, paddingTop: `${PATH_PADDING_TOP}px`, paddingBottom: `${PATH_PADDING_BOTTOM}px` }}>
           <AdventureScene />
+          <AdventureGoal top={GOAL_Y - GOAL_HEIGHT} />
           <svg className="winding-path-svg" viewBox={`0 0 100 ${pathHeight}`} preserveAspectRatio="none">
             <path className="adventure-road" d={roadD} />
             <path className="adventure-road-dots" d={roadD} />
