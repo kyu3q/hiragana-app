@@ -26,8 +26,7 @@ const AdventureScene = () => (
 
     {/* 上端: 月と星 */}
     <svg className="scene-stars" viewBox="0 0 420 300">
-      <circle cx="330" cy="100" r="26" fill="#fff8d6" />
-      <circle cx="341" cy="93" r="23" fill="#4a4a9c" opacity="0.35" />
+      <path d="M346 76 A26 26 0 1 0 346 126 A30 30 0 0 1 346 76Z" fill="#fff8d6" />
       {STARS.map(([cx, cy, r, delay]) => (
         <circle key={`${cx}-${cy}`} className="scene-star" cx={cx} cy={cy} r={r} fill="#fff" style={{ animationDelay: delay }} />
       ))}
