@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { GRADE1_KANJI, SIMILAR_PAIRS } from '../../../data/kanjiData';
 import { playJumpSound, playOK1Sound, playNGSound, playHappy1Sound, playHappy2Sound, playFinishSound } from '../../../utils/soundPlayer';
+import { isJumpKey, isEnemyAwake } from './jumpGameLogic';
 
 const JumpGame = ({ config, onComplete, onAddScore }) => {
   const canvasRef = useRef(null);
@@ -308,12 +309,11 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
     // -- Interactions --
     
     // 1. Obstacles
+    let reachedGoal = false;
     state.obstacles.forEach(obs => {
         if (obs.type === 'goal') {
              if (rectIntersect(player.x, player.y, PLAYER_SIZE, PLAYER_SIZE, obs.x, obs.y, obs.w, obs.h)) {
-                playFinishSound();
-                setGameState('won');
-                onComplete(true);
+                reachedGoal = true;
             }
             return;
         }
@@ -338,6 +338,14 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
         }
     });
 
+    // ゴールに着いたら、ここでループを止める（次のフレームを予約しないので、クリア処理は1回だけ）
+    if (reachedGoal) {
+        playFinishSound();
+        setGameState('won');
+        onComplete(true);
+        return;
+    }
+
     // Apply Movement
     player.x += intendedMove;
     state.cameraX = player.x - 150;
@@ -357,6 +365,8 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
             if (enemy.x < enemy.patrolStart) enemy.vx = 1;
             if (enemy.x > enemy.patrolEnd) enemy.vx = -1;
         } else if (enemy.type === 'bird') {
+            // 画面に近づくまでは動かさない（最初から飛ぶと、後半の鳥が先に流れてしまう）
+            if (!isEnemyAwake({ enemyX: enemy.x, playerX: player.x })) return;
             enemy.x -= 2; // Fly left
             enemy.y = enemy.baseY + Math.sin(Date.now() / 200 + enemy.phase) * 50;
         }
@@ -768,6 +778,18 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
     return () => cancelAnimationFrame(requestRef.current);
   }, [gameState]);
 
+  // キーボードでもジャンプできる（スペース、↑、W）。長押しの連続入力は無視する
+  useEffect(() => {
+    if (gameState !== 'playing') return undefined;
+    const handleKeyDown = (e) => {
+      if (!isJumpKey(e.key) || e.repeat) return;
+      e.preventDefault(); // スペースキーで画面がスクロールしないようにする
+      jump();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [gameState]);
+
   return (
     <div className="game-area jump-game" style={{ background: '#333', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
        {gameState === 'start' && (
@@ -824,8 +846,7 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
       <canvas 
         ref={canvasRef}
         style={{ width: '100%', height: '100%', maxWidth: '800px', maxHeight: '600px', aspectRatio: '4/3', border: '2px solid #ddd', borderRadius: '8px', background: '#000', touchAction: 'none' }}
-        onMouseDown={handleInput}
-        onTouchStart={handleInput}
+        onPointerDown={handleInput} // マウス・タッチ・ペンを1つにまとめる（タップで2回ジャンプしないように）
       />
     </div>
   );
