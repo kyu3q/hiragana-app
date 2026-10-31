@@ -4,180 +4,251 @@ import { hiraganaGroups } from '../../../data/hiraganaData';
 import { katakanaGroups } from '../../../data/katakanaData';
 import { playOK1Sound, playWrongSound, playHappy1Sound } from '../../../utils/soundPlayer';
 import { triggerConfetti } from '../../../utils/confettiEffect';
+import { speak, isSpeechAvailable, warmUpVoices, onVoicesChanged } from '../../../utils/speech';
+import { getDifficulty } from './adventureConfig';
+import {
+  generateQuestions,
+  buildQuestion,
+  insertRetry,
+  resolveType,
+  countScoredQuestions,
+} from './questionGenerator';
+import DifficultySelect from './DifficultySelect';
+import AdventureScene from './AdventureScene';
+import AdventureGoal, { GOAL_HEIGHT } from './AdventureGoal';
+import { buildPathD } from './pathGeometry';
+
+const NODE_HEIGHT = 140;
+const PATH_PADDING_TOP = 340; // 上の余白（画面上部の固定ヘッダー約72px と、ゴールのための空間）
+const PATH_PADDING_BOTTOM = 150;
+const GOAL_Y = 200; // ゴール（山頂）の位置。マップの上端からの距離（固定ヘッダーに隠れない高さ）
+const FEEDBACK_MS = 1000;
 
 const KanaAdventureGame = ({ onClose, type }) => {
+  const [screen, setScreen] = useState('select'); // 'select', 'playing', 'result', 'failed'
+  const [difficulty, setDifficulty] = useState(null);
   const [questions, setQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [score, setScore] = useState(0);
-  const [gameState, setGameState] = useState('playing'); // 'playing', 'result'
+  const [hearts, setHearts] = useState(0);
+  const [weakIds, setWeakIds] = useState([]); // セッション内で間違えた文字
   const [feedback, setFeedback] = useState(null); // 'correct', 'incorrect'
   const [selectedOption, setSelectedOption] = useState(null);
-  
-  // Ref for auto-scrolling
-  const scrollContainerRef = useRef(null);
+  const [speechAvailable, setSpeechAvailable] = useState(false);
+
   const activeStageRef = useRef(null);
+  const timerRef = useRef(null);
 
-  // Get data based on type
   const dataGroups = type === 'katakana' ? katakanaGroups : hiraganaGroups;
-  const allChars = dataGroups.flatMap(g => g.characters);
+  const allChars = dataGroups.flatMap((g) => g.characters);
 
-  // Initialize Game
+  // 音声一覧の読み込みを先に始め、タイマーは破棄時に止める
   useEffect(() => {
-    initGame();
+    warmUpVoices();
+    const unsubscribe = onVoicesChanged(() => setSpeechAvailable(isSpeechAvailable()));
+    return () => {
+      unsubscribe();
+      clearTimeout(timerRef.current);
+    };
+  }, []);
+
+  // ひらがな/カタカナが切り替わったら難易度選択に戻る
+  useEffect(() => {
+    clearTimeout(timerRef.current);
+    setScreen('select');
   }, [type]);
 
-  // Auto-scroll to active stage
+  const currentQuestion = questions[currentIndex];
+  const targetChar = currentQuestion?.target.char;
+  const currentType = currentQuestion ? resolveType(currentQuestion.type, speechAvailable) : null;
+
+  // 現在のステージへ自動スクロール
   useEffect(() => {
-    if (activeStageRef.current && scrollContainerRef.current) {
+    if (activeStageRef.current) {
       activeStageRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
-  }, [currentIndex, gameState]);
+  }, [currentIndex, screen]);
 
-  const initGame = () => {
-    const generatedQuestions = generateQuestions(10);
-    setQuestions(generatedQuestions);
+  // 音声出題は、問題が表示されたら自動で読み上げる
+  useEffect(() => {
+    if (screen === 'playing' && currentType === 'sound-to-char') {
+      speak(targetChar, () => setSpeechAvailable(false));
+    }
+  }, [screen, currentIndex, currentType, targetChar]);
+
+  const startGame = (difficultyKey) => {
+    clearTimeout(timerRef.current);
+    setDifficulty(difficultyKey);
+    setQuestions(generateQuestions({ chars: allChars, difficulty: difficultyKey, weakIds }));
     setCurrentIndex(0);
     setScore(0);
-    setGameState('playing');
+    setHearts(getDifficulty(difficultyKey).hearts);
     setFeedback(null);
     setSelectedOption(null);
+    setSpeechAvailable(isSpeechAvailable());
+    setScreen('playing');
   };
 
-  const generateQuestions = (count) => {
-    const shuffledChars = [...allChars].sort(() => 0.5 - Math.random());
-    const selectedChars = shuffledChars.slice(0, count);
-
-    return selectedChars.map(target => {
-      // 50% chance: Show Char -> Pick Romaji
-      // 50% chance: Show Romaji -> Pick Char
-      const mode = Math.random() > 0.5 ? 'char-to-romaji' : 'romaji-to-char';
-      
-      // Generate distractors
-      const distractors = [];
-      const otherChars = allChars.filter(c => c.id !== target.id);
-      
-      while (distractors.length < 3) {
-        const d = otherChars[Math.floor(Math.random() * otherChars.length)];
-        if (!distractors.includes(d)) {
-          distractors.push(d);
-        }
-      }
-
-      const options = [target, ...distractors].sort(() => 0.5 - Math.random());
-
-      return {
-        target,
-        mode,
-        options
-      };
-    });
+  const finishGame = (cleared) => {
+    if (cleared) {
+      setScreen('result');
+      playHappy1Sound();
+      triggerConfetti();
+    } else {
+      setScreen('failed');
+    }
   };
 
   const handleAnswer = (option) => {
-    if (feedback) return; // Prevent multiple clicks
+    if (feedback) return; // 連打防止
 
-    const currentQ = questions[currentIndex];
-    const isCorrect = option.id === currentQ.target.id;
+    const isCorrect = option.id === currentQuestion.target.id;
     setSelectedOption(option);
+
+    let nextHearts = hearts;
+    let nextQuestions = questions;
 
     if (isCorrect) {
       playOK1Sound();
       setFeedback('correct');
-      setScore(s => s + 1);
+      if (!currentQuestion.isRetry) setScore((s) => s + 1);
     } else {
       playWrongSound();
       setFeedback('incorrect');
+      nextHearts = hearts - 1;
+      setHearts(nextHearts);
+      setWeakIds((ids) => (ids.includes(currentQuestion.target.id) ? ids : [...ids, currentQuestion.target.id]));
+      // 再出題は1回まで（再出題で間違えても、さらには差し込まない）
+      if (!currentQuestion.isRetry) {
+        const retryQuestion = buildQuestion({
+          target: currentQuestion.target,
+          chars: allChars,
+          difficulty,
+          isRetry: true,
+        });
+        nextQuestions = insertRetry({ questions, currentIndex, retryQuestion });
+        setQuestions(nextQuestions);
+      }
     }
 
-    setTimeout(() => {
+    timerRef.current = setTimeout(() => {
       setFeedback(null);
       setSelectedOption(null);
-      
-      if (currentIndex < questions.length - 1) {
-        setCurrentIndex(prev => prev + 1);
+
+      if (nextHearts <= 0) {
+        finishGame(false);
+      } else if (currentIndex < nextQuestions.length - 1) {
+        setCurrentIndex((i) => i + 1);
       } else {
-        finishGame();
+        finishGame(true);
       }
-    }, 1000);
+    }, FEEDBACK_MS);
   };
 
-  const finishGame = () => {
-    setGameState('result');
-    playHappy1Sound();
-    triggerConfetti();
+  const renderPrompt = (question, questionType) => {
+    if (questionType === 'sound-to-char') {
+      return (
+        <button
+          className="speak-btn"
+          onClick={() => speak(question.target.char, () => setSpeechAvailable(false))}
+          aria-label="もういちど きく"
+        >
+          🔊
+        </button>
+      );
+    }
+    return questionType === 'char-to-romaji' ? question.target.char : question.target.romaji;
   };
 
-  if (questions.length === 0) return <div>Loading...</div>;
+  const renderResultOverlay = (title, emoji) => (
+    <div className="adventure-result-overlay">
+      <div className="result-title">{title}</div>
+      <div className="winner-emoji" style={{ fontSize: '6rem', marginBottom: '1rem' }}>{emoji}</div>
+      <div className="result-score">
+        スコア: {score} / {countScoredQuestions(questions)}
+      </div>
+      <div className="result-buttons">
+        <button className="game-button" onClick={() => startGame(difficulty)}>
+          もう一度挑戦
+        </button>
+        <button className="game-button" onClick={() => setScreen('select')}>
+          むずかしさを かえる
+        </button>
+      </div>
+    </div>
+  );
+
+  if (screen === 'select') {
+    return (
+      <div className="kana-adventure-game">
+        <AdventureScene />
+        <DifficultySelect onSelect={startGame} />
+      </div>
+    );
+  }
+
+  const maxHearts = getDifficulty(difficulty).hearts;
+  const pathHeight = PATH_PADDING_TOP + questions.length * NODE_HEIGHT + PATH_PADDING_BOTTOM;
+  const roadD = buildPathD({
+    count: questions.length,
+    pathHeight,
+    nodeHeight: NODE_HEIGHT,
+    paddingBottom: PATH_PADDING_BOTTOM,
+    goalY: GOAL_Y,
+  });
 
   return (
     <div className="kana-adventure-game">
-      {/* Background Layer */}
-      <div className="mountain-bg">
-        {/* Decorative Clouds */}
-        <div className="cloud-decoration" style={{ top: '10%', width: '100px', height: '60px', left: '-120px', animationDelay: '0s' }}></div>
-        <div className="cloud-decoration" style={{ top: '30%', width: '150px', height: '90px', left: '-200px', animationDelay: '5s' }}></div>
-        <div className="cloud-decoration" style={{ top: '60%', width: '120px', height: '70px', left: '-150px', animationDelay: '10s' }}></div>
-        <div className="cloud-decoration" style={{ top: '80%', width: '180px', height: '100px', left: '-220px', animationDelay: '2s' }}></div>
+      {/* ハート表示 */}
+      <div className="hearts-bar" role="img" aria-label={`のこり ${hearts} ハート`}>
+        {Array.from({ length: maxHearts }, (_, i) => (
+          <span key={i}>{i < hearts ? '❤️' : '🤍'}</span>
+        ))}
       </div>
-      
+
       {/* Scrollable Map Area */}
-      <div className="adventure-scroll-container" ref={scrollContainerRef}>
-        <div className="adventure-path-container">
-          {/* Path SVG Line (Reduced Height) */}
-          <svg className="winding-path-svg" viewBox="0 0 100 1650" preserveAspectRatio="none">
-             <path 
-               d={`M 50 1650 
-                  ${questions.map((_, i) => {
-                    // Total content height approx 1650 (100 pad top + 10*140 + 150 pad bottom)
-                    // Node 0 center = 1650 - 150 - 70 = 1430
-                    const y = 1430 - (i * 140); 
-                    const x = i % 2 === 0 ? 20 : 80; // Left(20), Right(80)
-                    return `L ${x} ${y}`;
-                  }).join(' ')}`}
-               fill="none" 
-               stroke="#8D6E63" 
-               strokeWidth="3"
-               strokeDasharray="15, 10"
-             />
+      <div className="adventure-scroll-container">
+        <div className="adventure-path-container" style={{ minHeight: `${pathHeight}px`, paddingTop: `${PATH_PADDING_TOP}px`, paddingBottom: `${PATH_PADDING_BOTTOM}px` }}>
+          <AdventureScene />
+          <AdventureGoal top={GOAL_Y - GOAL_HEIGHT} />
+          <svg className="winding-path-svg" viewBox={`0 0 100 ${pathHeight}`} preserveAspectRatio="none">
+            <path className="adventure-road" d={roadD} />
+            <path className="adventure-road-dots" d={roadD} />
           </svg>
 
-          {/* Render Questions (Stages) - Reversed visually by CSS flex-direction: column-reverse */}
+          {/* ステージ描画（CSS の column-reverse で下から上に並ぶ） */}
           {questions.map((q, idx) => {
-            const isActive = idx === currentIndex && gameState === 'playing';
-            const isCleared = idx < currentIndex;
+            const isActive = idx === currentIndex && screen === 'playing';
+            const isCleared = idx < currentIndex || screen === 'result';
             const isLocked = idx > currentIndex;
             const positionClass = idx % 2 === 0 ? 'left' : 'right';
-            
-            const questionText = q.mode === 'char-to-romaji' ? q.target.char : q.target.romaji;
+            const questionType = resolveType(q.type, speechAvailable);
 
             return (
-              <div 
-                key={idx} 
+              <div
+                key={idx}
                 className={`stage-node ${positionClass} ${isActive ? 'active' : ''} ${isCleared ? 'cleared' : ''} ${isLocked ? 'locked' : ''}`}
                 ref={isActive ? activeStageRef : null}
               >
                 <div className="stage-content">
                   {isActive ? (
-                    /* Active Quiz - Minimalist (No Card BG) */
                     <div className="quiz-active-container">
                       <div className="quiz-header-simple">
-                        もんだい {idx + 1}
+                        {q.isRetry ? 'もういちど！' : `もんだい ${questions.slice(0, idx + 1).filter((x) => !x.isRetry).length}`}
                       </div>
-                      
-                      <div className="quiz-question-text">
-                         {questionText}
-                      </div>
+
+                      <div className="quiz-question-text">{renderPrompt(q, questionType)}</div>
 
                       <div className="quiz-options-grid">
                         {q.options.map((opt, optIdx) => {
                           const isSelected = selectedOption === opt;
                           const isCorrect = opt.id === q.target.id;
-                          const optionText = q.mode === 'char-to-romaji' ? opt.romaji : opt.char;
+                          const optionText = questionType === 'char-to-romaji' ? opt.romaji : opt.char;
                           let btnClass = 'quiz-option-btn';
-                          
+
                           if (feedback) {
-                             if (isCorrect) btnClass += ' correct';
-                             else if (isSelected) btnClass += ' incorrect';
+                            if (isCorrect) btnClass += ' correct';
+                            else if (isSelected) btnClass += ' incorrect';
                           }
 
                           return (
@@ -192,22 +263,15 @@ const KanaAdventureGame = ({ onClose, type }) => {
                           );
                         })}
                       </div>
-                      
-                      {/* Avatar at current position */}
-                      <div className="player-avatar">
-                        🦁
-                      </div>
+
+                      <div className="player-avatar">🦁</div>
                     </div>
                   ) : isCleared ? (
-                    /* Cleared Marker */
                     <div className="stage-marker">
-                      🚩
+                      <span className="stage-flag">🚩</span>★
                     </div>
                   ) : (
-                    /* Locked Marker */
-                    <div className="stage-marker">
-                      🔒
-                    </div>
+                    <div className="stage-marker">🔒</div>
                   )}
                 </div>
               </div>
@@ -216,19 +280,8 @@ const KanaAdventureGame = ({ onClose, type }) => {
         </div>
       </div>
 
-      {/* Result Overlay */}
-      {gameState === 'result' && (
-        <div className="adventure-result-overlay">
-          <div className="result-title">冒険クリア！</div>
-          <div className="winner-emoji" style={{ fontSize: '6rem', marginBottom: '1rem' }}>🏔️🎉</div>
-          <div className="result-score">
-            スコア: {score} / {questions.length}
-          </div>
-          <button className="game-button" onClick={initGame} style={{ marginTop: '20px', fontSize: '1.5rem', padding: '1rem 2rem' }}>
-            もう一度挑戦
-          </button>
-        </div>
-      )}
+      {screen === 'result' && renderResultOverlay('冒険クリア！', '🏔️🎉')}
+      {screen === 'failed' && renderResultOverlay('ざんねん…', '😢')}
     </div>
   );
 };
