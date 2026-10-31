@@ -14,6 +14,8 @@ import {
   countScoredQuestions,
 } from './questionGenerator';
 import DifficultySelect from './DifficultySelect';
+import AdventureScene from './AdventureScene';
+import { buildPathD } from './pathGeometry';
 
 const NODE_HEIGHT = 140;
 const PATH_PADDING_TOP = 100;
@@ -177,7 +179,7 @@ const KanaAdventureGame = ({ onClose, type }) => {
   if (screen === 'select') {
     return (
       <div className="kana-adventure-game">
-        <div className="mountain-bg" />
+        <AdventureScene />
         <DifficultySelect onSelect={startGame} />
       </div>
     );
@@ -185,17 +187,15 @@ const KanaAdventureGame = ({ onClose, type }) => {
 
   const maxHearts = getDifficulty(difficulty).hearts;
   const pathHeight = PATH_PADDING_TOP + questions.length * NODE_HEIGHT + PATH_PADDING_BOTTOM;
+  const roadD = buildPathD({
+    count: questions.length,
+    pathHeight,
+    nodeHeight: NODE_HEIGHT,
+    paddingBottom: PATH_PADDING_BOTTOM,
+  });
 
   return (
     <div className="kana-adventure-game">
-      {/* Background Layer */}
-      <div className="mountain-bg">
-        <div className="cloud-decoration" style={{ top: '10%', width: '100px', height: '60px', left: '-120px', animationDelay: '0s' }}></div>
-        <div className="cloud-decoration" style={{ top: '30%', width: '150px', height: '90px', left: '-200px', animationDelay: '5s' }}></div>
-        <div className="cloud-decoration" style={{ top: '60%', width: '120px', height: '70px', left: '-150px', animationDelay: '10s' }}></div>
-        <div className="cloud-decoration" style={{ top: '80%', width: '180px', height: '100px', left: '-220px', animationDelay: '2s' }}></div>
-      </div>
-
       {/* ハート表示 */}
       <div className="hearts-bar">
         {Array.from({ length: maxHearts }, (_, i) => (
@@ -206,22 +206,10 @@ const KanaAdventureGame = ({ onClose, type }) => {
       {/* Scrollable Map Area */}
       <div className="adventure-scroll-container">
         <div className="adventure-path-container" style={{ minHeight: `${pathHeight}px` }}>
+          <AdventureScene />
           <svg className="winding-path-svg" viewBox={`0 0 100 ${pathHeight}`} preserveAspectRatio="none">
-            <path
-              d={`M 50 ${pathHeight}
-                  ${questions
-                    .map((_, i) => {
-                      // ステージ0の中心 = 全体の高さ - 下の余白 - ノード高さの半分
-                      const y = pathHeight - PATH_PADDING_BOTTOM - NODE_HEIGHT / 2 - i * NODE_HEIGHT;
-                      const x = i % 2 === 0 ? 20 : 80; // Left(20), Right(80)
-                      return `L ${x} ${y}`;
-                    })
-                    .join(' ')}`}
-              fill="none"
-              stroke="#8D6E63"
-              strokeWidth="3"
-              strokeDasharray="15, 10"
-            />
+            <path className="adventure-road" d={roadD} />
+            <path className="adventure-road-dots" d={roadD} />
           </svg>
 
           {/* ステージ描画（CSS の column-reverse で下から上に並ぶ） */}

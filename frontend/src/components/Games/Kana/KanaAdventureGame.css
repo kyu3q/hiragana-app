@@ -33,32 +33,6 @@
   align-items: center;
 }
 
-/* Background Mountain Graphic */
-.mountain-bg {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 0;
-  background: 
-    linear-gradient(to top, #66BB6A 0%, #A5D6A7 40%, #E0F7FA 80%, #FFFFFF 100%);
-  opacity: 0.8;
-}
-
-/* Decorative Clouds */
-.cloud-decoration {
-  position: absolute;
-  background: white;
-  border-radius: 50%;
-  opacity: 0.8;
-  animation: floatCloud 20s linear infinite;
-}
-@keyframes floatCloud {
-  0% { transform: translateX(-100px); }
-  100% { transform: translateX(100vw); }
-}
-
 /* The Winding Path Line */
 .winding-path-svg {
   position: absolute;
@@ -396,4 +370,99 @@
   margin-top: 20px;
   flex-wrap: wrap;
   justify-content: center;
+}
+
+/* ===== 背景シーン ===== */
+.adventure-scene {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* 下=昼 → 夕焼け → 上=星空。マップの高さに対する割合で変わる */
+.scene-sky {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    #cdeefc 0%, #bfe6fb 30%, #ffe3c4 52%, #ffc2b8 68%, #9b8fd6 84%, #3b3f8f 100%
+  );
+}
+
+.scene-stars {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: auto;
+}
+
+.scene-star {
+  animation: sceneTwinkle 2.4s ease-in-out infinite;
+}
+
+.scene-sun {
+  position: absolute;
+  right: 8%;
+  bottom: 36%;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff3a8 0 16%, #ffe27a 30%, rgba(255, 226, 122, 0) 70%);
+}
+
+.scene-cloud {
+  position: absolute;
+  left: 0;
+  height: auto;
+  animation: sceneCloudDrift 60s linear infinite;
+}
+.scene-cloud.far  { width: 90px;  opacity: 0.55; animation-duration: 90s; }
+.scene-cloud.mid  { width: 130px; opacity: 0.8;  animation-duration: 65s; }
+.scene-cloud.near { width: 180px; opacity: 0.95; animation-duration: 45s; }
+
+.scene-ground {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: auto;
+}
+
+@keyframes sceneTwinkle {
+  50% { opacity: 0.25; }
+}
+
+@keyframes sceneCloudDrift {
+  from { transform: translateX(-200px); }
+  to { transform: translateX(100vw); }
+}
+
+/* ===== 道 ===== */
+.adventure-road {
+  fill: none;
+  stroke: #f3dfb6;
+  stroke-width: 30;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.adventure-road-dots {
+  fill: none;
+  stroke: #e6c88a;
+  stroke-width: 30;
+  stroke-linecap: round;
+  stroke-dasharray: 2 16;
+  opacity: 0.7;
+  vector-effect: non-scaling-stroke;
+}
+
+/* ===== 動きを減らす設定 ===== */
+@media (prefers-reduced-motion: reduce) {
+  .scene-cloud,
+  .scene-star {
+    animation: none;
+  }
 }
