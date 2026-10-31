@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isJumpKey, isEnemyAwake, WAKE_DISTANCE, computeSteps, STEP_MS, MAX_STEPS } from './jumpGameLogic';
+import { isJumpKey, isEnemyAwake, WAKE_DISTANCE, computeSteps, STEP_MS, MAX_STEPS, resolveBlockCollision } from './jumpGameLogic';
 
 describe('isJumpKey', () => {
   it('スペースキーはジャンプ操作として扱う', () => {
@@ -74,5 +74,41 @@ describe('computeSteps', () => {
 
   it('上限で止めたときは、溜まった時間を捨てて高速で追いつかない', () => {
     expect(computeSteps({ accumulatorMs: 0, deltaMs: 5000 }).accumulatorMs).toBeLessThan(STEP_MS);
+  });
+});
+
+describe('resolveBlockCollision', () => {
+  const SIZE = 40;
+  const block = { x: 300, y: 340, w: 80, h: 40 }; // 下端は y=380
+
+  const resolve = (player, intendedMove = 3.5) =>
+    resolveBlockCollision({ player, size: SIZE, intendedMove, block });
+
+  it('ブロックに重なっていなければ、何も起きない', () => {
+    expect(resolve({ x: 100, y: 460, vy: 0 }).type).toBe('none');
+  });
+
+  it('上から落ちてきたら、ブロックの上に乗る', () => {
+    // 前フレームの足元(y+40-vy=346)が、ブロックの上端(340)から10px以内にあった
+    const result = resolve({ x: 320, y: 304 + 8, vy: 6 });
+    expect(result).toEqual({ type: 'top', y: 300, vy: 0 });
+  });
+
+  it('下から跳ねて頭をぶつけたら、ブロックの下で止まって落ち始める', () => {
+    // 前フレームの頭(y-vy=385)がブロックの下端(380)より下にあった
+    const result = resolve({ x: 320, y: 375, vy: -10 });
+    expect(result).toEqual({ type: 'ceiling', y: 380, vy: 0 });
+  });
+
+  it('横から近づいてぶつかったら、前に進めなくなる', () => {
+    const result = resolve({ x: 262, y: 350, vy: 0 });
+    expect(result.type).toBe('side');
+    expect(result.intendedMove).toBe(0);
+  });
+
+  it('ブロックの横を上昇中のときは、頭をぶつけた扱いにしない', () => {
+    // 頭が前フレームでもブロックの下端より上にあった（横から重なっているだけ）
+    const result = resolve({ x: 262, y: 330, vy: -10 });
+    expect(result.type).toBe('side');
   });
 });

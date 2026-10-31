@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { GRADE1_KANJI, SIMILAR_PAIRS } from '../../../data/kanjiData';
 import { playJumpSound, playOK1Sound, playNGSound, playHappy1Sound, playHappy2Sound, playFinishSound } from '../../../utils/soundPlayer';
-import { isJumpKey, isEnemyAwake, computeSteps } from './jumpGameLogic';
+import { isJumpKey, isEnemyAwake, computeSteps, resolveBlockCollision } from './jumpGameLogic';
 
 const JumpGame = ({ config, onComplete, onAddScore }) => {
   const canvasRef = useRef(null);
@@ -317,22 +317,25 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
             return;
         }
 
-        if (rectIntersect(player.x + intendedMove, player.y, PLAYER_SIZE, PLAYER_SIZE, obs.x, obs.y, obs.w, obs.h)) {
-            if (obs.type === 'spike') {
+        if (obs.type === 'block') {
+            const hit = resolveBlockCollision({ player, size: PLAYER_SIZE, intendedMove, block: obs });
+            if (hit.type === 'top') {
+                // 上に乗る
+                player.y = hit.y;
+                player.vy = hit.vy;
+                player.grounded = true;
+                player.jumpCount = 0;
+            } else if (hit.type === 'ceiling') {
+                // 下から頭をぶつけて、そこから落ち始める（ブロックを突き抜けない）
+                player.y = hit.y;
+                player.vy = hit.vy;
+            } else if (hit.type === 'side') {
+                // 横からぶつかったら前に進めない
+                intendedMove = hit.intendedMove;
+            }
+        } else if (obs.type === 'spike') {
+            if (rectIntersect(player.x + intendedMove, player.y, PLAYER_SIZE, PLAYER_SIZE, obs.x, obs.y, obs.w, obs.h)) {
                 takeDamage('トゲに当たっちゃった！');
-            } else if (obs.type === 'block') {
-                // Top Collision
-                if (player.vy >= 0 && player.y + PLAYER_SIZE - player.vy <= obs.y + 10) {
-                    player.y = obs.y - PLAYER_SIZE;
-                    player.vy = 0;
-                    player.grounded = true;
-                    player.jumpCount = 0;
-                } else {
-                    // Side Collision (Stop movement)
-                    if (player.x + PLAYER_SIZE <= obs.x + 10) {
-                        intendedMove = 0; 
-                    }
-                }
             }
         }
     });

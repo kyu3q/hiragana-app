@@ -26,3 +26,35 @@ export const computeSteps = ({ accumulatorMs, deltaMs }) => {
   }
   return { steps, accumulatorMs: total - steps * STEP_MS };
 };
+
+const rectIntersect = (a, b) => b.x < a.x + a.w && b.x + b.w > a.x && b.y < a.y + a.h && b.y + b.h > a.y;
+
+// 足場として、上や下の面に当たったと見なす、めり込みの許容量（px）
+const EDGE_TOLERANCE = 10;
+
+// プレイヤーとブロックの衝突を判定する。位置は変更せず、結果だけを返す。
+// player: { x, y, vy }（y と vy は今フレームの移動のあと）。intendedMove: 今フレームに横へ進む距離
+// 戻り値の type:
+//   'none'    当たっていない
+//   'top'     上から落ちて乗った（y, vy を返す）
+//   'ceiling' 下から跳ねて頭をぶつけた（y, vy を返す）
+//   'side'    横からぶつかった（intendedMove: 0 を返す）
+export const resolveBlockCollision = ({ player, size, intendedMove, block }) => {
+  const body = { x: player.x + intendedMove, y: player.y, w: size, h: size };
+  if (!rectIntersect(body, block)) return { type: 'none' };
+
+  const prevBottom = player.y + size - player.vy;
+  const prevTop = player.y - player.vy;
+  const blockBottom = block.y + block.h;
+
+  if (player.vy >= 0 && prevBottom <= block.y + EDGE_TOLERANCE) {
+    return { type: 'top', y: block.y - size, vy: 0 };
+  }
+  if (player.vy < 0 && prevTop >= blockBottom - EDGE_TOLERANCE) {
+    return { type: 'ceiling', y: blockBottom, vy: 0 };
+  }
+  if (player.x + size <= block.x + EDGE_TOLERANCE) {
+    return { type: 'side', intendedMove: 0 };
+  }
+  return { type: 'none' };
+};
