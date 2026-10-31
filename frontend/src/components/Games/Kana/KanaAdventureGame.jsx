@@ -197,7 +197,7 @@ const KanaAdventureGame = ({ onClose, type }) => {
   return (
     <div className="kana-adventure-game">
       {/* ハート表示 */}
-      <div className="hearts-bar">
+      <div className="hearts-bar" role="img" aria-label={`のこり ${hearts} ハート`}>
         {Array.from({ length: maxHearts }, (_, i) => (
           <span key={i}>{i < hearts ? '❤️' : '🤍'}</span>
         ))}
@@ -215,7 +215,7 @@ const KanaAdventureGame = ({ onClose, type }) => {
           {/* ステージ描画（CSS の column-reverse で下から上に並ぶ） */}
           {questions.map((q, idx) => {
             const isActive = idx === currentIndex && screen === 'playing';
-            const isCleared = idx < currentIndex;
+            const isCleared = idx < currentIndex || screen === 'result';
             const isLocked = idx > currentIndex;
             const positionClass = idx % 2 === 0 ? 'left' : 'right';
             const questionType = resolveType(q.type, speechAvailable);
@@ -263,7 +263,9 @@ const KanaAdventureGame = ({ onClose, type }) => {
                       <div className="player-avatar">🦁</div>
                     </div>
                   ) : isCleared ? (
-                    <div className="stage-marker">🚩</div>
+                    <div className="stage-marker">
+                      <span className="stage-flag">🚩</span>★
+                    </div>
                   ) : (
                     <div className="stage-marker">🔒</div>
                   )}

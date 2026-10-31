@@ -9,7 +9,7 @@ const DifficultySelect = ({ onSelect }) => (
         <button key={key} className="difficulty-btn" onClick={() => onSelect(key)}>
           <span className="difficulty-emoji">{difficulty.emoji}</span>
           <span className="difficulty-label">{difficulty.label}</span>
-          <span className="difficulty-hearts">{'❤️'.repeat(difficulty.hearts)}</span>
+          <span className="difficulty-hearts" role="img" aria-label={`ハート ${difficulty.hearts} こ`}>{'❤️'.repeat(difficulty.hearts)}</span>
         </button>
       ))}
     </div>
