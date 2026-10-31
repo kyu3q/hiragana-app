@@ -4,7 +4,7 @@ import { hiraganaGroups } from '../../../data/hiraganaData';
 import { katakanaGroups } from '../../../data/katakanaData';
 import { playOK1Sound, playWrongSound, playHappy1Sound } from '../../../utils/soundPlayer';
 import { triggerConfetti } from '../../../utils/confettiEffect';
-import { speak, isSpeechAvailable, warmUpVoices } from '../../../utils/speech';
+import { speak, isSpeechAvailable, warmUpVoices, onVoicesChanged } from '../../../utils/speech';
 import { getDifficulty } from './adventureConfig';
 import {
   generateQuestions,
@@ -41,7 +41,11 @@ const KanaAdventureGame = ({ onClose, type }) => {
   // 音声一覧の読み込みを先に始め、タイマーは破棄時に止める
   useEffect(() => {
     warmUpVoices();
-    return () => clearTimeout(timerRef.current);
+    const unsubscribe = onVoicesChanged(() => setSpeechAvailable(isSpeechAvailable()));
+    return () => {
+      unsubscribe();
+      clearTimeout(timerRef.current);
+    };
   }, []);
 
   // ひらがな/カタカナが切り替わったら難易度選択に戻る
@@ -51,6 +55,7 @@ const KanaAdventureGame = ({ onClose, type }) => {
   }, [type]);
 
   const currentQuestion = questions[currentIndex];
+  const targetChar = currentQuestion?.target.char;
   const currentType = currentQuestion ? resolveType(currentQuestion.type, speechAvailable) : null;
 
   // 現在のステージへ自動スクロール
@@ -63,9 +68,9 @@ const KanaAdventureGame = ({ onClose, type }) => {
   // 音声出題は、問題が表示されたら自動で読み上げる
   useEffect(() => {
     if (screen === 'playing' && currentType === 'sound-to-char') {
-      speak(currentQuestion.target.char, () => setSpeechAvailable(false));
+      speak(targetChar, () => setSpeechAvailable(false));
     }
-  }, [screen, currentIndex, currentType]);
+  }, [screen, currentIndex, currentType, targetChar]);
 
   const startGame = (difficultyKey) => {
     clearTimeout(timerRef.current);
@@ -237,7 +242,7 @@ const KanaAdventureGame = ({ onClose, type }) => {
                   {isActive ? (
                     <div className="quiz-active-container">
                       <div className="quiz-header-simple">
-                        {q.isRetry ? 'もういちど！' : `もんだい ${idx + 1}`}
+                        {q.isRetry ? 'もういちど！' : `もんだい ${questions.slice(0, idx + 1).filter((x) => !x.isRetry).length}`}
                       </div>
 
                       <div className="quiz-question-text">{renderPrompt(q, questionType)}</div>

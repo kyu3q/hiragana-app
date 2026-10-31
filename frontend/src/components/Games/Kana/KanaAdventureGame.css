@@ -361,10 +361,13 @@
 
 /* ===== ハート表示 ===== */
 .hearts-bar {
-  position: absolute;
-  top: 12px;
+  position: fixed;
+  top: 84px;
   left: 16px;
-  z-index: 5;
+  z-index: 15;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 16px;
+  padding: 4px 10px;
   display: flex;
   gap: 4px;
   font-size: 1.8rem;

@@ -18,6 +18,13 @@ export const warmUpVoices = () => {
   }
 };
 
+// 音声一覧の読み込み完了を購読する。戻り値は解除関数
+export const onVoicesChanged = (callback) => {
+  if (!isSupported()) return () => {};
+  window.speechSynthesis.addEventListener('voiceschanged', callback);
+  return () => window.speechSynthesis.removeEventListener('voiceschanged', callback);
+};
+
 // 読み上げを開始できたら true。失敗時は理由をログに残し、onError を呼ぶ
 export const speak = (text, onError) => {
   if (!isSpeechAvailable()) {
@@ -29,6 +36,8 @@ export const speak = (text, onError) => {
   utterance.lang = LANG;
   utterance.rate = RATE;
   utterance.onerror = (event) => {
+    // cancel() による中断は故障ではないので無視する
+    if (event.error === 'interrupted' || event.error === 'canceled') return;
     console.warn(`音声読み上げに失敗しました: ${event.error}`);
     if (onError) onError();
   };
