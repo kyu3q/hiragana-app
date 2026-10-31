@@ -19,9 +19,9 @@ import AdventureGoal, { GOAL_HEIGHT } from './AdventureGoal';
 import { buildPathD } from './pathGeometry';
 
 const NODE_HEIGHT = 140;
-const PATH_PADDING_TOP = 260; // 上の余白（ゴールのための空間）
+const PATH_PADDING_TOP = 340; // 上の余白（画面上部の固定ヘッダー約72px と、ゴールのための空間）
 const PATH_PADDING_BOTTOM = 150;
-const GOAL_Y = 120; // ゴール（山頂）の位置。マップの上端からの距離
+const GOAL_Y = 200; // ゴール（山頂）の位置。マップの上端からの距離（固定ヘッダーに隠れない高さ）
 const FEEDBACK_MS = 1000;
 
 const KanaAdventureGame = ({ onClose, type }) => {

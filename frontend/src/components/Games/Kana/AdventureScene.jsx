@@ -30,7 +30,7 @@ const AdventureScene = () => (
         <circle key={`${cx}-${cy}`} className="scene-star" cx={cx} cy={cy} r={r} fill="#fff" style={{ animationDelay: delay }} />
       ))}
     </svg>
-    <svg className="scene-moon" viewBox="0 0 40 52" aria-hidden="true">
+    <svg className="scene-moon" viewBox="-10 0 50 54" aria-hidden="true">
       <path d="M26 2 A26 26 0 1 0 26 52 A30 30 0 0 1 26 2Z" fill="#fff8d6" />
     </svg>
 

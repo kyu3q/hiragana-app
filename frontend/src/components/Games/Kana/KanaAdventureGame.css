@@ -475,8 +475,8 @@
 /* ===== 月（左上に固定。道が届かない場所） ===== */
 .scene-moon {
   position: absolute;
-  left: 6%;
-  top: 36px;
+  right: 10%;
+  top: 100px;
   width: 44px;
   height: auto;
 }
