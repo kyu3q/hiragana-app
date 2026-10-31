@@ -24,6 +24,35 @@ const charsWithDuplicateRomaji = () => [
 const repeat = (times, fn) => Array.from({ length: times }, fn);
 
 describe('generateQuestions', () => {
+  it('出題数が文字数を超えるときはエラーにする', () => {
+    expect(() => generateQuestions({ chars: makeChars(5), difficulty: 'easy', count: 10 })).toThrow(
+      '出題数が不正です: 10（1〜5 の整数を指定してください）'
+    );
+  });
+
+  it('出題数が0以下のときはエラーにする', () => {
+    expect(() => generateQuestions({ chars: makeChars(5), difficulty: 'easy', count: -3 })).toThrow(
+      '出題数が不正です: -3'
+    );
+  });
+
+  it('出題数が小数のときはエラーにする', () => {
+    expect(() => generateQuestions({ chars: makeChars(5), difficulty: 'easy', count: 2.5 })).toThrow(
+      '出題数が不正です: 2.5'
+    );
+  });
+
+  it('ローマ字の重複でダミー選択肢が足りないときはエラーにする', () => {
+    const chars = ['x', 'x', 'x', 'x', 'y', 'y'].map((romaji, i) => ({
+      id: i + 1,
+      char: `文${i + 1}`,
+      romaji,
+    }));
+    expect(() => generateQuestions({ chars, difficulty: 'normal', count: 6 })).toThrow(
+      'ダミー選択肢が不足しています'
+    );
+  });
+
   it('指定した数の問題を生成する', () => {
     const questions = generateQuestions({ chars: makeChars(46), difficulty: 'normal', count: 10 });
     expect(questions).toHaveLength(10);

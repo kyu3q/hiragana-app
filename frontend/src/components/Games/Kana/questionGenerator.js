@@ -52,6 +52,9 @@ export const generateQuestions = ({
   if (chars.length < optionCount) {
     throw new Error(`文字データが不足しています: 必要 ${optionCount} 件、実際 ${chars.length} 件`);
   }
+  if (!Number.isInteger(count) || count < 1 || count > chars.length) {
+    throw new Error(`出題数が不正です: ${count}（1〜${chars.length} の整数を指定してください）`);
+  }
 
   // 苦手文字は半数まで優先し、残りはランダムに選ぶ
   const weakChars = shuffle(
