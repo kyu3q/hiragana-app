@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { GRADE1_KANJI, SIMILAR_PAIRS } from '../../../data/kanjiData';
 import { playJumpSound, playOK1Sound, playNGSound, playHappy1Sound, playHappy2Sound, playFinishSound } from '../../../utils/soundPlayer';
-import { isJumpKey, isEnemyAwake } from './jumpGameLogic';
+import { isJumpKey, isEnemyAwake, computeSteps } from './jumpGameLogic';
 
 const JumpGame = ({ config, onComplete, onAddScore }) => {
   const canvasRef = useRef(null);
@@ -10,6 +10,8 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
   const [combo, setCombo] = useState(0);
   const [gameOverReason, setGameOverReason] = useState('');
   const requestRef = useRef();
+  const lastFrameRef = useRef(null); // 前回の描画の時刻
+  const accumulatorRef = useRef(0); // まだ更新に使っていない経過時間（ミリ秒）
 
   // Constants
   const CANVAS_WIDTH = 800;
@@ -274,11 +276,8 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
   };
 
   // --- Main Loop ---
-  const update = () => {
-    if (gameState !== 'playing') return;
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+  // 物理の更新を1回（1/60秒ぶん）進める。ゲームが終わったら false を返す
+  const step = () => {
     const state = stateRef.current;
     const { player } = state;
 
@@ -343,7 +342,7 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
         playFinishSound();
         setGameState('won');
         onComplete(true);
-        return;
+        return false;
     }
 
     // Apply Movement
@@ -352,7 +351,7 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
     if (player.y > CANVAS_HEIGHT) {
         setGameOverReason('落ちちゃった！');
         setGameState('lost');
-        return;
+        return false;
     }
 
     // 2. Enemies
@@ -443,8 +442,27 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
         p.vy += 0.1; // gravity for particles
     });
 
-    draw(ctx, state);
-    requestRef.current = requestAnimationFrame(update);
+    return state.lives > 0;
+  };
+
+  // 描画のたびに、経過時間ぶんだけ更新を進めてから描く（60Hzでも120Hzでも同じ速さになる）
+  const update = (now) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    const deltaMs = lastFrameRef.current === null ? 0 : now - lastFrameRef.current;
+    lastFrameRef.current = now;
+    const result = computeSteps({ accumulatorMs: accumulatorRef.current, deltaMs });
+    accumulatorRef.current = result.accumulatorMs;
+
+    let running = true;
+    for (let i = 0; i < result.steps && running; i++) {
+      running = step();
+    }
+
+    draw(ctx, stateRef.current);
+    if (running) requestRef.current = requestAnimationFrame(update);
   };
 
   // --- Rendering ---
@@ -773,6 +791,8 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
 
   useEffect(() => {
     if (gameState === 'playing') {
+      lastFrameRef.current = null;
+      accumulatorRef.current = 0;
       requestRef.current = requestAnimationFrame(update);
     }
     return () => cancelAnimationFrame(requestRef.current);

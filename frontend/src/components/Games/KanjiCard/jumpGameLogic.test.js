@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isJumpKey, isEnemyAwake, WAKE_DISTANCE } from './jumpGameLogic';
+import { isJumpKey, isEnemyAwake, WAKE_DISTANCE, computeSteps, STEP_MS, MAX_STEPS } from './jumpGameLogic';
 
 describe('isJumpKey', () => {
   it('スペースキーはジャンプ操作として扱う', () => {
@@ -34,5 +34,45 @@ describe('isEnemyAwake', () => {
 
   it('プレイヤーを追い越した敵も動いたままにする', () => {
     expect(isEnemyAwake({ enemyX: -50, playerX: 100 })).toBe(true);
+  });
+});
+
+describe('computeSteps', () => {
+  // 画面の更新間隔を変えて、1秒間に進める更新回数を数える
+  const countStepsPerSecond = (frameMs) => {
+    let accumulatorMs = 0;
+    let total = 0;
+    for (let t = 0; t < 1000; t += frameMs) {
+      const result = computeSteps({ accumulatorMs, deltaMs: frameMs });
+      accumulatorMs = result.accumulatorMs;
+      total += result.steps;
+    }
+    return total;
+  };
+
+  it('60Hzの画面では1フレームで1回更新する', () => {
+    expect(computeSteps({ accumulatorMs: 0, deltaMs: STEP_MS }).steps).toBe(1);
+  });
+
+  it('更新間隔に満たない時間は、更新せずに持ち越す', () => {
+    const result = computeSteps({ accumulatorMs: 0, deltaMs: 8 });
+    expect(result.steps).toBe(0);
+    expect(result.accumulatorMs).toBeCloseTo(8);
+  });
+
+  it('60Hzと120Hzの画面で、1秒間の更新回数がほぼ同じになる', () => {
+    expect(Math.abs(countStepsPerSecond(1000 / 60) - countStepsPerSecond(1000 / 120))).toBeLessThanOrEqual(1);
+  });
+
+  it('1秒間の更新回数は60回になる（144Hzの画面でも）', () => {
+    expect(Math.abs(countStepsPerSecond(1000 / 144) - 60)).toBeLessThanOrEqual(1);
+  });
+
+  it('タブを開き直したときなど、長い空白があっても更新回数を上限で止める', () => {
+    expect(computeSteps({ accumulatorMs: 0, deltaMs: 5000 }).steps).toBe(MAX_STEPS);
+  });
+
+  it('上限で止めたときは、溜まった時間を捨てて高速で追いつかない', () => {
+    expect(computeSteps({ accumulatorMs: 0, deltaMs: 5000 }).accumulatorMs).toBeLessThan(STEP_MS);
   });
 });
