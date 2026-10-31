@@ -1,6 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { getDifficulty } from './adventureConfig';
-import { generateQuestions, buildQuestion, resolveType } from './questionGenerator';
+import {
+  generateQuestions,
+  buildQuestion,
+  resolveType,
+  insertRetry,
+  countScoredQuestions,
+} from './questionGenerator';
 
 const makeChars = (n) =>
   Array.from({ length: n }, (_, i) => ({ id: i + 1, char: `文${i + 1}`, romaji: `r${i + 1}` }));
@@ -116,5 +122,63 @@ describe('resolveType', () => {
 
   it('音声以外の出題タイプはそのまま', () => {
     expect(resolveType('char-to-romaji', false)).toBe('char-to-romaji');
+  });
+});
+
+const makeQuestions = (n) =>
+  Array.from({ length: n }, (_, i) => ({ target: { id: i + 1 }, isRetry: false }));
+const retryQuestion = { target: { id: 99 }, isRetry: true };
+
+describe('insertRetry', () => {
+  it('現在位置の2つ後ろに挿入できる（乱数が小さいとき）', () => {
+    const result = insertRetry({
+      questions: makeQuestions(10),
+      currentIndex: 3,
+      retryQuestion,
+      random: () => 0,
+    });
+    expect(result[5]).toBe(retryQuestion);
+  });
+
+  it('現在位置の3つ後ろに挿入できる（乱数が大きいとき）', () => {
+    const result = insertRetry({
+      questions: makeQuestions(10),
+      currentIndex: 3,
+      retryQuestion,
+      random: () => 0.99,
+    });
+    expect(result[6]).toBe(retryQuestion);
+  });
+
+  it('末尾を超える場合は末尾に挿入する', () => {
+    const result = insertRetry({
+      questions: makeQuestions(10),
+      currentIndex: 9,
+      retryQuestion,
+      random: () => 0.99,
+    });
+    expect(result[10]).toBe(retryQuestion);
+  });
+
+  it('挿入後の問題数は1つ増える', () => {
+    const result = insertRetry({
+      questions: makeQuestions(10),
+      currentIndex: 3,
+      retryQuestion,
+    });
+    expect(result).toHaveLength(11);
+  });
+
+  it('元の配列を変更しない', () => {
+    const questions = makeQuestions(10);
+    insertRetry({ questions, currentIndex: 3, retryQuestion });
+    expect(questions).toHaveLength(10);
+  });
+});
+
+describe('countScoredQuestions', () => {
+  it('再出題をスコアの母数に含めない', () => {
+    const questions = [...makeQuestions(10), retryQuestion];
+    expect(countScoredQuestions(questions)).toBe(10);
   });
 });

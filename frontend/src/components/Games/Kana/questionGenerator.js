@@ -67,3 +67,13 @@ export const generateQuestions = ({
     buildQuestion({ target, chars, difficulty, random })
   );
 };
+
+// 間違えた文字を、現在位置の2〜3問後ろに再出題として差し込む
+export const insertRetry = ({ questions, currentIndex, retryQuestion, random = Math.random }) => {
+  const offset = 2 + Math.floor(random() * 2);
+  const position = Math.min(currentIndex + offset, questions.length);
+  return [...questions.slice(0, position), retryQuestion, ...questions.slice(position)];
+};
+
+// 再出題はスコアの母数に含めない
+export const countScoredQuestions = (questions) => questions.filter((q) => !q.isRetry).length;
