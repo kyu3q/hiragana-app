@@ -39,8 +39,8 @@ const AdventureScene = () => (
     <Cloud layer="near" top="52%" delay="-5s" />
     <Cloud layer="mid" top="70%" delay="-45s" />
 
-    {/* 下端: 山・丘・草原・木・花 */}
-    <svg className="scene-ground" viewBox="0 -40 420 460">
+    {/* 下端: 山・丘・草原・木・花。幅 420 の絵柄を横に敷き詰める（高さは固定） */}
+    <svg className="scene-ground" width="100%" height="460">
       <defs>
         <linearGradient id="sceneGrass" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#9ad98a" />
@@ -59,22 +59,27 @@ const AdventureScene = () => (
           <circle cy="-8" r="5" fill="#ffd1dc" />
           <circle cy="-4" r="3.5" fill="#ffd54f" />
         </g>
+        <pattern id="sceneTile" width="420" height="460" patternUnits="userSpaceOnUse">
+          {/* 元の座標（上端が y=-40）を保つため 40px 下げる */}
+          <g transform="translate(0 40)">
+            <path d="M10 190 L80 60 Q95 40 110 60 L200 190Z" fill="#b9c8f0" />
+            <path d="M60 190 L190 0 Q210 -30 230 0 L360 190Z" fill="#a9b9e6" />
+            <path d="M165 22 L190 0 Q210 -30 230 0 L252 30 Q235 18 222 32 Q210 16 196 32 Q182 20 165 22Z" fill="#fff" />
+            <path d="M250 190 L330 80 Q345 62 360 80 L410 190Z" fill="#b3c3ec" />
+            {/* 丘と草原は、タイルの左端と右端で高さをそろえて継ぎ目を目立たなくする */}
+            <path d="M0 240 Q90 140 200 210 Q300 150 420 240 L420 420 L0 420Z" fill="#a6dc9a" />
+            <path d="M0 290 Q110 240 230 280 Q330 310 420 290 L420 420 L0 420Z" fill="url(#sceneGrass)" />
+            <use href="#sceneTree" x="40" y="350" />
+            <use href="#sceneTree" x="380" y="330" />
+            <use href="#sceneTree" x="350" y="380" transform="translate(70 76) scale(0.8)" />
+            <use href="#sceneFlower" x="130" y="375" />
+            <use href="#sceneFlower" x="270" y="390" />
+            <use href="#sceneFlower" x="60" y="400" />
+            <use href="#sceneFlower" x="330" y="360" />
+          </g>
+        </pattern>
       </defs>
-
-      <path d="M-20 190 L80 60 Q95 40 110 60 L210 190Z" fill="#b9c8f0" />
-      <path d="M60 190 L190 0 Q210 -30 230 0 L360 190Z" fill="#a9b9e6" />
-      <path d="M165 22 L190 0 Q210 -30 230 0 L252 30 Q235 18 222 32 Q210 16 196 32 Q182 20 165 22Z" fill="#fff" />
-      <path d="M250 190 L340 80 Q355 62 370 80 L460 190Z" fill="#b3c3ec" />
-      <path d="M-20 240 Q90 140 200 210 Q300 150 440 230 L440 420 L-20 420Z" fill="#a6dc9a" />
-      <path d="M-20 290 Q110 240 230 280 Q330 310 440 260 L440 420 L-20 420Z" fill="url(#sceneGrass)" />
-
-      <use href="#sceneTree" x="40" y="350" />
-      <use href="#sceneTree" x="380" y="330" />
-      <use href="#sceneTree" x="350" y="380" transform="translate(70 76) scale(0.8)" />
-      <use href="#sceneFlower" x="130" y="375" />
-      <use href="#sceneFlower" x="270" y="390" />
-      <use href="#sceneFlower" x="60" y="400" />
-      <use href="#sceneFlower" x="330" y="360" />
+      <rect width="100%" height="460" fill="url(#sceneTile)" />
     </svg>
   </div>
 );
