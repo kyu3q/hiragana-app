@@ -17,7 +17,6 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
   const canvasRef = useRef(null);
   const [gameState, setGameState] = useState('start'); // start, playing, won, lost
   const [score, setScore] = useState(0);
-  const [combo, setCombo] = useState(0);
   const [gameOverReason, setGameOverReason] = useState('');
   const requestRef = useRef();
   const lastFrameRef = useRef(null); // 前回の描画の時刻
@@ -87,7 +86,6 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
     // Level Generation
     let currentX = 800;
     const levelLength = 10000; // Longer level
-    let difficultyMultiplier = 1;
 
     while (currentX < levelLength) {
       const type = Math.random();
@@ -218,7 +216,6 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
       noticeTimer: 0
     };
     setScore(0);
-    setCombo(0);
     setGameOverReason('');
   };
 
@@ -260,7 +257,6 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
       state.comboTimer = 180; // Reset combo timer (3 seconds at 60fps)
       
       setScore(state.score);
-      setCombo(state.combo);
       onAddScore(finalScore);
       
       // Visual feedback
@@ -282,7 +278,6 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
       state.lives--;
       state.invincible = 90;
       state.combo = 0; // Reset combo on damage
-      setCombo(0);
       playNGSound();
       
       if (state.lives <= 0) {
@@ -311,7 +306,6 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
       state.invincible = RESPAWN_INVINCIBLE;
       state.combo = 0;
       state.comboTimer = 0;
-      setCombo(0);
       // 再開した場所のすぐそばの敵は、いなかったことにする（すぐやられてしまうのを防ぐ）
       state.enemies.forEach(enemy => {
           if (enemy.x > checkpoint.x - 100 && enemy.x < checkpoint.x + 400) enemy.active = false;
@@ -335,7 +329,6 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
         state.comboTimer--;
         if (state.comboTimer <= 0) {
             state.combo = 0; // Combo expired
-            setCombo(0);
         }
     }
 
@@ -853,7 +846,7 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
     return x2 < x1 + w1 && x2 + w2 > x1 && y2 < y1 + h1 && y2 + h2 > y1;
   };
 
-  const handleInput = (e) => {
+  const handleInput = () => {
     if (gameState === 'playing') {
        jump();
     }
