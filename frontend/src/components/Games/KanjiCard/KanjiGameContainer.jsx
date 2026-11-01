@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './KanjiGames.css';
 import SnakeGame from './SnakeGame';
 import CatchGame from './CatchGame';
@@ -7,10 +7,35 @@ import JumpGame from './JumpGame';
 import AirplaneGame from './AirplaneGame';
 import BattleGame from './BattleGame';
 import { playFinishSound } from '../../../utils/soundPlayer';
+import { bgm } from '../../../utils/bgm/bgmPlayer';
+import { BGM_TRACK_IDS } from '../../../utils/bgm/bgmTracks';
+import { createBrowserMuteStore } from '../../../utils/bgm/bgmSettings';
+
+const muteStore = createBrowserMuteStore();
 
 const KanjiGameContainer = ({ kanji, onClose }) => {
   const [score, setScore] = useState(0);
   const [completed, setCompleted] = useState(false);
+  const [muted, setMuted] = useState(() => muteStore.get());
+
+  // ミュート設定を BGM に反映する（再生を始める前に設定しておく）
+  useEffect(() => {
+    bgm.setMuted(muted);
+  }, [muted]);
+
+  // ゲームを開いている間だけ、そのゲームのBGMを流す。クリアしたら止める（クリア音と重ならないように）
+  const { gameType } = kanji;
+  useEffect(() => {
+    if (completed || !BGM_TRACK_IDS.includes(gameType)) return undefined;
+    bgm.play(gameType);
+    return () => bgm.stop();
+  }, [gameType, completed]);
+
+  const toggleMuted = () => {
+    const next = !muted;
+    setMuted(next);
+    muteStore.set(next);
+  };
 
   const handleComplete = (success) => {
     if (success) {
@@ -58,8 +83,18 @@ const KanjiGameContainer = ({ kanji, onClose }) => {
           <button className="ghost" onClick={onClose} style={{fontSize: '1.2rem', padding: '4px 12px'}}>← もどる</button>
           <span className="game-title" style={{marginLeft: '12px'}}>{kanji.char} のゲーム</span>
         </div>
-        <div className="game-score">
-          {score} pt
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <button
+            className="ghost"
+            onClick={toggleMuted}
+            aria-label={muted ? 'BGMをつける' : 'BGMを消す'}
+            style={{ fontSize: '1.2rem', padding: '4px 12px' }}
+          >
+            {muted ? '🔇' : '🔊'}
+          </button>
+          <div className="game-score">
+            {score} pt
+          </div>
         </div>
       </div>
       
