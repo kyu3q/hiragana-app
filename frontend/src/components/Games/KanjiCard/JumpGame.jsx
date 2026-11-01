@@ -16,13 +16,15 @@ import {
   RESPAWN_LIVES,
   RESPAWN_INVINCIBLE,
 } from './jumpGameLogic';
-import { STAGES, pickPattern } from './stages';
+import { STAGES, pickPattern, isLastStage, stageTitle } from './stages';
 
 const JumpGame = ({ config, onComplete, onAddScore }) => {
   const canvasRef = useRef(null);
-  const [gameState, setGameState] = useState('start'); // start, playing, won, lost
+  const [gameState, setGameState] = useState('start'); // start, intro, playing, stageClear, won, lost
   const [score, setScore] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [stageIndex, setStageIndex] = useState(0);
+  const stageStartScoreRef = useRef(0); // そのステージを始めたときのスコア（リトライで戻す）
   const [gameOverReason, setGameOverReason] = useState('');
   const requestRef = useRef();
   const lastFrameRef = useRef(null); // 前回の描画の時刻
@@ -232,6 +234,17 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
     setGameOverReason('');
   };
 
+  // ステージを始める。名前を出すとき（最初・つぎへ）は intro、リトライはすぐ playing
+  const startStage = (index, startScore, withIntro) => {
+    stageStartScoreRef.current = startScore;
+    setStageIndex(index);
+    setPaused(false);
+    initGame(index, startScore);
+    const canvas = canvasRef.current;
+    if (canvas) draw(canvas.getContext('2d'), stateRef.current);
+    setGameState(withIntro ? 'intro' : 'playing');
+  };
+
   // --- Actions ---
   const jump = () => {
     const state = stateRef.current;
@@ -415,8 +428,12 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
     // ゴールに着いたら、ここでループを止める（次のフレームを予約しないので、クリア処理は1回だけ）
     if (reachedGoal) {
         playFinishSound();
-        setGameState('won');
-        onComplete(true);
+        if (isLastStage(state.stageIndex)) {
+            setGameState('won');
+            onComplete(true);
+        } else {
+            setGameState('stageClear');
+        }
         return false;
     }
 
@@ -917,6 +934,15 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
     ctx.fillText(`ターゲット`, CANVAS_WIDTH/2, 30);
     ctx.font = "bold 28px 'Zen Maru Gothic'";
     ctx.fillText(config.targetChar, CANVAS_WIDTH/2, 55);
+
+    // いまのステージ
+    ctx.font = "bold 16px Arial";
+    ctx.fillStyle = "white";
+    ctx.textAlign = "center";
+    ctx.shadowColor = "black"; // 明るい空（砂漠・雪山）でも読めるように
+    ctx.shadowBlur = 4;
+    ctx.fillText(`ステージ ${state.stageIndex + 1}/${STAGES.length}  ${state.stage.name}`, CANVAS_WIDTH / 2, 82);
+    ctx.shadowBlur = 0;
   };
 
   const rectIntersect = (x1, y1, w1, h1, x2, y2, w2, h2) => {
@@ -939,6 +965,13 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
     }
     return () => cancelAnimationFrame(requestRef.current);
   }, [config]);
+
+  // ステージの名前を2秒見せてから、始める
+  useEffect(() => {
+    if (gameState !== 'intro') return undefined;
+    const timer = setTimeout(() => setGameState('playing'), 2000);
+    return () => clearTimeout(timer);
+  }, [gameState]);
 
   // 一時停止中はループを止める。再開したときは時間を数え直す（止めていた間の時間を、まとめて進めないため）
   useEffect(() => {
@@ -1010,11 +1043,8 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
           <p style={{fontSize: '0.9em'}}>画面タップでジャンプ（2回まで可能）</p>
           <p style={{fontSize: '0.9em', color:'#FFD700'}}>敵を踏んづけて倒せるよ！</p>
           <p style={{fontSize: '0.9em', color:'#69F0AE'}}>🚩 はたを通ると、やられてもそこから再開できるよ</p>
-          <button className="start-btn" onClick={() => {
-              initGame();
-              setPaused(false);
-              setGameState('playing');
-          }}>スタート！</button>
+          <p style={{fontSize: '0.9em'}}>4つのステージを、つづけて走りぬけよう！</p>
+          <button className="start-btn" onClick={() => startStage(0, 0, true)}>スタート！</button>
         </div>
       )}
 
@@ -1025,11 +1055,24 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
           <div style={{fontSize:'2rem', margin:'10px 0'}}>
              スコア: {score}
           </div>
-          <button className="start-btn" onClick={() => {
-            initGame();
-            setPaused(false);
-            setGameState('playing');
-          }}>リトライ</button>
+          <button className="start-btn" onClick={() => startStage(stageIndex, stageStartScoreRef.current, false)}>リトライ</button>
+        </div>
+      )}
+
+      {gameState === 'intro' && (
+        <div className="game-instruction-overlay">
+          <h3>{stageTitle(stageIndex)}</h3>
+          <p>{STAGES[stageIndex].name}を走りぬけよう！</p>
+        </div>
+      )}
+
+      {gameState === 'stageClear' && (
+        <div className="game-result-modal">
+          <h2>ステージクリア！</h2>
+          <div style={{ fontSize: '2rem', margin: '10px 0' }}>スコア: {score}</div>
+          <button className="start-btn" onClick={() => startStage(stageIndex + 1, stateRef.current.score, true)}>
+            つぎへ
+          </button>
         </div>
       )}
       
