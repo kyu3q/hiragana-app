@@ -1,14 +1,34 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { GRADE1_KANJI, SIMILAR_PAIRS } from '../../../data/kanjiData';
 import { playJumpSound, playOK1Sound, playNGSound, playHappy1Sound, playHappy2Sound, playFinishSound } from '../../../utils/soundPlayer';
+import {
+  isJumpKey,
+  isPauseKey,
+  isEnemyAwake,
+  updateAirState,
+  shouldBufferedJump,
+  JUMP_BUFFER_FRAMES,
+  computeSteps,
+  resolveBlockCollision,
+  buildCheckpoints,
+  updateCheckpoints,
+  lastReachedCheckpoint,
+  RESPAWN_LIVES,
+  RESPAWN_INVINCIBLE,
+} from './jumpGameLogic';
+import { STAGES, pickPattern, isLastStage, stageTitle } from './stages';
 
 const JumpGame = ({ config, onComplete, onAddScore }) => {
   const canvasRef = useRef(null);
-  const [gameState, setGameState] = useState('start'); // start, playing, won, lost
+  const [gameState, setGameState] = useState('start'); // start, intro, playing, stageClear, won, lost
   const [score, setScore] = useState(0);
-  const [combo, setCombo] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const [stageIndex, setStageIndex] = useState(0);
+  const stageStartScoreRef = useRef(0); // そのステージを始めたときのスコア（リトライで戻す）
   const [gameOverReason, setGameOverReason] = useState('');
   const requestRef = useRef();
+  const lastFrameRef = useRef(null); // 前回の描画の時刻
+  const accumulatorRef = useRef(0); // まだ更新に使っていない経過時間（ミリ秒）
 
   // Constants
   const CANVAS_WIDTH = 800;
@@ -21,11 +41,14 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
   
   // Game State Reference to avoid closure staleness in game loop
   const stateRef = useRef({
-    player: { x: 100, y: GROUND_Y - PLAYER_SIZE, vy: 0, grounded: true, jumpCount: 0 },
+    stage: STAGES[0],
+    stageIndex: 0,
+    player: { x: 100, y: GROUND_Y - PLAYER_SIZE, vy: 0, grounded: true, jumpCount: 0, airFrames: 0 },
     cameraX: 0,
     score: 0,
     combo: 0,
     comboTimer: 0,
+    jumpBuffer: 0,
     lives: 3,
     invincible: 0,
     magnetTimer: 0,
@@ -36,10 +59,14 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
     clouds: [],
     mountains: [],
     particles: [],
-    powerups: []
+    powerups: [],
+    checkpoints: [],
+    noticeText: '',
+    noticeTimer: 0
   });
 
-  const initGame = () => {
+  const initGame = (stageIndex = 0, startScore = 0) => {
+    const stage = STAGES[stageIndex];
     const items = [];
     const enemies = [];
     const obstacles = [];
@@ -58,23 +85,23 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
         });
     }
     // Mountains (Layer 2 - Medium)
+    const m = stage.theme.mountain;
     for(let i=0; i<40; i++) {
         mountains.push({
             x: i * 300 + Math.random() * 100,
             y: GROUND_Y,
             h: 150 + Math.random() * 200,
             w: 400 + Math.random() * 200,
-            color: `hsl(${120 + Math.random()*40}, 30%, ${20 + Math.random()*20}%)`
+            color: `hsl(${m.hue + Math.random() * m.hueRange}, ${m.saturation}%, ${m.lightness + Math.random() * m.lightnessRange}%)`
         });
     }
 
     // Level Generation
     let currentX = 800;
-    const levelLength = 10000; // Longer level
-    let difficultyMultiplier = 1;
+    const levelLength = stage.levelLength;
 
     while (currentX < levelLength) {
-      const type = Math.random();
+      const pattern = pickPattern({ weights: stage.weights, r: Math.random() });
       
       // Determine Target Character vs Distractor
       const isTarget = Math.random() < 0.5;
@@ -94,7 +121,7 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
       }
 
       // Pattern Generation
-      if (type < 0.2) {
+      if (pattern === 'upperPath') {
         // --- Pattern: Upper Path (Sky Road) ---
         const pathLength = 4 + Math.floor(Math.random() * 5); // 4-8 blocks
         const pathHeight = 160;
@@ -122,7 +149,7 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
 
         currentX += pathLength * 80 + 200;
 
-      } else if (type < 0.4) {
+      } else if (pattern === 'groundEnemy') {
         // --- Pattern: Ground Enemy & Item ---
         enemies.push({
             x: currentX, y: GROUND_Y - 45, w: 45, h: 45, active: true, type: 'slime',
@@ -133,14 +160,14 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
             w: 40, h: 40, char: char, type: isTarget ? 'target' : 'bad', active: true
         });
         currentX += 450;
-      } else if (type < 0.55) {
+      } else if (pattern === 'bird') {
         // --- Pattern: Flying Enemy ---
         enemies.push({
             x: currentX, y: GROUND_Y - 100 - Math.random() * 100, w: 50, h: 40, active: true, type: 'bird',
             baseY: GROUND_Y - 150, phase: Math.random() * Math.PI * 2
         });
         currentX += 300;
-      } else if (type < 0.7) {
+      } else if (pattern === 'stairs') {
         // --- Pattern: Step Blocks (Stairs) ---
         for(let i=0; i<3; i++) {
              obstacles.push({
@@ -153,13 +180,13 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
         }
         currentX += 400;
 
-      } else if (type < 0.8) {
+      } else if (pattern === 'spike') {
          // --- Pattern: Spikes ---
          obstacles.push({
             x: currentX, y: GROUND_Y - 40, w: 40, h: 40, type: 'spike'
         });
         currentX += 300;
-      } else if (type < 0.9) {
+      } else if (pattern === 'powerup') {
         // --- Powerup Chance ---
         const r = Math.random();
         let pType = 'magnet';
@@ -187,33 +214,52 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
     });
 
     stateRef.current = {
-      player: { x: 100, y: GROUND_Y - PLAYER_SIZE, vy: 0, grounded: true, jumpCount: 0 },
+      stage, stageIndex,
+      player: { x: 100, y: GROUND_Y - PLAYER_SIZE, vy: 0, grounded: true, jumpCount: 0, airFrames: 0 },
       cameraX: 0,
-      score: 0,
+      score: startScore,
       combo: 0,
       comboTimer: 0,
+      jumpBuffer: 0,
       lives: 3,
       invincible: 0,
       magnetTimer: 0,
       shield: false,
-      items, enemies, obstacles, clouds, mountains, particles: [], powerups
+      items, enemies, obstacles, clouds, mountains, particles: [], powerups,
+      checkpoints: buildCheckpoints({ levelLength }),
+      noticeText: '',
+      noticeTimer: 0
     };
-    setScore(0);
-    setCombo(0);
+    setScore(startScore);
     setGameOverReason('');
+  };
+
+  // ステージを始める。名前を出すとき（最初・つぎへ）は intro、リトライはすぐ playing
+  const startStage = (index, startScore, withIntro) => {
+    stageStartScoreRef.current = startScore;
+    setStageIndex(index);
+    setPaused(false);
+    initGame(index, startScore);
+    const canvas = canvasRef.current;
+    if (canvas) draw(canvas.getContext('2d'), stateRef.current);
+    setGameState(withIntro ? 'intro' : 'playing');
   };
 
   // --- Actions ---
   const jump = () => {
-    const { player } = stateRef.current;
-    if (player.grounded || player.jumpCount < 2) {
-      player.vy = JUMP_STRENGTH;
-      player.grounded = false;
-      player.jumpCount++;
-      
-      createParticles(player.x + PLAYER_SIZE/2, player.y + PLAYER_SIZE, 5, '#fff', 2);
-      playJumpSound();
+    const state = stateRef.current;
+    const { player } = state;
+    if (player.jumpCount >= 2) {
+      // 着地の少し前に押した分は、着地した瞬間に跳ぶ
+      state.jumpBuffer = JUMP_BUFFER_FRAMES;
+      return;
     }
+    player.vy = JUMP_STRENGTH;
+    player.grounded = false;
+    player.jumpCount++;
+
+    createParticles(player.x + PLAYER_SIZE/2, player.y + PLAYER_SIZE, 5, '#fff', 2);
+    playJumpSound();
   };
 
   const createParticles = (x, y, count, color, speed) => {
@@ -241,7 +287,6 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
       state.comboTimer = 180; // Reset combo timer (3 seconds at 60fps)
       
       setScore(state.score);
-      setCombo(state.combo);
       onAddScore(finalScore);
       
       // Visual feedback
@@ -263,39 +308,68 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
       state.lives--;
       state.invincible = 90;
       state.combo = 0; // Reset combo on damage
-      setCombo(0);
       playNGSound();
       
       if (state.lives <= 0) {
-          setGameOverReason(reason);
-          setGameState('lost');
+          loseAllLives(reason);
       }
   };
 
+  // 通過済みのチェックポイントがあればそこから再開し、なければゲームオーバーにする
+  const loseAllLives = (reason) => {
+      const state = stateRef.current;
+      const checkpoint = lastReachedCheckpoint(state.checkpoints);
+      if (!checkpoint) {
+          setGameOverReason(reason);
+          setGameState('lost');
+          return;
+      }
+
+      const { player } = state;
+      player.x = checkpoint.x;
+      player.y = GROUND_Y - PLAYER_SIZE;
+      player.vy = 0;
+      player.grounded = true;
+      player.jumpCount = 0;
+      player.airFrames = 0;
+      state.jumpBuffer = 0;
+      state.cameraX = player.x - 150;
+      state.lives = RESPAWN_LIVES;
+      state.invincible = RESPAWN_INVINCIBLE;
+      state.combo = 0;
+      state.comboTimer = 0;
+      // 再開した場所のすぐそばの敵は、いなかったことにする（すぐやられてしまうのを防ぐ）
+      state.enemies.forEach(enemy => {
+          if (enemy.x > checkpoint.x - 100 && enemy.x < checkpoint.x + 400) enemy.active = false;
+      });
+      state.noticeText = 'チェックポイントから再開！';
+      state.noticeTimer = 120;
+      createParticles(player.x + PLAYER_SIZE / 2, player.y, 12, '#FFD700', 5);
+  };
+
   // --- Main Loop ---
-  const update = () => {
-    if (gameState !== 'playing') return;
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+  // 物理の更新を1回（1/60秒ぶん）進める。ゲームが終わったら false を返す
+  const step = () => {
     const state = stateRef.current;
     const { player } = state;
 
     // -- Timers --
     if (state.invincible > 0) state.invincible--;
     if (state.magnetTimer > 0) state.magnetTimer--;
+    if (state.noticeTimer > 0) state.noticeTimer--;
     if (state.comboTimer > 0) {
         state.comboTimer--;
         if (state.comboTimer <= 0) {
             state.combo = 0; // Combo expired
-            setCombo(0);
         }
     }
 
     // -- Player Physics --
+    // 地面や足場に乗っているかは、毎フレーム判定し直す（歩いて落ちたときに「乗っている」まま残らないように）
+    player.grounded = false;
     player.vy += GRAVITY;
     player.y += player.vy;
-    let intendedMove = MOVE_SPEED;
+    let intendedMove = MOVE_SPEED * state.stage.speed;
 
     // Ground Collision
     if (player.y + PLAYER_SIZE >= GROUND_Y) {
@@ -308,43 +382,79 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
     // -- Interactions --
     
     // 1. Obstacles
+    let reachedGoal = false;
     state.obstacles.forEach(obs => {
         if (obs.type === 'goal') {
              if (rectIntersect(player.x, player.y, PLAYER_SIZE, PLAYER_SIZE, obs.x, obs.y, obs.w, obs.h)) {
-                playFinishSound();
-                setGameState('won');
-                onComplete(true);
+                reachedGoal = true;
             }
             return;
         }
 
-        if (rectIntersect(player.x + intendedMove, player.y, PLAYER_SIZE, PLAYER_SIZE, obs.x, obs.y, obs.w, obs.h)) {
-            if (obs.type === 'spike') {
+        if (obs.type === 'block') {
+            const hit = resolveBlockCollision({ player, size: PLAYER_SIZE, intendedMove, block: obs });
+            if (hit.type === 'top') {
+                // 上に乗る
+                player.y = hit.y;
+                player.vy = hit.vy;
+                player.grounded = true;
+                player.jumpCount = 0;
+            } else if (hit.type === 'ceiling') {
+                // 下から頭をぶつけて、そこから落ち始める（ブロックを突き抜けない）
+                player.y = hit.y;
+                player.vy = hit.vy;
+            } else if (hit.type === 'side') {
+                // 横からぶつかったら前に進めない
+                intendedMove = hit.intendedMove;
+            }
+        } else if (obs.type === 'spike') {
+            if (rectIntersect(player.x + intendedMove, player.y, PLAYER_SIZE, PLAYER_SIZE, obs.x, obs.y, obs.w, obs.h)) {
                 takeDamage('トゲに当たっちゃった！');
-            } else if (obs.type === 'block') {
-                // Top Collision
-                if (player.vy >= 0 && player.y + PLAYER_SIZE - player.vy <= obs.y + 10) {
-                    player.y = obs.y - PLAYER_SIZE;
-                    player.vy = 0;
-                    player.grounded = true;
-                    player.jumpCount = 0;
-                } else {
-                    // Side Collision (Stop movement)
-                    if (player.x + PLAYER_SIZE <= obs.x + 10) {
-                        intendedMove = 0; 
-                    }
-                }
             }
         }
     });
+
+    // 足場を離れた直後の猶予と、着地直前の先行入力
+    Object.assign(player, updateAirState({ grounded: player.grounded, airFrames: player.airFrames, jumpCount: player.jumpCount }));
+    if (state.jumpBuffer > 0) {
+        if (shouldBufferedJump({ buffer: state.jumpBuffer, grounded: player.grounded })) {
+            state.jumpBuffer = 0;
+            jump();
+        } else {
+            state.jumpBuffer--;
+        }
+    }
+
+    // ゴールに着いたら、ここでループを止める（次のフレームを予約しないので、クリア処理は1回だけ）
+    if (reachedGoal) {
+        playFinishSound();
+        if (isLastStage(state.stageIndex)) {
+            setGameState('won');
+            onComplete(true);
+        } else {
+            setGameState('stageClear');
+        }
+        return false;
+    }
 
     // Apply Movement
     player.x += intendedMove;
     state.cameraX = player.x - 150;
     if (player.y > CANVAS_HEIGHT) {
-        setGameOverReason('落ちちゃった！');
-        setGameState('lost');
-        return;
+        state.lives = 0;
+        loseAllLives('落ちちゃった！');
+        return state.lives > 0;
+    }
+
+    // チェックポイントの旗に着いたら通過済みにする
+    const checkpointResult = updateCheckpoints({ checkpoints: state.checkpoints, playerX: player.x });
+    state.checkpoints = checkpointResult.checkpoints;
+    if (checkpointResult.newlyReached.length > 0) {
+        state.noticeText = 'チェックポイント！';
+        state.noticeTimer = 90;
+        playHappy2Sound();
+        const flag = checkpointResult.newlyReached[0];
+        createParticles(flag.x, GROUND_Y - 60, 12, '#69F0AE', 5);
     }
 
     // 2. Enemies
@@ -357,6 +467,8 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
             if (enemy.x < enemy.patrolStart) enemy.vx = 1;
             if (enemy.x > enemy.patrolEnd) enemy.vx = -1;
         } else if (enemy.type === 'bird') {
+            // 画面に近づくまでは動かさない（最初から飛ぶと、後半の鳥が先に流れてしまう）
+            if (!isEnemyAwake({ enemyX: enemy.x, playerX: player.x })) return;
             enemy.x -= 2; // Fly left
             enemy.y = enemy.baseY + Math.sin(Date.now() / 200 + enemy.phase) * 50;
         }
@@ -433,19 +545,71 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
         p.vy += 0.1; // gravity for particles
     });
 
-    draw(ctx, state);
-    requestRef.current = requestAnimationFrame(update);
+    return state.lives > 0;
+  };
+
+  // 描画のたびに、経過時間ぶんだけ更新を進めてから描く（60Hzでも120Hzでも同じ速さになる）
+  const update = (now) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    const deltaMs = lastFrameRef.current === null ? 0 : now - lastFrameRef.current;
+    lastFrameRef.current = now;
+    const result = computeSteps({ accumulatorMs: accumulatorRef.current, deltaMs });
+    accumulatorRef.current = result.accumulatorMs;
+
+    let running = true;
+    for (let i = 0; i < result.steps && running; i++) {
+      running = step();
+    }
+
+    draw(ctx, stateRef.current);
+    if (running) requestRef.current = requestAnimationFrame(update);
   };
 
   // --- Rendering ---
+  // 雪・火の粉。画面に固定で描き、時間だけで動かす（状態は持たない）
+  const drawWeather = (ctx, weather) => {
+    if (weather === 'none') return;
+    const t = Date.now();
+    ctx.save();
+    for (let i = 0; i < 40; i++) {
+      const seed = i * 137.5;
+      const x = Math.abs((seed * 7 + Math.sin(t / 1000 + i) * 20) % CANVAS_WIDTH);
+      if (weather === 'snow') {
+        const y = (seed * 3 + t * 0.05) % CANVAS_HEIGHT;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.beginPath(); ctx.arc(x, y, 2 + (i % 3), 0, Math.PI * 2); ctx.fill();
+      } else {
+        const y = CANVAS_HEIGHT - ((seed * 3 + t * 0.06) % CANVAS_HEIGHT);
+        ctx.fillStyle = i % 2 === 0 ? 'rgba(255, 152, 0, 0.8)' : 'rgba(255, 87, 34, 0.8)';
+        ctx.beginPath(); ctx.arc(x, y, 1.5 + (i % 2), 0, Math.PI * 2); ctx.fill();
+      }
+    }
+    ctx.restore();
+  };
+
+  // 絵文字を中心の位置に描く（描画の設定を、ほかの描画に残さない）
+  const drawEmoji = (ctx, emoji, cx, cy, size) => {
+    ctx.save();
+    ctx.font = `${size}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(emoji, cx, cy);
+    ctx.restore();
+  };
+
   const draw = (ctx, state) => {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
     
+    const theme = state.stage.theme;
+
     // Sky Gradient
     const gradient = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
-    gradient.addColorStop(0, '#4FC3F7'); // Light Blue
-    gradient.addColorStop(1, '#E1F5FE'); // White-ish Blue
+    gradient.addColorStop(0, theme.sky[0]);
+    gradient.addColorStop(1, theme.sky[1]);
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
@@ -470,7 +634,7 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
     ctx.save();
     // 2. Clouds (Medium Slow)
     ctx.translate(-state.cameraX * 0.5, 0);
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+    ctx.fillStyle = theme.cloud;
     state.clouds.forEach(c => {
         const lx = c.x % (CANVAS_WIDTH * 4); // Loop clouds
         ctx.beginPath();
@@ -485,17 +649,29 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
     ctx.translate(-state.cameraX, 0);
 
     // Ground
-    ctx.fillStyle = '#795548';
+    ctx.fillStyle = theme.ground;
     ctx.fillRect(state.cameraX, GROUND_Y, CANVAS_WIDTH, CANVAS_HEIGHT - GROUND_Y);
     // Grass Top
-    ctx.fillStyle = '#8BC34A';
+    ctx.fillStyle = theme.groundTop;
     ctx.fillRect(state.cameraX, GROUND_Y, CANVAS_WIDTH, 20);
     
     // Decorate Ground (simple patterns)
-    ctx.fillStyle = '#689F38';
+    ctx.fillStyle = theme.groundDecor;
     for(let i=Math.floor(state.cameraX/100)*100; i<state.cameraX+CANVAS_WIDTH; i+=100) {
         ctx.beginPath(); ctx.arc(i, GROUND_Y, 10, 0, Math.PI, true); ctx.fill();
     }
+
+    // チェックポイントの旗（通過前は灰色、通過後は緑）
+    state.checkpoints.forEach(c => {
+        ctx.fillStyle = '#EEEEEE';
+        ctx.fillRect(c.x, GROUND_Y - 90, 6, 90); // Pole
+        ctx.fillStyle = c.reached ? '#4CAF50' : '#9E9E9E';
+        ctx.beginPath();
+        ctx.moveTo(c.x + 6, GROUND_Y - 88);
+        ctx.lineTo(c.x + 56, GROUND_Y - 68);
+        ctx.lineTo(c.x + 6, GROUND_Y - 48);
+        ctx.fill();
+    });
 
     // Goal
     const goal = state.obstacles.find(o => o.type === 'goal');
@@ -530,6 +706,11 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
             ctx.strokeStyle = '#EF6C00'; ctx.lineWidth = 3;
             ctx.strokeRect(obs.x, obs.y, obs.w, obs.h);
         } else if (obs.type === 'spike') {
+            const spikeSkin = state.stage.enemySkin && state.stage.enemySkin.spike;
+            if (spikeSkin) {
+                drawEmoji(ctx, spikeSkin, obs.x + obs.w / 2, obs.y + obs.h / 2, obs.h * 1.1);
+                return;
+            }
             // Bright Red Spikes
             ctx.fillStyle = '#FF5252';
             for(let i=0; i<3; i++) {
@@ -572,6 +753,11 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
     // Enemies
     state.enemies.forEach(e => {
         if (!e.active) return;
+        const skin = state.stage.enemySkin && state.stage.enemySkin[e.type];
+        if (skin) {
+            drawEmoji(ctx, skin, e.x + e.w / 2, e.y + e.h / 2, e.h);
+            return;
+        }
         if (e.type === 'slime') {
             const squish = Math.abs(Math.sin(Date.now() / 150)) * 0.1;
             ctx.fillStyle = '#AB47BC';
@@ -689,6 +875,8 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
 
     ctx.restore();
 
+    drawWeather(ctx, theme.weather);
+
     // -- UI Overlay --
     ctx.font = "bold 24px Arial";
     ctx.shadowColor = "black";
@@ -728,6 +916,14 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
         ctx.fillText(`🧲 マグネット (${Math.ceil(state.magnetTimer/60)})`, 20, buffY);
     }
     
+    // お知らせ（チェックポイントの通過・再開）
+    if (state.noticeTimer > 0) {
+        ctx.textAlign = "center";
+        ctx.font = "bold 32px 'Zen Maru Gothic', sans-serif";
+        ctx.fillStyle = "#69F0AE";
+        ctx.fillText(state.noticeText, CANVAS_WIDTH / 2, 130);
+    }
+
     // Target display
     ctx.shadowBlur = 0;
     ctx.fillStyle = "rgba(0,0,0,0.5)";
@@ -738,14 +934,23 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
     ctx.fillText(`ターゲット`, CANVAS_WIDTH/2, 30);
     ctx.font = "bold 28px 'Zen Maru Gothic'";
     ctx.fillText(config.targetChar, CANVAS_WIDTH/2, 55);
+
+    // いまのステージ
+    ctx.font = "bold 16px Arial";
+    ctx.fillStyle = "white";
+    ctx.textAlign = "center";
+    ctx.shadowColor = "black"; // 明るい空（砂漠・雪山）でも読めるように
+    ctx.shadowBlur = 4;
+    ctx.fillText(`ステージ ${state.stageIndex + 1}/${STAGES.length}  ${state.stage.name}`, CANVAS_WIDTH / 2, 82);
+    ctx.shadowBlur = 0;
   };
 
   const rectIntersect = (x1, y1, w1, h1, x2, y2, w2, h2) => {
     return x2 < x1 + w1 && x2 + w2 > x1 && y2 < y1 + h1 && y2 + h2 > y1;
   };
 
-  const handleInput = (e) => {
-    if (gameState === 'playing') {
+  const handleInput = () => {
+    if (gameState === 'playing' && !paused) {
        jump();
     }
   };
@@ -761,12 +966,49 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
     return () => cancelAnimationFrame(requestRef.current);
   }, [config]);
 
+  // ステージの名前を2秒見せてから、始める
   useEffect(() => {
-    if (gameState === 'playing') {
+    if (gameState !== 'intro') return undefined;
+    const timer = setTimeout(() => setGameState('playing'), 2000);
+    return () => clearTimeout(timer);
+  }, [gameState]);
+
+  // 一時停止中はループを止める。再開したときは時間を数え直す（止めていた間の時間を、まとめて進めないため）
+  useEffect(() => {
+    if (gameState === 'playing' && !paused) {
+      lastFrameRef.current = null;
+      accumulatorRef.current = 0;
       requestRef.current = requestAnimationFrame(update);
     }
     return () => cancelAnimationFrame(requestRef.current);
+  }, [gameState, paused]);
+
+  // ほかのタブやアプリに切り替えたら、自動で止める
+  useEffect(() => {
+    if (gameState !== 'playing') return undefined;
+    const handleVisibility = () => {
+      if (document.hidden) setPaused(true);
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
   }, [gameState]);
+
+  // キーボードでもジャンプできる（スペース、↑、W）。長押しの連続入力は無視する
+  useEffect(() => {
+    if (gameState !== 'playing') return undefined;
+    const handleKeyDown = (e) => {
+      if (e.repeat) return;
+      if (isPauseKey(e.key)) {
+        setPaused((p) => !p);
+        return;
+      }
+      if (!isJumpKey(e.key)) return;
+      e.preventDefault(); // スペースキーで画面がスクロールしないようにする
+      if (!paused) jump(); // 一時停止中はジャンプしない
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [gameState, paused]);
 
   return (
     <div className="game-area jump-game" style={{ background: '#333', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
@@ -800,10 +1042,9 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
 
           <p style={{fontSize: '0.9em'}}>画面タップでジャンプ（2回まで可能）</p>
           <p style={{fontSize: '0.9em', color:'#FFD700'}}>敵を踏んづけて倒せるよ！</p>
-          <button className="start-btn" onClick={() => {
-              initGame();
-              setGameState('playing');
-          }}>スタート！</button>
+          <p style={{fontSize: '0.9em', color:'#69F0AE'}}>🚩 はたを通ると、やられてもそこから再開できるよ</p>
+          <p style={{fontSize: '0.9em'}}>4つのステージを、つづけて走りぬけよう！</p>
+          <button className="start-btn" onClick={() => startStage(0, 0, true)}>スタート！</button>
         </div>
       )}
 
@@ -814,18 +1055,48 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
           <div style={{fontSize:'2rem', margin:'10px 0'}}>
              スコア: {score}
           </div>
-          <button className="start-btn" onClick={() => {
-            initGame();
-            setGameState('playing');
-          }}>リトライ</button>
+          <button className="start-btn" onClick={() => startStage(stageIndex, stageStartScoreRef.current, false)}>リトライ</button>
+        </div>
+      )}
+
+      {gameState === 'intro' && (
+        <div className="game-instruction-overlay">
+          <h3>{stageTitle(stageIndex)}</h3>
+          <p>{STAGES[stageIndex].name}を走りぬけよう！</p>
+        </div>
+      )}
+
+      {gameState === 'stageClear' && (
+        <div className="game-result-modal">
+          <h2>ステージクリア！</h2>
+          <div style={{ fontSize: '2rem', margin: '10px 0' }}>スコア: {score}</div>
+          <button className="start-btn" onClick={() => startStage(stageIndex + 1, stateRef.current.score, true)}>
+            つぎへ
+          </button>
         </div>
       )}
       
+      {gameState === 'playing' && !paused && (
+        <button
+          type="button"
+          aria-label="一時停止"
+          onClick={() => setPaused(true)}
+          style={{ position: 'absolute', bottom: 8, right: 8, zIndex: 50, padding: '4px 10px', fontSize: '1.2rem', background: 'rgba(0,0,0,0.5)', color: '#fff', borderRadius: 8 }}
+        >⏸</button>
+      )}
+
+      {gameState === 'playing' && paused && (
+        <div className="game-instruction-overlay">
+          <h3>⏸ 一時停止</h3>
+          <p style={{ fontSize: '0.9em' }}>Esc / P キーでも、つづけられるよ</p>
+          <button className="start-btn" onClick={() => setPaused(false)}>つづける</button>
+        </div>
+      )}
+
       <canvas 
         ref={canvasRef}
         style={{ width: '100%', height: '100%', maxWidth: '800px', maxHeight: '600px', aspectRatio: '4/3', border: '2px solid #ddd', borderRadius: '8px', background: '#000', touchAction: 'none' }}
-        onMouseDown={handleInput}
-        onTouchStart={handleInput}
+        onPointerDown={handleInput} // マウス・タッチ・ペンを1つにまとめる（タップで2回ジャンプしないように）
       />
     </div>
   );

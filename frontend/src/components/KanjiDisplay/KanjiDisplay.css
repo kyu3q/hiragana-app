@@ -54,6 +54,7 @@
   font-family: inherit;
   transition: all 0.2s ease;
   background: white;
+  color: #1f2937; /* ダークモードで白文字になるのを防ぐ */
 }
 
 .kanji-search-input:focus {

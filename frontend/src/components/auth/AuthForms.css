@@ -149,6 +149,11 @@
   font-size: 1rem;
   transition: all 0.3s ease;
   background-color: #fafafa;
+  color: #5d4037; /* ダークモードで白文字になり、入力内容が見えなくなるのを防ぐ */
+}
+
+.form-group input::placeholder {
+  color: #a1887f;
 }
 
 .form-group input:focus {
