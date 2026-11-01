@@ -1038,7 +1038,7 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
           type="button"
           aria-label="一時停止"
           onClick={() => setPaused(true)}
-          style={{ position: 'absolute', top: 8, right: 8, zIndex: 50, padding: '4px 10px', fontSize: '1.2rem', background: 'rgba(0,0,0,0.5)', color: '#fff', borderRadius: 8 }}
+          style={{ position: 'absolute', bottom: 8, right: 8, zIndex: 50, padding: '4px 10px', fontSize: '1.2rem', background: 'rgba(0,0,0,0.5)', color: '#fff', borderRadius: 8 }}
         >⏸</button>
       )}
 
