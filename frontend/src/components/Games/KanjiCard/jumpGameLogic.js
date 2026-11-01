@@ -92,3 +92,21 @@ export const lastReachedCheckpoint = (checkpoints) => {
   const reached = checkpoints.filter((c) => c.reached);
   return reached.length > 0 ? reached[reached.length - 1] : null;
 };
+
+// 足場を離れてから、地上ジャンプができる猶予（フレーム数。6フレーム = 0.1秒）
+export const COYOTE_FRAMES = 6;
+
+// 着地の少し前に押したジャンプを、覚えておく長さ（フレーム数。6フレーム = 0.1秒）
+export const JUMP_BUFFER_FRAMES = 6;
+
+// 1フレームごとの空中の状態。猶予を過ぎても跳ばずに落ち続けたら、地上ジャンプの権利を使ったことにする
+// （ブロックの端から歩いて落ちたときに、ジャンプを1回多く使えないようにする）
+export const updateAirState = ({ grounded, airFrames, jumpCount }) => {
+  if (grounded) return { airFrames: 0, jumpCount: 0 };
+  const nextAirFrames = airFrames + 1;
+  const expired = nextAirFrames > COYOTE_FRAMES && jumpCount === 0;
+  return { airFrames: nextAirFrames, jumpCount: expired ? 1 : jumpCount };
+};
+
+// 着地した瞬間に、先行入力が残っていればジャンプする
+export const shouldBufferedJump = ({ buffer, grounded }) => grounded && buffer > 0;

@@ -4,6 +4,9 @@ import { playJumpSound, playOK1Sound, playNGSound, playHappy1Sound, playHappy2So
 import {
   isJumpKey,
   isEnemyAwake,
+  updateAirState,
+  shouldBufferedJump,
+  JUMP_BUFFER_FRAMES,
   computeSteps,
   resolveBlockCollision,
   buildCheckpoints,
@@ -33,11 +36,12 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
   
   // Game State Reference to avoid closure staleness in game loop
   const stateRef = useRef({
-    player: { x: 100, y: GROUND_Y - PLAYER_SIZE, vy: 0, grounded: true, jumpCount: 0 },
+    player: { x: 100, y: GROUND_Y - PLAYER_SIZE, vy: 0, grounded: true, jumpCount: 0, airFrames: 0 },
     cameraX: 0,
     score: 0,
     combo: 0,
     comboTimer: 0,
+    jumpBuffer: 0,
     lives: 3,
     invincible: 0,
     magnetTimer: 0,
@@ -201,11 +205,12 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
     });
 
     stateRef.current = {
-      player: { x: 100, y: GROUND_Y - PLAYER_SIZE, vy: 0, grounded: true, jumpCount: 0 },
+      player: { x: 100, y: GROUND_Y - PLAYER_SIZE, vy: 0, grounded: true, jumpCount: 0, airFrames: 0 },
       cameraX: 0,
       score: 0,
       combo: 0,
       comboTimer: 0,
+      jumpBuffer: 0,
       lives: 3,
       invincible: 0,
       magnetTimer: 0,
@@ -221,15 +226,19 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
 
   // --- Actions ---
   const jump = () => {
-    const { player } = stateRef.current;
-    if (player.grounded || player.jumpCount < 2) {
-      player.vy = JUMP_STRENGTH;
-      player.grounded = false;
-      player.jumpCount++;
-      
-      createParticles(player.x + PLAYER_SIZE/2, player.y + PLAYER_SIZE, 5, '#fff', 2);
-      playJumpSound();
+    const state = stateRef.current;
+    const { player } = state;
+    if (player.jumpCount >= 2) {
+      // 着地の少し前に押した分は、着地した瞬間に跳ぶ
+      state.jumpBuffer = JUMP_BUFFER_FRAMES;
+      return;
     }
+    player.vy = JUMP_STRENGTH;
+    player.grounded = false;
+    player.jumpCount++;
+
+    createParticles(player.x + PLAYER_SIZE/2, player.y + PLAYER_SIZE, 5, '#fff', 2);
+    playJumpSound();
   };
 
   const createParticles = (x, y, count, color, speed) => {
@@ -301,6 +310,8 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
       player.vy = 0;
       player.grounded = true;
       player.jumpCount = 0;
+      player.airFrames = 0;
+      state.jumpBuffer = 0;
       state.cameraX = player.x - 150;
       state.lives = RESPAWN_LIVES;
       state.invincible = RESPAWN_INVINCIBLE;
@@ -333,6 +344,8 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
     }
 
     // -- Player Physics --
+    // 地面や足場に乗っているかは、毎フレーム判定し直す（歩いて落ちたときに「乗っている」まま残らないように）
+    player.grounded = false;
     player.vy += GRAVITY;
     player.y += player.vy;
     let intendedMove = MOVE_SPEED;
@@ -379,6 +392,17 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
             }
         }
     });
+
+    // 足場を離れた直後の猶予と、着地直前の先行入力
+    Object.assign(player, updateAirState({ grounded: player.grounded, airFrames: player.airFrames, jumpCount: player.jumpCount }));
+    if (state.jumpBuffer > 0) {
+        if (shouldBufferedJump({ buffer: state.jumpBuffer, grounded: player.grounded })) {
+            state.jumpBuffer = 0;
+            jump();
+        } else {
+            state.jumpBuffer--;
+        }
+    }
 
     // ゴールに着いたら、ここでループを止める（次のフレームを予約しないので、クリア処理は1回だけ）
     if (reachedGoal) {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isJumpKey, isEnemyAwake, WAKE_DISTANCE, computeSteps, STEP_MS, MAX_STEPS, resolveBlockCollision, buildCheckpoints, updateCheckpoints, lastReachedCheckpoint, CHECKPOINT_INTERVAL } from './jumpGameLogic';
+import { isJumpKey, isEnemyAwake, WAKE_DISTANCE, computeSteps, STEP_MS, MAX_STEPS, resolveBlockCollision, buildCheckpoints, updateCheckpoints, lastReachedCheckpoint, CHECKPOINT_INTERVAL, updateAirState, COYOTE_FRAMES, JUMP_BUFFER_FRAMES, shouldBufferedJump } from './jumpGameLogic';
 
 describe('isJumpKey', () => {
   it('スペースキーはジャンプ操作として扱う', () => {
@@ -174,5 +174,45 @@ describe('lastReachedCheckpoint', () => {
       { x: 7500, reached: false },
     ];
     expect(lastReachedCheckpoint(checkpoints).x).toBe(5000);
+  });
+});
+
+describe('updateAirState（コヨーテタイム）', () => {
+  it('地面にいる間は空中時間を0に戻し、ジャンプ回数も0に戻す', () => {
+    expect(updateAirState({ grounded: true, airFrames: 3, jumpCount: 1 })).toEqual({ airFrames: 0, jumpCount: 0 });
+  });
+
+  it('足場を離れた直後は、地上ジャンプの権利を残す', () => {
+    const next = updateAirState({ grounded: false, airFrames: COYOTE_FRAMES - 1, jumpCount: 0 });
+    expect(next.jumpCount).toBe(0);
+  });
+
+  it('猶予を過ぎたら、地上ジャンプの権利を使ったことにする', () => {
+    let s = { airFrames: 0, jumpCount: 0 };
+    for (let i = 0; i <= COYOTE_FRAMES; i++) s = updateAirState({ grounded: false, ...s });
+    expect(s.jumpCount).toBe(1);
+  });
+
+  it('ジャンプ済みの空中では、ジャンプ回数を増やさない', () => {
+    const s = updateAirState({ grounded: false, airFrames: 50, jumpCount: 2 });
+    expect(s.jumpCount).toBe(2);
+  });
+});
+
+describe('先行入力', () => {
+  it('ジャンプできない時に押すと、バッファを満タンにする', () => {
+    expect(JUMP_BUFFER_FRAMES).toBeGreaterThan(0);
+  });
+
+  it('着地した時にバッファが残っていれば、ジャンプする', () => {
+    expect(shouldBufferedJump({ buffer: 3, grounded: true })).toBe(true);
+  });
+
+  it('バッファが切れていたら、着地してもジャンプしない', () => {
+    expect(shouldBufferedJump({ buffer: 0, grounded: true })).toBe(false);
+  });
+
+  it('空中のままなら、バッファが残っていてもジャンプしない', () => {
+    expect(shouldBufferedJump({ buffer: 3, grounded: false })).toBe(false);
   });
 });
