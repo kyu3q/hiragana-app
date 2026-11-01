@@ -5,6 +5,11 @@ const JUMP_KEYS = [' ', 'ArrowUp', 'w', 'W'];
 // ジャンプ操作として扱うキーか
 export const isJumpKey = (key) => JUMP_KEYS.includes(key);
 
+const PAUSE_KEYS = ['Escape', 'p', 'P'];
+
+// 一時停止・再開の操作として扱うキーか
+export const isPauseKey = (key) => PAUSE_KEYS.includes(key);
+
 // 敵が動き出す距離。画面の右端（カメラはプレイヤーの150px左）より少し先
 export const WAKE_DISTANCE = 800;
 

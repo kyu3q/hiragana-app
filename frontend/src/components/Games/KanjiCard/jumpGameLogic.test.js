@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isJumpKey, isEnemyAwake, WAKE_DISTANCE, computeSteps, STEP_MS, MAX_STEPS, resolveBlockCollision, buildCheckpoints, updateCheckpoints, lastReachedCheckpoint, CHECKPOINT_INTERVAL, updateAirState, COYOTE_FRAMES, JUMP_BUFFER_FRAMES, shouldBufferedJump } from './jumpGameLogic';
+import { isJumpKey, isEnemyAwake, WAKE_DISTANCE, computeSteps, STEP_MS, MAX_STEPS, resolveBlockCollision, buildCheckpoints, updateCheckpoints, lastReachedCheckpoint, CHECKPOINT_INTERVAL, updateAirState, COYOTE_FRAMES, JUMP_BUFFER_FRAMES, shouldBufferedJump, isPauseKey } from './jumpGameLogic';
 
 describe('isJumpKey', () => {
   it('スペースキーはジャンプ操作として扱う', () => {
@@ -214,5 +214,19 @@ describe('先行入力', () => {
 
   it('空中のままなら、バッファが残っていてもジャンプしない', () => {
     expect(shouldBufferedJump({ buffer: 3, grounded: false })).toBe(false);
+  });
+});
+
+describe('isPauseKey', () => {
+  it('EscキーとPキーは一時停止の操作として扱う', () => {
+    expect(isPauseKey('Escape')).toBe(true);
+    expect(isPauseKey('p')).toBe(true);
+    expect(isPauseKey('P')).toBe(true);
+  });
+
+  it('ジャンプのキーやそれ以外のキーは、一時停止の操作として扱わない', () => {
+    expect(isPauseKey(' ')).toBe(false);
+    expect(isPauseKey('ArrowUp')).toBe(false);
+    expect(isPauseKey('a')).toBe(false);
   });
 });

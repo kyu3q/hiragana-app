@@ -3,6 +3,7 @@ import { GRADE1_KANJI, SIMILAR_PAIRS } from '../../../data/kanjiData';
 import { playJumpSound, playOK1Sound, playNGSound, playHappy1Sound, playHappy2Sound, playFinishSound } from '../../../utils/soundPlayer';
 import {
   isJumpKey,
+  isPauseKey,
   isEnemyAwake,
   updateAirState,
   shouldBufferedJump,
@@ -20,6 +21,7 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
   const canvasRef = useRef(null);
   const [gameState, setGameState] = useState('start'); // start, playing, won, lost
   const [score, setScore] = useState(0);
+  const [paused, setPaused] = useState(false);
   const [gameOverReason, setGameOverReason] = useState('');
   const requestRef = useRef();
   const lastFrameRef = useRef(null); // 前回の描画の時刻
@@ -871,7 +873,7 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
   };
 
   const handleInput = () => {
-    if (gameState === 'playing') {
+    if (gameState === 'playing' && !paused) {
        jump();
     }
   };
@@ -887,26 +889,42 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
     return () => cancelAnimationFrame(requestRef.current);
   }, [config]);
 
+  // 一時停止中はループを止める。再開したときは時間を数え直す（止めていた間の時間を、まとめて進めないため）
   useEffect(() => {
-    if (gameState === 'playing') {
+    if (gameState === 'playing' && !paused) {
       lastFrameRef.current = null;
       accumulatorRef.current = 0;
       requestRef.current = requestAnimationFrame(update);
     }
     return () => cancelAnimationFrame(requestRef.current);
+  }, [gameState, paused]);
+
+  // ほかのタブやアプリに切り替えたら、自動で止める
+  useEffect(() => {
+    if (gameState !== 'playing') return undefined;
+    const handleVisibility = () => {
+      if (document.hidden) setPaused(true);
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
   }, [gameState]);
 
   // キーボードでもジャンプできる（スペース、↑、W）。長押しの連続入力は無視する
   useEffect(() => {
     if (gameState !== 'playing') return undefined;
     const handleKeyDown = (e) => {
-      if (!isJumpKey(e.key) || e.repeat) return;
+      if (e.repeat) return;
+      if (isPauseKey(e.key)) {
+        setPaused((p) => !p);
+        return;
+      }
+      if (!isJumpKey(e.key)) return;
       e.preventDefault(); // スペースキーで画面がスクロールしないようにする
-      jump();
+      if (!paused) jump(); // 一時停止中はジャンプしない
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [gameState]);
+  }, [gameState, paused]);
 
   return (
     <div className="game-area jump-game" style={{ background: '#333', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
@@ -943,6 +961,7 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
           <p style={{fontSize: '0.9em', color:'#69F0AE'}}>🚩 はたを通ると、やられてもそこから再開できるよ</p>
           <button className="start-btn" onClick={() => {
               initGame();
+              setPaused(false);
               setGameState('playing');
           }}>スタート！</button>
         </div>
@@ -957,11 +976,29 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
           </div>
           <button className="start-btn" onClick={() => {
             initGame();
+            setPaused(false);
             setGameState('playing');
           }}>リトライ</button>
         </div>
       )}
       
+      {gameState === 'playing' && !paused && (
+        <button
+          type="button"
+          aria-label="一時停止"
+          onClick={() => setPaused(true)}
+          style={{ position: 'absolute', top: 8, right: 8, zIndex: 50, padding: '4px 10px', fontSize: '1.2rem', background: 'rgba(0,0,0,0.5)', color: '#fff', borderRadius: 8 }}
+        >⏸</button>
+      )}
+
+      {gameState === 'playing' && paused && (
+        <div className="game-instruction-overlay">
+          <h3>⏸ 一時停止</h3>
+          <p style={{ fontSize: '0.9em' }}>Esc / P キーでも、つづけられるよ</p>
+          <button className="start-btn" onClick={() => setPaused(false)}>つづける</button>
+        </div>
+      )}
+
       <canvas 
         ref={canvasRef}
         style={{ width: '100%', height: '100%', maxWidth: '800px', maxHeight: '600px', aspectRatio: '4/3', border: '2px solid #ddd', borderRadius: '8px', background: '#000', touchAction: 'none' }}
