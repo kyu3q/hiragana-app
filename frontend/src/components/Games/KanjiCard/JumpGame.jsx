@@ -16,6 +16,7 @@ import {
   RESPAWN_LIVES,
   RESPAWN_INVINCIBLE,
 } from './jumpGameLogic';
+import { STAGES, pickPattern } from './stages';
 
 const JumpGame = ({ config, onComplete, onAddScore }) => {
   const canvasRef = useRef(null);
@@ -38,6 +39,8 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
   
   // Game State Reference to avoid closure staleness in game loop
   const stateRef = useRef({
+    stage: STAGES[0],
+    stageIndex: 0,
     player: { x: 100, y: GROUND_Y - PLAYER_SIZE, vy: 0, grounded: true, jumpCount: 0, airFrames: 0 },
     cameraX: 0,
     score: 0,
@@ -60,7 +63,8 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
     noticeTimer: 0
   });
 
-  const initGame = () => {
+  const initGame = (stageIndex = 0, startScore = 0) => {
+    const stage = STAGES[stageIndex];
     const items = [];
     const enemies = [];
     const obstacles = [];
@@ -79,22 +83,23 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
         });
     }
     // Mountains (Layer 2 - Medium)
+    const m = stage.theme.mountain;
     for(let i=0; i<40; i++) {
         mountains.push({
             x: i * 300 + Math.random() * 100,
             y: GROUND_Y,
             h: 150 + Math.random() * 200,
             w: 400 + Math.random() * 200,
-            color: `hsl(${120 + Math.random()*40}, 30%, ${20 + Math.random()*20}%)`
+            color: `hsl(${m.hue + Math.random() * m.hueRange}, ${m.saturation}%, ${m.lightness + Math.random() * m.lightnessRange}%)`
         });
     }
 
     // Level Generation
     let currentX = 800;
-    const levelLength = 10000; // Longer level
+    const levelLength = stage.levelLength;
 
     while (currentX < levelLength) {
-      const type = Math.random();
+      const pattern = pickPattern({ weights: stage.weights, r: Math.random() });
       
       // Determine Target Character vs Distractor
       const isTarget = Math.random() < 0.5;
@@ -114,7 +119,7 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
       }
 
       // Pattern Generation
-      if (type < 0.2) {
+      if (pattern === 'upperPath') {
         // --- Pattern: Upper Path (Sky Road) ---
         const pathLength = 4 + Math.floor(Math.random() * 5); // 4-8 blocks
         const pathHeight = 160;
@@ -142,7 +147,7 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
 
         currentX += pathLength * 80 + 200;
 
-      } else if (type < 0.4) {
+      } else if (pattern === 'groundEnemy') {
         // --- Pattern: Ground Enemy & Item ---
         enemies.push({
             x: currentX, y: GROUND_Y - 45, w: 45, h: 45, active: true, type: 'slime',
@@ -153,14 +158,14 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
             w: 40, h: 40, char: char, type: isTarget ? 'target' : 'bad', active: true
         });
         currentX += 450;
-      } else if (type < 0.55) {
+      } else if (pattern === 'bird') {
         // --- Pattern: Flying Enemy ---
         enemies.push({
             x: currentX, y: GROUND_Y - 100 - Math.random() * 100, w: 50, h: 40, active: true, type: 'bird',
             baseY: GROUND_Y - 150, phase: Math.random() * Math.PI * 2
         });
         currentX += 300;
-      } else if (type < 0.7) {
+      } else if (pattern === 'stairs') {
         // --- Pattern: Step Blocks (Stairs) ---
         for(let i=0; i<3; i++) {
              obstacles.push({
@@ -173,13 +178,13 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
         }
         currentX += 400;
 
-      } else if (type < 0.8) {
+      } else if (pattern === 'spike') {
          // --- Pattern: Spikes ---
          obstacles.push({
             x: currentX, y: GROUND_Y - 40, w: 40, h: 40, type: 'spike'
         });
         currentX += 300;
-      } else if (type < 0.9) {
+      } else if (pattern === 'powerup') {
         // --- Powerup Chance ---
         const r = Math.random();
         let pType = 'magnet';
@@ -207,9 +212,10 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
     });
 
     stateRef.current = {
+      stage, stageIndex,
       player: { x: 100, y: GROUND_Y - PLAYER_SIZE, vy: 0, grounded: true, jumpCount: 0, airFrames: 0 },
       cameraX: 0,
-      score: 0,
+      score: startScore,
       combo: 0,
       comboTimer: 0,
       jumpBuffer: 0,
@@ -222,7 +228,7 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
       noticeText: '',
       noticeTimer: 0
     };
-    setScore(0);
+    setScore(startScore);
     setGameOverReason('');
   };
 
@@ -350,7 +356,7 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
     player.grounded = false;
     player.vy += GRAVITY;
     player.y += player.vy;
-    let intendedMove = MOVE_SPEED;
+    let intendedMove = MOVE_SPEED * state.stage.speed;
 
     // Ground Collision
     if (player.y + PLAYER_SIZE >= GROUND_Y) {
