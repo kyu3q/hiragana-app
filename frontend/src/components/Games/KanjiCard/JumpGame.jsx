@@ -1,7 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { GRADE1_KANJI, SIMILAR_PAIRS } from '../../../data/kanjiData';
 import { playJumpSound, playOK1Sound, playNGSound, playHappy1Sound, playHappy2Sound, playFinishSound } from '../../../utils/soundPlayer';
-import { isJumpKey, isEnemyAwake, computeSteps, resolveBlockCollision } from './jumpGameLogic';
+import {
+  isJumpKey,
+  isEnemyAwake,
+  computeSteps,
+  resolveBlockCollision,
+  buildCheckpoints,
+  updateCheckpoints,
+  lastReachedCheckpoint,
+  RESPAWN_LIVES,
+  RESPAWN_INVINCIBLE,
+} from './jumpGameLogic';
 
 const JumpGame = ({ config, onComplete, onAddScore }) => {
   const canvasRef = useRef(null);
@@ -39,7 +49,10 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
     clouds: [],
     mountains: [],
     particles: [],
-    powerups: []
+    powerups: [],
+    checkpoints: [],
+    noticeText: '',
+    noticeTimer: 0
   });
 
   const initGame = () => {
@@ -199,7 +212,10 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
       invincible: 0,
       magnetTimer: 0,
       shield: false,
-      items, enemies, obstacles, clouds, mountains, particles: [], powerups
+      items, enemies, obstacles, clouds, mountains, particles: [], powerups,
+      checkpoints: buildCheckpoints({ levelLength }),
+      noticeText: '',
+      noticeTimer: 0
     };
     setScore(0);
     setCombo(0);
@@ -270,9 +286,39 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
       playNGSound();
       
       if (state.lives <= 0) {
+          loseAllLives(reason);
+      }
+  };
+
+  // 通過済みのチェックポイントがあればそこから再開し、なければゲームオーバーにする
+  const loseAllLives = (reason) => {
+      const state = stateRef.current;
+      const checkpoint = lastReachedCheckpoint(state.checkpoints);
+      if (!checkpoint) {
           setGameOverReason(reason);
           setGameState('lost');
+          return;
       }
+
+      const { player } = state;
+      player.x = checkpoint.x;
+      player.y = GROUND_Y - PLAYER_SIZE;
+      player.vy = 0;
+      player.grounded = true;
+      player.jumpCount = 0;
+      state.cameraX = player.x - 150;
+      state.lives = RESPAWN_LIVES;
+      state.invincible = RESPAWN_INVINCIBLE;
+      state.combo = 0;
+      state.comboTimer = 0;
+      setCombo(0);
+      // 再開した場所のすぐそばの敵は、いなかったことにする（すぐやられてしまうのを防ぐ）
+      state.enemies.forEach(enemy => {
+          if (enemy.x > checkpoint.x - 100 && enemy.x < checkpoint.x + 400) enemy.active = false;
+      });
+      state.noticeText = 'チェックポイントから再開！';
+      state.noticeTimer = 120;
+      createParticles(player.x + PLAYER_SIZE / 2, player.y, 12, '#FFD700', 5);
   };
 
   // --- Main Loop ---
@@ -284,6 +330,7 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
     // -- Timers --
     if (state.invincible > 0) state.invincible--;
     if (state.magnetTimer > 0) state.magnetTimer--;
+    if (state.noticeTimer > 0) state.noticeTimer--;
     if (state.comboTimer > 0) {
         state.comboTimer--;
         if (state.comboTimer <= 0) {
@@ -352,9 +399,20 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
     player.x += intendedMove;
     state.cameraX = player.x - 150;
     if (player.y > CANVAS_HEIGHT) {
-        setGameOverReason('落ちちゃった！');
-        setGameState('lost');
-        return false;
+        state.lives = 0;
+        loseAllLives('落ちちゃった！');
+        return state.lives > 0;
+    }
+
+    // チェックポイントの旗に着いたら通過済みにする
+    const checkpointResult = updateCheckpoints({ checkpoints: state.checkpoints, playerX: player.x });
+    state.checkpoints = checkpointResult.checkpoints;
+    if (checkpointResult.newlyReached.length > 0) {
+        state.noticeText = 'チェックポイント！';
+        state.noticeTimer = 90;
+        playHappy2Sound();
+        const flag = checkpointResult.newlyReached[0];
+        createParticles(flag.x, GROUND_Y - 60, 12, '#69F0AE', 5);
     }
 
     // 2. Enemies
@@ -527,6 +585,18 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
     for(let i=Math.floor(state.cameraX/100)*100; i<state.cameraX+CANVAS_WIDTH; i+=100) {
         ctx.beginPath(); ctx.arc(i, GROUND_Y, 10, 0, Math.PI, true); ctx.fill();
     }
+
+    // チェックポイントの旗（通過前は灰色、通過後は緑）
+    state.checkpoints.forEach(c => {
+        ctx.fillStyle = '#EEEEEE';
+        ctx.fillRect(c.x, GROUND_Y - 90, 6, 90); // Pole
+        ctx.fillStyle = c.reached ? '#4CAF50' : '#9E9E9E';
+        ctx.beginPath();
+        ctx.moveTo(c.x + 6, GROUND_Y - 88);
+        ctx.lineTo(c.x + 56, GROUND_Y - 68);
+        ctx.lineTo(c.x + 6, GROUND_Y - 48);
+        ctx.fill();
+    });
 
     // Goal
     const goal = state.obstacles.find(o => o.type === 'goal');
@@ -759,6 +829,14 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
         ctx.fillText(`🧲 マグネット (${Math.ceil(state.magnetTimer/60)})`, 20, buffY);
     }
     
+    // お知らせ（チェックポイントの通過・再開）
+    if (state.noticeTimer > 0) {
+        ctx.textAlign = "center";
+        ctx.font = "bold 32px 'Zen Maru Gothic', sans-serif";
+        ctx.fillStyle = "#69F0AE";
+        ctx.fillText(state.noticeText, CANVAS_WIDTH / 2, 130);
+    }
+
     // Target display
     ctx.shadowBlur = 0;
     ctx.fillStyle = "rgba(0,0,0,0.5)";
@@ -845,6 +923,7 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
 
           <p style={{fontSize: '0.9em'}}>画面タップでジャンプ（2回まで可能）</p>
           <p style={{fontSize: '0.9em', color:'#FFD700'}}>敵を踏んづけて倒せるよ！</p>
+          <p style={{fontSize: '0.9em', color:'#69F0AE'}}>🚩 はたを通ると、やられてもそこから再開できるよ</p>
           <button className="start-btn" onClick={() => {
               initGame();
               setGameState('playing');

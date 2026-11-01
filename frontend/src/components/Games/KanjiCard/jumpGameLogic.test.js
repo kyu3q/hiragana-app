@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isJumpKey, isEnemyAwake, WAKE_DISTANCE, computeSteps, STEP_MS, MAX_STEPS, resolveBlockCollision } from './jumpGameLogic';
+import { isJumpKey, isEnemyAwake, WAKE_DISTANCE, computeSteps, STEP_MS, MAX_STEPS, resolveBlockCollision, buildCheckpoints, updateCheckpoints, lastReachedCheckpoint, CHECKPOINT_INTERVAL } from './jumpGameLogic';
 
 describe('isJumpKey', () => {
   it('スペースキーはジャンプ操作として扱う', () => {
@@ -110,5 +110,69 @@ describe('resolveBlockCollision', () => {
     // 頭が前フレームでもブロックの下端より上にあった（横から重なっているだけ）
     const result = resolve({ x: 262, y: 330, vy: -10 });
     expect(result.type).toBe('side');
+  });
+});
+
+describe('buildCheckpoints', () => {
+  it('コースを一定の間隔で区切って、チェックポイントを並べる', () => {
+    const xs = buildCheckpoints({ levelLength: 10000 }).map((c) => c.x);
+    expect(xs).toEqual([CHECKPOINT_INTERVAL, CHECKPOINT_INTERVAL * 2, CHECKPOINT_INTERVAL * 3]);
+  });
+
+  it('ゴールの手前すぎる位置には置かない', () => {
+    const xs = buildCheckpoints({ levelLength: 5100 }).map((c) => c.x);
+    expect(xs).toEqual([CHECKPOINT_INTERVAL]);
+  });
+
+  it('短いコースには置かない', () => {
+    expect(buildCheckpoints({ levelLength: 2000 })).toEqual([]);
+  });
+
+  it('最初はどれも通過していない', () => {
+    expect(buildCheckpoints({ levelLength: 10000 }).every((c) => c.reached === false)).toBe(true);
+  });
+});
+
+describe('updateCheckpoints', () => {
+  const checkpoints = [
+    { x: 2500, reached: false },
+    { x: 5000, reached: false },
+  ];
+
+  it('手前にいるうちは、何も通過しない', () => {
+    const result = updateCheckpoints({ checkpoints, playerX: 2499 });
+    expect(result.newlyReached).toEqual([]);
+  });
+
+  it('旗の位置に着いたら、通過したことにして、新しく通過した旗を返す', () => {
+    const result = updateCheckpoints({ checkpoints, playerX: 2500 });
+    expect(result.checkpoints[0].reached).toBe(true);
+    expect(result.newlyReached.map((c) => c.x)).toEqual([2500]);
+  });
+
+  it('通過済みの旗は、もう一度「新しく通過した」扱いにしない', () => {
+    const once = updateCheckpoints({ checkpoints, playerX: 2600 });
+    const twice = updateCheckpoints({ checkpoints: once.checkpoints, playerX: 2700 });
+    expect(twice.newlyReached).toEqual([]);
+  });
+
+  it('元の配列は書き換えない', () => {
+    updateCheckpoints({ checkpoints, playerX: 6000 });
+    expect(checkpoints.every((c) => c.reached === false)).toBe(true);
+  });
+});
+
+describe('lastReachedCheckpoint', () => {
+  it('どの旗も通過していなければ null', () => {
+    expect(lastReachedCheckpoint([{ x: 2500, reached: false }])).toBeNull();
+  });
+
+  it('通過した旗のうち、いちばん先の旗を返す', () => {
+    const checkpoints = [
+      { x: 2500, reached: true },
+      { x: 5000, reached: true },
+      { x: 7500, reached: false },
+    ];
+    expect(lastReachedCheckpoint(checkpoints).x).toBe(5000);
   });
 });

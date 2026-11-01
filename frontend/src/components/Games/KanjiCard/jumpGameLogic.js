@@ -58,3 +58,37 @@ export const resolveBlockCollision = ({ player, size, intendedMove, block }) => 
   }
   return { type: 'none' };
 };
+
+// --- チェックポイント ---
+
+// チェックポイントを置く間隔（px）。コース全体は約10000px
+export const CHECKPOINT_INTERVAL = 2500;
+
+// ゴールの手前この距離（px）以内には置かない（すぐゴールなので意味がない）
+const CHECKPOINT_GOAL_MARGIN = 500;
+
+// 再開したときのライフと、再開直後の無敵時間（フレーム数。2秒ぶん）
+export const RESPAWN_LIVES = 3;
+export const RESPAWN_INVINCIBLE = 120;
+
+// コースの長さから、チェックポイントを並べる
+export const buildCheckpoints = ({ levelLength }) => {
+  const checkpoints = [];
+  for (let x = CHECKPOINT_INTERVAL; x < levelLength - CHECKPOINT_GOAL_MARGIN; x += CHECKPOINT_INTERVAL) {
+    checkpoints.push({ x, reached: false });
+  }
+  return checkpoints;
+};
+
+// プレイヤーが旗の位置に着いたら通過済みにする。元の配列は書き換えず、新しく通過した旗も返す
+export const updateCheckpoints = ({ checkpoints, playerX }) => {
+  const newlyReached = checkpoints.filter((c) => !c.reached && playerX >= c.x);
+  const updated = checkpoints.map((c) => (!c.reached && playerX >= c.x ? { ...c, reached: true } : c));
+  return { checkpoints: updated, newlyReached };
+};
+
+// 通過済みのうち、いちばん先の旗（再開する場所）。なければ null
+export const lastReachedCheckpoint = (checkpoints) => {
+  const reached = checkpoints.filter((c) => c.reached);
+  return reached.length > 0 ? reached[reached.length - 1] : null;
+};
