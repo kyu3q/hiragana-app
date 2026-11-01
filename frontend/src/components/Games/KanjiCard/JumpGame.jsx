@@ -552,14 +552,47 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
   };
 
   // --- Rendering ---
+  // 雪・火の粉。画面に固定で描き、時間だけで動かす（状態は持たない）
+  const drawWeather = (ctx, weather) => {
+    if (weather === 'none') return;
+    const t = Date.now();
+    ctx.save();
+    for (let i = 0; i < 40; i++) {
+      const seed = i * 137.5;
+      const x = Math.abs((seed * 7 + Math.sin(t / 1000 + i) * 20) % CANVAS_WIDTH);
+      if (weather === 'snow') {
+        const y = (seed * 3 + t * 0.05) % CANVAS_HEIGHT;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.beginPath(); ctx.arc(x, y, 2 + (i % 3), 0, Math.PI * 2); ctx.fill();
+      } else {
+        const y = CANVAS_HEIGHT - ((seed * 3 + t * 0.06) % CANVAS_HEIGHT);
+        ctx.fillStyle = i % 2 === 0 ? 'rgba(255, 152, 0, 0.8)' : 'rgba(255, 87, 34, 0.8)';
+        ctx.beginPath(); ctx.arc(x, y, 1.5 + (i % 2), 0, Math.PI * 2); ctx.fill();
+      }
+    }
+    ctx.restore();
+  };
+
+  // 絵文字を中心の位置に描く（描画の設定を、ほかの描画に残さない）
+  const drawEmoji = (ctx, emoji, cx, cy, size) => {
+    ctx.save();
+    ctx.font = `${size}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(emoji, cx, cy);
+    ctx.restore();
+  };
+
   const draw = (ctx, state) => {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
     
+    const theme = state.stage.theme;
+
     // Sky Gradient
     const gradient = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
-    gradient.addColorStop(0, '#4FC3F7'); // Light Blue
-    gradient.addColorStop(1, '#E1F5FE'); // White-ish Blue
+    gradient.addColorStop(0, theme.sky[0]);
+    gradient.addColorStop(1, theme.sky[1]);
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
@@ -584,7 +617,7 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
     ctx.save();
     // 2. Clouds (Medium Slow)
     ctx.translate(-state.cameraX * 0.5, 0);
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+    ctx.fillStyle = theme.cloud;
     state.clouds.forEach(c => {
         const lx = c.x % (CANVAS_WIDTH * 4); // Loop clouds
         ctx.beginPath();
@@ -599,14 +632,14 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
     ctx.translate(-state.cameraX, 0);
 
     // Ground
-    ctx.fillStyle = '#795548';
+    ctx.fillStyle = theme.ground;
     ctx.fillRect(state.cameraX, GROUND_Y, CANVAS_WIDTH, CANVAS_HEIGHT - GROUND_Y);
     // Grass Top
-    ctx.fillStyle = '#8BC34A';
+    ctx.fillStyle = theme.groundTop;
     ctx.fillRect(state.cameraX, GROUND_Y, CANVAS_WIDTH, 20);
     
     // Decorate Ground (simple patterns)
-    ctx.fillStyle = '#689F38';
+    ctx.fillStyle = theme.groundDecor;
     for(let i=Math.floor(state.cameraX/100)*100; i<state.cameraX+CANVAS_WIDTH; i+=100) {
         ctx.beginPath(); ctx.arc(i, GROUND_Y, 10, 0, Math.PI, true); ctx.fill();
     }
@@ -656,6 +689,11 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
             ctx.strokeStyle = '#EF6C00'; ctx.lineWidth = 3;
             ctx.strokeRect(obs.x, obs.y, obs.w, obs.h);
         } else if (obs.type === 'spike') {
+            const spikeSkin = state.stage.enemySkin && state.stage.enemySkin.spike;
+            if (spikeSkin) {
+                drawEmoji(ctx, spikeSkin, obs.x + obs.w / 2, obs.y + obs.h / 2, obs.h * 1.1);
+                return;
+            }
             // Bright Red Spikes
             ctx.fillStyle = '#FF5252';
             for(let i=0; i<3; i++) {
@@ -698,6 +736,11 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
     // Enemies
     state.enemies.forEach(e => {
         if (!e.active) return;
+        const skin = state.stage.enemySkin && state.stage.enemySkin[e.type];
+        if (skin) {
+            drawEmoji(ctx, skin, e.x + e.w / 2, e.y + e.h / 2, e.h);
+            return;
+        }
         if (e.type === 'slime') {
             const squish = Math.abs(Math.sin(Date.now() / 150)) * 0.1;
             ctx.fillStyle = '#AB47BC';
@@ -814,6 +857,8 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
     }
 
     ctx.restore();
+
+    drawWeather(ctx, theme.weather);
 
     // -- UI Overlay --
     ctx.font = "bold 24px Arial";
