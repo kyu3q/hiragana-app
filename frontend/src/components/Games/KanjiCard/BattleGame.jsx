@@ -1,118 +1,175 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { playCorrectSound, playNGSound, playFinishSound } from '../../../utils/soundPlayer';
 import { SIMILAR_PAIRS } from '../../../data/kanjiData';
+import { BATTLE_STAGES, buildOptions, pickDamage } from './battleStages';
+import { isLastStage, stageProgress, stageTitle, nextStageStart, retryStageStart } from './stageFlow';
+import { StageIntro, StageClear } from './StageOverlays';
+
+const PLAYER_MAX_HP = 100;
 
 const BattleGame = ({ config, onComplete, onAddScore }) => {
-  const [playerHp, setPlayerHp] = useState(100);
-  const [enemyHp, setEnemyHp] = useState(100);
+  const [gameState, setGameState] = useState('start'); // start, intro, playing, stageClear, lost
+  const [stageIndex, setStageIndex] = useState(0);
+  const [score, setScore] = useState(0);
+  const [playerHp, setPlayerHp] = useState(PLAYER_MAX_HP);
+  const [enemyHp, setEnemyHp] = useState(BATTLE_STAGES[0].enemyHp);
   const [message, setMessage] = useState('モンスターがあらわれた！');
   const [options, setOptions] = useState([]);
-  const [isPlayerTurn, setIsPlayerTurn] = useState(true);
   const [showQuestion, setShowQuestion] = useState(false);
-  const [questionType, setQuestionType] = useState('find_kanji'); // 'find_kanji'
+  const [questionId, setQuestionId] = useState(0); // 問題ごとに増やす（タイマーのやり直し用）
+  const [timeLeft, setTimeLeft] = useState(null);
   const [isAttacking, setIsAttacking] = useState(false);
   const [isDamaged, setIsDamaged] = useState(false);
-  const [gameOver, setGameOver] = useState(false);
+
+  // 非同期の途中でも最新の値を読めるよう、ref にも持つ
+  const stageIndexRef = useRef(0);
+  const playerHpRef = useRef(PLAYER_MAX_HP);
+  const enemyHpRef = useRef(BATTLE_STAGES[0].enemyHp);
+  const scoreRef = useRef(0);
+  const stageStartScoreRef = useRef(0); // そのステージを始めたときのスコア（リトライで戻す）
+  const timersRef = useRef([]);
+
+  const stage = BATTLE_STAGES[stageIndex];
 
   // コンフィグから設定を取得（なければデフォルト）
   const targetChar = config.targetChar || '漢';
   const instruction = config.instruction || '正しい漢字を選んで攻撃だ！';
 
-  useEffect(() => {
-    generateQuestion();
-  }, []);
+  // 予約した setTimeout を、まとめて片付けられるようにする
+  const later = (fn, ms) => {
+    timersRef.current.push(setTimeout(fn, ms));
+  };
+  const clearTimers = () => {
+    timersRef.current.forEach(clearTimeout);
+    timersRef.current = [];
+  };
+
+  useEffect(() => clearTimers, []);
 
   const generateQuestion = () => {
-    // 似ている漢字を取得
-    let distractors = SIMILAR_PAIRS[targetChar] || '日月火水木金土'; // デフォルト
-    distractors = distractors.split('');
-    
-    // 選択肢を作成 (正解1 + 不正解3)
-    const currentOptions = [
-      { char: targetChar, isCorrect: true },
-      ...Array(3).fill(null).map(() => ({
-        char: distractors[Math.floor(Math.random() * distractors.length)],
-        isCorrect: false
-      }))
-    ];
-
-    // シャッフル
-    setOptions(currentOptions.sort(() => Math.random() - 0.5));
+    const current = BATTLE_STAGES[stageIndexRef.current];
+    setOptions(buildOptions({
+      targetChar,
+      similarChars: SIMILAR_PAIRS[targetChar],
+      count: current.optionCount,
+    }));
+    setTimeLeft(current.timeLimit);
+    setQuestionId((id) => id + 1);
     setShowQuestion(true);
     setMessage(instruction);
   };
 
-  const handleOptionClick = (option) => {
-    if (!showQuestion || gameOver) return;
+  // ステージを始める。名前を出すとき（最初・つぎへ）は intro、リトライはすぐ playing
+  const startStage = ({ index, startScore, withIntro }) => {
+    clearTimers();
+    stageIndexRef.current = index;
+    stageStartScoreRef.current = startScore;
+    scoreRef.current = startScore;
+    playerHpRef.current = PLAYER_MAX_HP;
+    enemyHpRef.current = BATTLE_STAGES[index].enemyHp;
+    setStageIndex(index);
+    setScore(startScore);
+    setPlayerHp(PLAYER_MAX_HP);
+    setEnemyHp(BATTLE_STAGES[index].enemyHp);
+    setIsAttacking(false);
+    setIsDamaged(false);
+    setShowQuestion(false);
+    setMessage('モンスターがあらわれた！');
+    if (withIntro) {
+      setGameState('intro');
+    } else {
+      setGameState('playing');
+      generateQuestion();
+    }
+  };
 
+  const handleIntroDone = useCallback(() => {
+    setGameState('playing');
+    generateQuestion();
+    // generateQuestion は ref と props だけを読むので、ステージ開始時の1回だけ呼べばよい
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // option が null のときは、時間切れ（まちがい扱い）
+  const answer = (option) => {
     setShowQuestion(false);
 
-    if (option.isCorrect) {
+    if (option && option.isCorrect) {
       // 正解：プレイヤーの攻撃
       playCorrectSound();
       setMessage('正解！プレイヤーの攻撃！');
       setIsAttacking(true);
-      
-      setTimeout(() => {
+
+      later(() => {
         setIsAttacking(false);
-        const damage = 20 + Math.floor(Math.random() * 10);
-        const newEnemyHp = Math.max(0, enemyHp - damage);
+        const newEnemyHp = Math.max(0, enemyHpRef.current - pickDamage({ kind: 'attack', r: Math.random() }));
+        enemyHpRef.current = newEnemyHp;
         setEnemyHp(newEnemyHp);
+        scoreRef.current += 100;
+        setScore(scoreRef.current);
         onAddScore(100);
 
         if (newEnemyHp === 0) {
+          playFinishSound();
           setMessage('モンスターをたおした！');
-          setTimeout(() => {
-            onComplete(true);
+          later(() => {
+            if (isLastStage(BATTLE_STAGES, stageIndexRef.current)) {
+              onComplete(true);
+            } else {
+              setGameState('stageClear');
+            }
           }, 1000);
         } else {
-          // 次の問題へ
-          setTimeout(() => {
-             generateQuestion();
-          }, 1000);
+          later(generateQuestion, 1000);
         }
       }, 500);
-
     } else {
       // 不正解：モンスターの攻撃
       playNGSound();
-      setMessage(`ちがうよ... 正解は「${targetChar}」だよ`);
-      
-      setTimeout(() => {
+      setMessage(option ? `ちがうよ... 正解は「${targetChar}」だよ` : `じかんぎれ！ 正解は「${targetChar}」だよ`);
+
+      later(() => {
         setMessage('モンスターの攻撃！');
         setIsDamaged(true);
-        
-        setTimeout(() => {
+
+        later(() => {
           setIsDamaged(false);
-          const damage = 15 + Math.floor(Math.random() * 10);
-          const newPlayerHp = Math.max(0, playerHp - damage);
+          const newPlayerHp = Math.max(0, playerHpRef.current - pickDamage({ kind: 'hit', r: Math.random() }));
+          playerHpRef.current = newPlayerHp;
           setPlayerHp(newPlayerHp);
 
           if (newPlayerHp === 0) {
-            setGameOver(true);
             setMessage('目の前が真っ暗になった...');
-            // ゲームオーバー処理（リトライなど）
-            // ここでは簡易的にリトライボタンを出すなどの処理が必要だが、
-            // 今回はonComplete(false)で呼び出し元に任せるか、この場でリトライさせるか
-            // 既存のゲームに合わせて onComplete(false) は実装されていない場合が多いので
-            // このコンポーネント内でリトライを表示する
+            later(() => setGameState('lost'), 1000);
           } else {
-            // 次の問題へ
-            setTimeout(() => {
-              generateQuestion();
-            }, 1000);
+            later(generateQuestion, 1000);
           }
         }, 500);
       }, 1000);
     }
   };
 
-  const handleRetry = () => {
-    setPlayerHp(100);
-    setEnemyHp(100);
-    setGameOver(false);
-    generateQuestion();
+  const handleOptionClick = (option) => {
+    if (!showQuestion || gameState !== 'playing') return;
+    answer(option);
   };
+
+  // 時間切れ用に、いつも最新の answer を呼べるようにする
+  const answerRef = useRef(answer);
+  answerRef.current = answer;
+
+  // 制限時間：1秒ごとに減らし、問題が変わる・画面を離れるときは必ず止める
+  useEffect(() => {
+    if (!showQuestion || gameState !== 'playing' || stage.timeLimit === null) return undefined;
+    const timerId = setInterval(() => setTimeLeft((t) => (t === null ? t : t - 1)), 1000);
+    return () => clearInterval(timerId);
+  }, [showQuestion, gameState, questionId, stage.timeLimit]);
+
+  useEffect(() => {
+    if (showQuestion && gameState === 'playing' && timeLeft !== null && timeLeft <= 0) {
+      answerRef.current(null);
+    }
+  }, [timeLeft, showQuestion, gameState]);
 
   return (
     <div className="battle-game" style={{
@@ -120,12 +177,18 @@ const BattleGame = ({ config, onComplete, onAddScore }) => {
       height: '100%',
       display: 'flex',
       flexDirection: 'column',
-      backgroundImage: 'linear-gradient(to bottom, #87CEEB 0%, #E0F7FA 100%)',
+      backgroundImage: `linear-gradient(to bottom, ${stage.background[0]} 0%, ${stage.background[1]} 100%)`,
       padding: '20px',
       boxSizing: 'border-box',
       position: 'relative',
       fontFamily: '"M PLUS Rounded 1c", sans-serif'
     }}>
+      {/* ステージ番号と残り時間 */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: '#fff', textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}>
+        <span>{stageProgress(BATTLE_STAGES, stageIndex)}</span>
+        {gameState === 'playing' && showQuestion && timeLeft !== null && <span>のこり {Math.max(0, timeLeft)} びょう</span>}
+      </div>
+
       {/* バトルフィールド */}
       <div className="battle-field" style={{
         flex: 1,
@@ -159,19 +222,19 @@ const BattleGame = ({ config, onComplete, onAddScore }) => {
           textAlign: 'center',
           transition: 'transform 0.2s'
         }}>
-          <div style={{fontSize: '5rem'}}>👾</div>
+          <div style={{fontSize: '5rem'}}>{stage.enemyEmoji}</div>
           <div className="hp-bar-container" style={{
             width: '100px', height: '10px', background: '#555', borderRadius: '5px', margin: '0 auto'
           }}>
             <div className="hp-bar" style={{
-              width: `${enemyHp}%`,
+              width: `${(enemyHp / stage.enemyHp) * 100}%`,
               height: '100%',
-              background: enemyHp > 30 ? '#FF9800' : '#F44336',
+              background: enemyHp / stage.enemyHp > 0.3 ? '#FF9800' : '#F44336',
               borderRadius: '5px',
               transition: 'width 0.5s'
             }}></div>
           </div>
-          <p style={{fontWeight: 'bold', color: '#333'}}>モンスター HP: {enemyHp}</p>
+          <p style={{fontWeight: 'bold', color: '#333'}}>{stage.name} HP: {enemyHp}</p>
         </div>
       </div>
 
@@ -196,21 +259,9 @@ const BattleGame = ({ config, onComplete, onAddScore }) => {
         display: 'grid',
         gridTemplateColumns: '1fr 1fr',
         gap: '10px',
-        height: '150px'
+        height: stage.optionCount > 4 ? '230px' : '150px'
       }}>
-        {gameOver ? (
-           <button onClick={handleRetry} style={{
-             gridColumn: '1 / span 2',
-             fontSize: '1.5rem',
-             background: '#FF9F43',
-             color: 'white',
-             border: 'none',
-             borderRadius: '10px',
-             cursor: 'pointer'
-           }}>
-             もういちど チャレンジ！
-           </button>
-        ) : (
+        {gameState === 'playing' && (
           showQuestion && options.map((option, index) => (
             <button
               key={index}
@@ -235,6 +286,43 @@ const BattleGame = ({ config, onComplete, onAddScore }) => {
         )}
       </div>
       
+      {gameState === 'start' && (
+        <div className="game-instruction-overlay">
+          <h3>漢字バトル</h3>
+          <p>{instruction}</p>
+          <p style={{ fontSize: '0.9em' }}>3つのステージを、つづけてたおそう！</p>
+          <button className="start-btn" onClick={() => startStage({ index: 0, startScore: 0, withIntro: true })}>スタート！</button>
+        </div>
+      )}
+
+      {gameState === 'intro' && (
+        <StageIntro
+          title={stageTitle(BATTLE_STAGES, stageIndex)}
+          message={`${stage.name}をたおそう！`}
+          onDone={handleIntroDone}
+        />
+      )}
+
+      {gameState === 'stageClear' && (
+        <StageClear
+          score={score}
+          onNext={() => startStage(nextStageStart({ index: stageIndex, score: scoreRef.current }))}
+        />
+      )}
+
+      {gameState === 'lost' && (
+        <div className="game-result-modal">
+          <h2>ゲームオーバー</h2>
+          <div style={{ fontSize: '2rem', margin: '10px 0' }}>スコア: {score}</div>
+          <button
+            className="start-btn"
+            onClick={() => startStage(retryStageStart({ index: stageIndex, startScore: stageStartScoreRef.current }))}
+          >
+            もういちど チャレンジ！
+          </button>
+        </div>
+      )}
+
       <style>{`
         @keyframes shake {
           0% { transform: translateX(0); }
