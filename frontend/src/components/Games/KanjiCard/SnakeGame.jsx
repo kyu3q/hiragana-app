@@ -1,11 +1,16 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { GRADE1_KANJI, SIMILAR_PAIRS } from '../../../data/kanjiData';
 import { playOK2Sound, playNGSound, playHappy1Sound, playHappy2Sound } from '../../../utils/soundPlayer';
+import { SNAKE_STAGES, getMoveInterval, isStageGoalReached } from './snakeStages';
+import { isLastStage, stageTitle, stageProgress, nextStageStart, retryStageStart } from './stageFlow';
+import { StageIntro, StageClear } from './StageOverlays';
 
 const SnakeGame = ({ config, onComplete, onAddScore }) => {
   const canvasRef = useRef(null);
-  const [gameState, setGameState] = useState('start');
+  const [gameState, setGameState] = useState('start'); // start, intro, playing, paused, stageClear, won, lost
   const [score, setScore] = useState(0);
+  const [stageIndex, setStageIndex] = useState(0);
+  const stageStartScoreRef = useRef(0); // そのステージを始めたときのスコア（リトライで戻す）
   const [gameOverReason, setGameOverReason] = useState('');
   const requestRef = useRef();
   const lastUpdateRef = useRef(0);
@@ -18,38 +23,54 @@ const SnakeGame = ({ config, onComplete, onAddScore }) => {
   const COLS = CANVAS_WIDTH / GRID_SIZE;
   const ROWS = CANVAS_HEIGHT / GRID_SIZE;
   
-  // Dynamic speed based on score - slower start (250ms), speeds up by 10ms every 50 points, capped at 100ms
-  const getSpeed = (currentScore) => Math.max(100, 250 - Math.floor(currentScore / 50) * 10);
-
   const stateRef = useRef({
     snake: [{ x: 5, y: 5 }, { x: 4, y: 5 }, { x: 3, y: 5 }],
     direction: { x: 1, y: 0 },
     nextDirection: { x: 1, y: 0 },
     items: [], // { x, y, char, type }
     score: 0,
+    startScore: 0,
+    stage: SNAKE_STAGES[0],
+    stageIndex: 0,
     lives: 3,
     flash: 0
   });
 
-  const initGame = () => {
+  // ステージの最初の状態を作る。スコアは startScore から始まり、ライフはステージごとに3に戻す
+  const initGame = (index = 0, startScore = 0) => {
     stateRef.current = {
       snake: [{ x: Math.floor(COLS/2), y: Math.floor(ROWS/2) }],
       direction: { x: 1, y: 0 },
       nextDirection: { x: 1, y: 0 },
       items: [],
-      score: 0,
+      score: startScore,
+      startScore,
+      stage: SNAKE_STAGES[index],
+      stageIndex: index,
       lives: 3,
       flash: 0
     };
     badItemTimerRef.current = Date.now();
-    setScore(0);
+    setScore(startScore);
+    setGameOverReason('');
     spawnItem('target');
     spawnItem('bad');
   };
 
+  // ステージを始める。名前を出すとき（最初・つぎへ）は intro、リトライはすぐ playing
+  const startStage = ({ index, startScore, withIntro }) => {
+    stageStartScoreRef.current = startScore;
+    setStageIndex(index);
+    initGame(index, startScore);
+    draw();
+    setGameState(withIntro ? 'intro' : 'playing');
+  };
+
+  const handleIntroDone = useCallback(() => setGameState('playing'), []);
+
   const spawnItem = (type) => {
     let x, y, valid;
-    const { snake, items } = stateRef.current;
+    const { snake, items, stage } = stateRef.current;
     
     // Try to find empty spot
     for (let i = 0; i < 50; i++) {
@@ -73,6 +94,8 @@ const SnakeGame = ({ config, onComplete, onAddScore }) => {
                 }
             }
         }
+        // 障害物の上には出さない
+        if (valid && stage.obstacles.some(o => o.x === x && o.y === y)) valid = false;
         // Don't spawn on center (respawn point)
         if (x === Math.floor(COLS/2) && y === Math.floor(ROWS/2)) valid = false;
 
@@ -104,33 +127,10 @@ const SnakeGame = ({ config, onComplete, onAddScore }) => {
     }
   };
 
-  const resetSnake = () => {
-    const cx = Math.floor(COLS/2);
-    const cy = Math.floor(ROWS/2);
-    stateRef.current.snake = [{ x: cx, y: cy }];
-    stateRef.current.direction = { x: 0, y: 0 }; 
-    stateRef.current.nextDirection = { x: 1, y: 0 }; 
-    
-    // Clear items at spawn point just in case
-    stateRef.current.items = stateRef.current.items.filter(i => i.x !== cx || i.y !== cy);
-  };
-
-  const handleLifeLost = () => {
-    stateRef.current.lives--;
-    stateRef.current.shake = 10;
-    playNGSound();
-    if (stateRef.current.lives <= 0) {
-        setGameOverReason('ライフがなくなっちゃった！');
-        setGameState('lost');
-    } else {
-        resetSnake();
-    }
-  };
-
   const update = (timestamp) => {
     if (gameState !== 'playing') return;
 
-    const currentSpeed = getSpeed(stateRef.current.score);
+    const currentSpeed = getMoveInterval(stateRef.current.stage, stateRef.current.score - stateRef.current.startScore);
 
     if (timestamp - lastUpdateRef.current > currentSpeed) {
         const state = stateRef.current;
@@ -147,6 +147,14 @@ const SnakeGame = ({ config, onComplete, onAddScore }) => {
         if (head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS) {
             playNGSound();
             setGameOverReason('壁にぶつかっちゃった！');
+            setGameState('lost');
+            return;
+        }
+
+        // 障害物にぶつかる
+        if (state.stage.obstacles.some(o => o.x === head.x && o.y === head.y)) {
+            playNGSound();
+            setGameOverReason('いわにぶつかっちゃった！');
             setGameState('lost');
             return;
         }
@@ -205,7 +213,7 @@ const SnakeGame = ({ config, onComplete, onAddScore }) => {
             // Chance for heart
             if (Math.random() < 0.1) spawnItem('heart');
             // Chance for bad
-            if (Math.random() > 0.5) spawnItem('bad');
+            if (Math.random() < state.stage.badSpawnChance) spawnItem('bad');
         } else if (ateHeart) {
             // If we ate heart, we didn't eat target, so pop tail unless we want to grow
             // Usually eating bonus items doesn't grow snake? Let's say it doesn't.
@@ -226,16 +234,21 @@ const SnakeGame = ({ config, onComplete, onAddScore }) => {
         const now = Date.now();
         if (now - badItemTimerRef.current > 5000) {
             state.items = state.items.filter(i => i.type !== 'bad');
-            const count = 1 + Math.floor(Math.random() * 3);
+            const count = 1 + Math.floor(Math.random() * state.stage.badRotateMax);
             for(let i=0; i<count; i++) spawnItem('bad');
             badItemTimerRef.current = now;
         }
 
         // Win condition
-        if (state.score >= 500) {
+        // ステージの目標点（ループはここで止める。次のフレームを予約しないので、クリア処理は1回だけ）
+        if (isStageGoalReached(state.stage, state.score, state.startScore)) {
              playHappy2Sound();
-             setGameState('won');
-             onComplete(true);
+             if (isLastStage(SNAKE_STAGES, state.stageIndex)) {
+                 setGameState('won');
+                 onComplete(true);
+             } else {
+                 setGameState('stageClear');
+             }
              return;
         }
 
@@ -255,7 +268,8 @@ const SnakeGame = ({ config, onComplete, onAddScore }) => {
     ctx.save();
 
     // Clear
-    ctx.fillStyle = config.bg || '#f0f9ff'; 
+    const theme = state.stage.theme;
+    ctx.fillStyle = theme.bg || config.bg || '#f0f9ff';
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
     // Grid
@@ -272,7 +286,7 @@ const SnakeGame = ({ config, onComplete, onAddScore }) => {
 
     // Draw Snake
     // Body
-    ctx.fillStyle = '#8BC34A';
+    ctx.fillStyle = theme.snakeBody;
     for (let i = 1; i < state.snake.length; i++) {
         const segment = state.snake[i];
         ctx.beginPath();
@@ -282,7 +296,7 @@ const SnakeGame = ({ config, onComplete, onAddScore }) => {
 
     // Head
     const head = state.snake[0];
-    ctx.fillStyle = '#FF9F43';
+    ctx.fillStyle = theme.snakeHead;
     
     // Draw Head Background
     ctx.beginPath();
@@ -318,19 +332,30 @@ const SnakeGame = ({ config, onComplete, onAddScore }) => {
     ctx.beginPath(); ctx.arc(leftEyeX, leftEyeY, eyeSize/2, 0, Math.PI*2); ctx.fill();
     ctx.beginPath(); ctx.arc(rightEyeX, rightEyeY, eyeSize/2, 0, Math.PI*2); ctx.fill();
 
+    // 障害物
+    ctx.font = `${GRID_SIZE - 6}px serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    state.stage.obstacles.forEach(o => {
+        ctx.fillText(theme.obstacleEmoji, o.x * GRID_SIZE + GRID_SIZE/2, o.y * GRID_SIZE + GRID_SIZE/2);
+    });
+
     // Draw Items
     state.items.forEach(item => {
         ctx.font = `bold ${GRID_SIZE - 5}px serif`;
         if (item.type === 'heart') {
             ctx.fillStyle = '#FF5252';
-        } else if (item.type === 'bad') {
-            ctx.fillStyle = '#5D4037';
         } else {
-            ctx.fillStyle = '#5D4037'; // 正しい漢字も同じ色にする (#FF9F43 -> #5D4037)
+            ctx.fillStyle = theme.textColor; // 正しい漢字もハズレも同じ色にする
         }
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(item.char, item.x * GRID_SIZE + GRID_SIZE/2, item.y * GRID_SIZE + GRID_SIZE/2);
+        ctx.fillText(item.type === 'heart' ? theme.heartEmoji : item.char, item.x * GRID_SIZE + GRID_SIZE/2, item.y * GRID_SIZE + GRID_SIZE/2);
+        if (item.type === 'bad') {
+            // ハズレには、ステージのおじゃま絵文字を小さく添える
+            ctx.font = `${GRID_SIZE * 0.4}px serif`;
+            ctx.fillText(theme.badEmoji, item.x * GRID_SIZE + GRID_SIZE * 0.82, item.y * GRID_SIZE + GRID_SIZE * 0.2);
+        }
     });
 
     // Damage Flash
@@ -351,8 +376,14 @@ const SnakeGame = ({ config, onComplete, onAddScore }) => {
     ctx.fillText(hearts, 20, 30);
     
     // Score
-    ctx.fillStyle = "#333";
-    ctx.fillText(`スコア: ${state.score} / 500`, 20, 60);
+    ctx.fillStyle = theme.bg ? theme.textColor : "#333";
+    ctx.fillText(`スコア: ${state.score}  (このステージ ${state.score - state.startScore} / ${state.stage.targetScore})`, 20, 60);
+
+    // ステージの番号（1/3）
+    ctx.font = "bold 20px Arial";
+    ctx.textAlign = "center";
+    ctx.fillStyle = theme.bg ? theme.textColor : "#333";
+    ctx.fillText(`${stageProgress(SNAKE_STAGES, state.stageIndex)}  ${state.stage.name}`, CANVAS_WIDTH / 2, 30);
 
   };
 
@@ -418,6 +449,8 @@ const SnakeGame = ({ config, onComplete, onAddScore }) => {
         draw();
     }
     initGame();
+    stageStartScoreRef.current = 0;
+    setStageIndex(0);
     return () => cancelAnimationFrame(requestRef.current);
   }, [config]);
 
@@ -449,10 +482,8 @@ const SnakeGame = ({ config, onComplete, onAddScore }) => {
                 <small>ハズレ（ライフ-1）</small>
              </div>
           </div>
-          <button className="start-btn" onClick={() => {
-              initGame();
-              setGameState('playing');
-          }}>スタート！</button>
+          <p style={{fontSize: '0.9em'}}>3つのステージを、つづけてクリアしよう！</p>
+          <button className="start-btn" onClick={() => startStage({ index: 0, startScore: 0, withIntro: true })}>スタート！</button>
         </div>
       )}
 
@@ -467,11 +498,23 @@ const SnakeGame = ({ config, onComplete, onAddScore }) => {
         <div className="game-result-modal">
           <h2>ゲームオーバー</h2>
           <p>{gameOverReason || 'ライフがなくなっちゃった！'}</p>
-          <button className="start-btn" onClick={() => {
-            initGame();
-            setGameState('playing');
-          }}>リトライ</button>
+          <button className="start-btn" onClick={() => startStage(retryStageStart({ index: stageIndex, startScore: stageStartScoreRef.current }))}>リトライ</button>
         </div>
+      )}
+
+      {gameState === 'intro' && (
+        <StageIntro
+          title={stageTitle(SNAKE_STAGES, stageIndex)}
+          message={`${SNAKE_STAGES[stageIndex].name}で、正しい漢字を食べよう！`}
+          onDone={handleIntroDone}
+        />
+      )}
+
+      {gameState === 'stageClear' && (
+        <StageClear
+          score={score}
+          onNext={() => startStage(nextStageStart({ index: stageIndex, score: stateRef.current.score }))}
+        />
       )}
 
       {gameState === 'playing' && (
