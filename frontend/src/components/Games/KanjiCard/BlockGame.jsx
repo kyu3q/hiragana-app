@@ -1,18 +1,15 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { playOK1Sound, playNGSound, playCollisionSound, playHappy1Sound, playHappy2Sound } from '../../../utils/soundPlayer';
-import { BLOCK_STAGES, buildBricks } from './blockStages';
-import { isLastStage, stageTitle, stageProgress, nextStageStart, retryStageStart } from './stageFlow';
-import { StageIntro, StageClear } from './StageOverlays';
 
 const BlockGame = ({ config, onComplete, onAddScore }) => {
   const canvasRef = useRef(null);
-  const [gameState, setGameState] = useState('start'); // start, intro, playing, stageClear, won, lost
-  const [stageIndex, setStageIndex] = useState(0);
-  const stageStartScoreRef = useRef(0); // そのステージを始めたときのスコア（リトライで戻す）
+  const [gameState, setGameState] = useState('start'); // start, playing, won, lost
   const requestRef = useRef();
 
   // Game Constants
   const BALL_RADIUS = 10;
+  const BRICK_ROW_COUNT = 5;
+  const BRICK_COLUMN_COUNT = 8;
   
   // State refs for animation loop
   const stateRef = useRef({
@@ -22,59 +19,59 @@ const BlockGame = ({ config, onComplete, onAddScore }) => {
     bricks: [],
     items: [], // {x, y, type, dy, char, color}
     score: 0,
-    lives: BLOCK_STAGES[0].lives,
+    lives: 5,
     ballAttached: true,
-    particles: [],
-    stage: BLOCK_STAGES[0],
-    stageIndex: 0
+    particles: []
   });
 
-  const initGame = (index = 0, startScore = 0) => {
+  const initGame = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const width = canvas.width;
     const height = canvas.height;
-    const stage = BLOCK_STAGES[index];
 
-    const bricks = buildBricks({
-      stage,
-      width,
-      padding: 10,
-      offsetTop: 60,
-      offsetLeft: 30,
-      offsetRight: 30,
-      brickHeight: 30
-    });
+    // Create Bricks
+    const bricks = [];
+    const padding = 10;
+    const offsetTop = 60;
+    const offsetLeft = 30;
+    const offsetRight = 30;
+    const availableWidth = width - offsetLeft - offsetRight;
+    const totalPadding = padding * (BRICK_COLUMN_COUNT - 1);
+    const brickWidth = (availableWidth - totalPadding) / BRICK_COLUMN_COUNT;
+    const brickHeight = 30;
+
+    for (let c = 0; c < BRICK_COLUMN_COUNT; c++) {
+      for (let r = 0; r < BRICK_ROW_COUNT; r++) {
+        bricks.push({
+          x: offsetLeft + (c * (brickWidth + padding)),
+          y: offsetTop + (r * (brickHeight + padding)),
+          width: brickWidth,
+          height: brickHeight,
+          status: 1, // 1 = active
+          color: `hsl(${c * 45}, 70%, 60%)`,
+          // 20% chance to drop item
+          itemType: Math.random() < 0.2 ? (Math.random() < 0.3 ? 'heart' : (Math.random() < 0.5 ? 'wide' : 'multi')) : null
+        });
+      }
+    }
 
     stateRef.current = {
       paddleX: (width - 120) / 2,
       paddleWidth: 120,
-      balls: [{ x: width / 2, y: height - 40, dx: stage.ballSpeed, dy: -stage.ballSpeed, active: true }],
+      balls: [{ x: width / 2, y: height - 40, dx: 5, dy: -5, active: true }],
       bricks: bricks,
       items: [],
-      score: startScore,
-      lives: stage.lives,
+      score: 0,
+      lives: 5,
       ballAttached: true,
-      particles: [],
-      stage,
-      stageIndex: index
+      particles: []
     };
-  };
-
-  // ステージを始める。名前を出すとき（最初・つぎへ）は intro、リトライはすぐ playing
-  const startStage = ({ index, startScore, withIntro }) => {
-    stageStartScoreRef.current = startScore;
-    setStageIndex(index);
-    initGame(index, startScore);
-    const canvas = canvasRef.current;
-    if (canvas) draw(canvas.getContext('2d'), canvas.width, canvas.height, stateRef.current);
-    setGameState(withIntro ? 'intro' : 'playing');
   };
 
   const resetBall = () => {
     stateRef.current.ballAttached = true;
-    const speed = stateRef.current.stage.ballSpeed;
-    stateRef.current.balls = [{ x: 0, y: 0, dx: speed, dy: -speed, active: true }];
+    stateRef.current.balls = [{ x: 0, y: 0, dx: 5, dy: -5, active: true }];
     stateRef.current.items = []; // Clear items
   };
 
@@ -235,13 +232,8 @@ const BlockGame = ({ config, onComplete, onAddScore }) => {
     // Check Win
     if (state.bricks.every(b => b.status === 0)) {
       playHappy1Sound();
-      // ここでループを止める（次のフレームを予約しないので、クリア処理は1回だけ）
-      if (isLastStage(BLOCK_STAGES, state.stageIndex)) {
-        setGameState('won');
-        onComplete(true);
-      } else {
-        setGameState('stageClear');
-      }
+      setGameState('won');
+      onComplete(true);
       return;
     }
 
@@ -258,13 +250,10 @@ const BlockGame = ({ config, onComplete, onAddScore }) => {
   const draw = (ctx, width, height, state) => {
     ctx.clearRect(0, 0, width, height);
     const PADDLE_HEIGHT = 20;
-    const theme = state.stage.theme;
 
     // Background
-    ctx.fillStyle = theme.background;
-    ctx.fillRect(0, 0, width, height);
     ctx.font = "300px serif";
-    ctx.fillStyle = theme.kanjiColor;
+    ctx.fillStyle = "rgba(0,0,0,0.05)";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText(config.targetChar || '', width / 2, height / 2);
@@ -283,14 +272,6 @@ const BlockGame = ({ config, onComplete, onAddScore }) => {
         ctx.fillRect(b.x, b.y, b.width, b.height/2);
         
         ctx.closePath();
-
-        // ステージの絵文字
-        if (theme.brickEmoji) {
-          ctx.font = `${Math.floor(b.height * 0.7)}px serif`;
-          ctx.textAlign = "center";
-          ctx.textBaseline = "middle";
-          ctx.fillText(theme.brickEmoji, b.x + b.width / 2, b.y + b.height / 2);
-        }
       }
     });
 
@@ -323,7 +304,7 @@ const BlockGame = ({ config, onComplete, onAddScore }) => {
         if (!ball.active) return;
         ctx.beginPath();
         ctx.arc(ball.x, ball.y, BALL_RADIUS, 0, Math.PI * 2);
-        ctx.fillStyle = theme.ballColor;
+        ctx.fillStyle = "#333";
         ctx.fill();
         ctx.closePath();
     });
@@ -342,31 +323,22 @@ const BlockGame = ({ config, onComplete, onAddScore }) => {
     for(let i=0; i<state.lives; i++) hearts += "❤ ";
     ctx.fillText(hearts, 20, 40);
     
-    // ステージ番号（1/3 など）
-    ctx.font = "20px Arial";
-    ctx.fillStyle = theme.textColor;
-    ctx.textAlign = "right";
-    ctx.textBaseline = "alphabetic";
-    ctx.fillText(stageProgress(BLOCK_STAGES, state.stageIndex), width - 20, 35);
-
     // Hint
     if (state.ballAttached) {
       ctx.font = "20px Arial";
-      ctx.fillStyle = theme.textColor;
+      ctx.fillStyle = "#333";
       ctx.textAlign = "center";
       ctx.fillText("クリックしてスタート", width / 2, height / 2 + 100);
     }
   };
 
   const launchBall = () => {
-    if (gameState !== 'playing') return;
     if (stateRef.current.ballAttached) {
       stateRef.current.ballAttached = false;
-      const speed = stateRef.current.stage.ballSpeed;
       // Launch all balls (usually just one at start)
       stateRef.current.balls.forEach(b => {
-          b.dx = speed * (Math.random() > 0.5 ? 1 : -1);
-          b.dy = -speed;
+          b.dx = 5 * (Math.random() > 0.5 ? 1 : -1);
+          b.dy = -5;
       });
     }
   };
@@ -406,9 +378,7 @@ const BlockGame = ({ config, onComplete, onAddScore }) => {
     const canvas = canvasRef.current;
     canvas.width = 800;
     canvas.height = 600;
-    setStageIndex(0);
-    stageStartScoreRef.current = 0;
-    initGame(0, 0);
+    initGame();
     if(canvas) draw(canvas.getContext('2d'), 800, 600, stateRef.current);
     return () => cancelAnimationFrame(requestRef.current);
   }, [config]);
@@ -419,8 +389,6 @@ const BlockGame = ({ config, onComplete, onAddScore }) => {
     }
     return () => cancelAnimationFrame(requestRef.current);
   }, [gameState]);
-
-  const handleIntroDone = useCallback(() => setGameState('playing'), []);
 
   return (
     <div className="game-area block-game" style={{ background: '#f0f9ff', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
@@ -434,8 +402,9 @@ const BlockGame = ({ config, onComplete, onAddScore }) => {
              <div style={{textAlign:'center', color:'#4CAF50'}}>↔ <small>ワイド</small></div>
              <div style={{textAlign:'center', color:'#2196F3'}}>⚇ <small>マルチ</small></div>
           </div>
-          <p style={{fontSize: '0.9em'}}>{BLOCK_STAGES.length}つのステージを、つづけてクリアしよう！</p>
-          <button className="start-btn" onClick={() => startStage({ index: 0, startScore: 0, withIntro: true })}>スタート！</button>
+          <button className="start-btn" onClick={() => {
+            setGameState('playing');
+          }}>スタート！</button>
         </div>
       )}
 
@@ -443,23 +412,11 @@ const BlockGame = ({ config, onComplete, onAddScore }) => {
         <div className="game-result-modal">
           <h2>ざんねん...</h2>
           <p>もういちどチャレンジ！</p>
-          <button className="start-btn" onClick={() => startStage(retryStageStart({ index: stageIndex, startScore: stageStartScoreRef.current }))}>リトライ</button>
+          <button className="start-btn" onClick={() => {
+            initGame();
+            setGameState('playing');
+          }}>リトライ</button>
         </div>
-      )}
-
-      {gameState === 'intro' && (
-        <StageIntro
-          title={stageTitle(BLOCK_STAGES, stageIndex)}
-          message="ブロックを全部くずそう！"
-          onDone={handleIntroDone}
-        />
-      )}
-
-      {gameState === 'stageClear' && (
-        <StageClear
-          score={stateRef.current.score}
-          onNext={() => startStage(nextStageStart({ index: stageIndex, score: stateRef.current.score }))}
-        />
       )}
       
       <canvas 
