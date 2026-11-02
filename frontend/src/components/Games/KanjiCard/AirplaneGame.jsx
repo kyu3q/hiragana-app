@@ -3,11 +3,22 @@ import { playJumpSound, playOK1Sound, playNGSound, playHappy1Sound, playFinishSo
 import { STAGES, pickItemType } from './airplaneStages';
 import { isLastStage, stageTitle, stageProgress, nextStageStart, retryStageStart } from './stageFlow';
 import { StageIntro, StageClear } from './StageOverlays';
+import { computeSteps, isPauseKey } from './jumpGameLogic';
+import {
+  isThrustKey,
+  buildCheckpoints,
+  updateCheckpoints,
+  lastReachedCheckpoint,
+  respawnAt,
+} from './airplaneLogic';
 
 const AirplaneGame = ({ config, onComplete, onAddScore }) => {
   const canvasRef = useRef(null);
   const [gameState, setGameState] = useState('start'); // start, intro, playing, stageClear, won, lost
+  const [paused, setPaused] = useState(false);
   const requestRef = useRef();
+  const lastFrameRef = useRef(null); // 前回の描画の時刻
+  const accumulatorRef = useRef(0); // まだ更新に使っていない経過時間（ミリ秒）
   const [stageIndex, setStageIndex] = useState(0);
   const stageStartScoreRef = useRef(0); // そのステージを始めたときのスコア（リトライで戻す）
 
@@ -33,7 +44,11 @@ const AirplaneGame = ({ config, onComplete, onAddScore }) => {
     stage: STAGES[0],
     stageIndex: 0,
     stars: [],
-    levelLength: STAGES[0].levelLength // Distance to fly to win
+    levelLength: STAGES[0].levelLength, // Distance to fly to win
+    checkpoints: [],
+    tick: 0, // 更新した回数（鳥のゆれ方に使う。一時停止中は進まない）
+    noticeText: '',
+    noticeTimer: 0
   });
 
   const initGame = (index = 0, startScore = 0) => {
@@ -71,7 +86,11 @@ const AirplaneGame = ({ config, onComplete, onAddScore }) => {
       stage,
       stageIndex: index,
       stars,
-      levelLength: stage.levelLength
+      levelLength: stage.levelLength,
+      checkpoints: buildCheckpoints({ levelLength: stage.levelLength }),
+      tick: 0,
+      noticeText: '',
+      noticeTimer: 0
     };
   };
 
@@ -79,6 +98,7 @@ const AirplaneGame = ({ config, onComplete, onAddScore }) => {
   const startStage = ({ index, startScore, withIntro }) => {
     stageStartScoreRef.current = startScore;
     setStageIndex(index);
+    setPaused(false);
     initGame(index, startScore);
     const canvas = canvasRef.current;
     if (canvas) draw(canvas.getContext('2d'), stateRef.current);
@@ -123,14 +143,39 @@ const AirplaneGame = ({ config, onComplete, onAddScore }) => {
     state.items.push(item);
   };
 
-  const update = () => {
-    if (gameState !== 'playing') return;
-    
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+  // 通過済みの旗があればそこから再開し、なければ墜落（ゲームオーバー）にする。続けられるなら true
+  const crashOrRespawn = () => {
+    const state = stateRef.current;
+    const checkpoint = lastReachedCheckpoint(state.checkpoints);
+    if (!checkpoint) {
+        setGameState('lost');
+        playNGSound();
+        return false;
+    }
+
+    const respawn = respawnAt({ distance: checkpoint.distance });
+    state.distance = respawn.distance;
+    state.fuel = respawn.fuel;
+    state.invincible = respawn.invincible;
+    state.combo = 0;
+    state.player.y = CANVAS_HEIGHT / 2;
+    state.player.vy = 0;
+    state.isThrusting = false;
+    // 再開した場所のアイテムは、いったん消す（すぐぶつかるのを防ぐ）
+    state.items = [];
+    state.noticeText = 'チェックポイントから再開！';
+    state.noticeTimer = 120;
+    createParticles(state.player.x, state.player.y, '#FFD700', 12);
+    return true;
+  };
+
+  // 物理の更新を1回（1/60秒ぶん）進める。ステージが終わったら false を返す
+  const step = () => {
     const state = stateRef.current;
     const { player } = state;
+
+    state.tick++;
+    if (state.noticeTimer > 0) state.noticeTimer--;
 
     // 0. Invincibility
     if (state.invincible > 0) state.invincible--;
@@ -174,14 +219,21 @@ const AirplaneGame = ({ config, onComplete, onAddScore }) => {
         } else {
             setGameState('stageClear');
         }
-        return;
+        return false;
+    }
+
+    // チェックポイントの旗を通ったら、通過済みにする
+    const checkpointResult = updateCheckpoints({ checkpoints: state.checkpoints, distance: state.distance });
+    state.checkpoints = checkpointResult.checkpoints;
+    if (checkpointResult.newlyReached.length > 0) {
+        state.noticeText = 'チェックポイント！';
+        state.noticeTimer = 90;
+        playHappy1Sound();
     }
 
     // Lose Condition
     if (state.fuel <= 0) {
-        setGameState('lost');
-        playNGSound();
-        return;
+        return crashOrRespawn();
     }
 
     // 3. Spawning
@@ -204,7 +256,7 @@ const AirplaneGame = ({ config, onComplete, onAddScore }) => {
         item.x += item.vx;
         // Sine wave movement for birds
         if (item.type === 'obstacle' && item.subType === 'bird') {
-            item.y += Math.sin(Date.now() / 200) * 2;
+            item.y += Math.sin(state.tick / 12) * 2; // 一時停止中は止まるよう、時刻ではなく更新回数で動かす
         }
     });
 
@@ -234,9 +286,27 @@ const AirplaneGame = ({ config, onComplete, onAddScore }) => {
     });
     state.particles = state.particles.filter(p => p.life > 0);
 
-    // Draw
-    draw(ctx, state);
-    requestRef.current = requestAnimationFrame(update);
+    return true;
+  };
+
+  // 描画のたびに、経過時間ぶんだけ更新を進めてから描く（60Hzでも120Hzでも同じ速さになる）
+  const update = (now) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    const deltaMs = lastFrameRef.current === null ? 0 : now - lastFrameRef.current;
+    lastFrameRef.current = now;
+    const result = computeSteps({ accumulatorMs: accumulatorRef.current, deltaMs });
+    accumulatorRef.current = result.accumulatorMs;
+
+    let running = true;
+    for (let i = 0; i < result.steps && running; i++) {
+      running = step();
+    }
+
+    draw(ctx, stateRef.current);
+    if (running) requestRef.current = requestAnimationFrame(update);
   };
 
   const handleCollision = (item, state) => {
@@ -316,6 +386,20 @@ const AirplaneGame = ({ config, onComplete, onAddScore }) => {
         ctx.arc(c.x, c.y, c.size, 0, Math.PI * 2);
         ctx.arc(c.x + c.size * 0.5, c.y - c.size * 0.2, c.size * 0.8, 0, Math.PI * 2);
         ctx.arc(c.x - c.size * 0.5, c.y - c.size * 0.2, c.size * 0.8, 0, Math.PI * 2);
+        ctx.fill();
+    });
+
+    // チェックポイントの旗（通過前は灰色、通過後は緑）。アイテムと同じ速さで流れる（1距離 = 10px）
+    state.checkpoints.forEach(c => {
+        const x = state.player.x + (c.distance - state.distance) * 10;
+        if (x < -60 || x > CANVAS_WIDTH + 60) return;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+        ctx.fillRect(x, 0, 4, CANVAS_HEIGHT); // Pole
+        ctx.fillStyle = c.reached ? '#4CAF50' : '#9E9E9E';
+        ctx.beginPath();
+        ctx.moveTo(x + 4, 60);
+        ctx.lineTo(x + 54, 80);
+        ctx.lineTo(x + 4, 100);
         ctx.fill();
     });
 
@@ -481,19 +565,39 @@ const AirplaneGame = ({ config, onComplete, onAddScore }) => {
     ctx.arc(CANVAS_WIDTH/2 - 100 + 200 * progress, 25, 8, 0, Math.PI*2);
     ctx.fill();
 
+    // お知らせ（チェックポイントなど）
+    if (state.noticeTimer > 0) {
+        ctx.fillStyle = 'white';
+        ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+        ctx.lineWidth = 4;
+        ctx.font = 'bold 32px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.strokeText(state.noticeText, CANVAS_WIDTH / 2, 150);
+        ctx.fillText(state.noticeText, CANVAS_WIDTH / 2, 150);
+    }
   };
 
-  const handleInputStart = (e) => {
-    e.preventDefault();
-    if (gameState === 'playing') {
+  // エンジンを吹かす・止める。一時停止中は操作を受けつけない
+  const startThrust = () => {
+    if (gameState === 'playing' && !paused) {
         stateRef.current.isThrusting = true;
         playJumpSound(); // Use jump sound as engine rev
     }
   };
 
+  const stopThrust = () => {
+    stateRef.current.isThrusting = false;
+  };
+
+  // マウス・タッチ・ペンを pointer イベントにまとめる（タッチで二重に反応しないように）
+  const handleInputStart = (e) => {
+    e.preventDefault();
+    startThrust();
+  };
+
   const handleInputEnd = (e) => {
     e.preventDefault();
-    stateRef.current.isThrusting = false;
+    stopThrust();
   };
 
   useEffect(() => {
@@ -511,12 +615,54 @@ const AirplaneGame = ({ config, onComplete, onAddScore }) => {
 
   // ループは playing の間だけ動く。stageClear・intro・lost に入るとき、ここで必ず止まる
   // （次の playing で1本だけ始まる。ステージを切り替えても二重にならない）
+  // 一時停止中もループを止める。再開したときは時間を数え直す（止めていた間の時間を、まとめて進めないため）
   useEffect(() => {
-    if (gameState === 'playing') {
+    if (gameState === 'playing' && !paused) {
+      lastFrameRef.current = null;
+      accumulatorRef.current = 0;
       requestRef.current = requestAnimationFrame(update);
     }
     return () => cancelAnimationFrame(requestRef.current);
+  }, [gameState, paused]);
+
+  // 一時停止にしたら、エンジンも止める（再開したとき、押しっぱなしの状態が残らないように）
+  useEffect(() => {
+    if (paused) stateRef.current.isThrusting = false;
+  }, [paused]);
+
+  // ほかのタブやアプリに切り替えたら、自動で止める
+  useEffect(() => {
+    if (gameState !== 'playing') return undefined;
+    const handleVisibility = () => {
+      if (document.hidden) setPaused(true);
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
   }, [gameState]);
+
+  // キーボードでも操作できる（スペース・↑・W で上昇、Esc・P で一時停止）。長押しの連続入力は無視する
+  useEffect(() => {
+    if (gameState !== 'playing') return undefined;
+    const handleKeyDown = (e) => {
+      if (e.repeat) return;
+      if (isPauseKey(e.key)) {
+        setPaused((p) => !p);
+        return;
+      }
+      if (!isThrustKey(e.key)) return;
+      e.preventDefault(); // スペースキーで画面がスクロールしないようにする
+      startThrust();
+    };
+    const handleKeyUp = (e) => {
+      if (isThrustKey(e.key)) stopThrust();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [gameState, paused]);
 
   return (
     <div className="game-area airplane-game" style={{ background: '#333', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
@@ -524,6 +670,8 @@ const AirplaneGame = ({ config, onComplete, onAddScore }) => {
         <div className="game-instruction-overlay">
           <h3>{config.title || '空の旅'}</h3>
           <p>{config.instruction || '画面を押して上昇！燃料（漢字）を集めて飛び続けよう！'}</p>
+          <p style={{ fontSize: '0.9em' }}>スペース・↑キーでも上昇できるよ</p>
+          <p style={{ fontSize: '0.9em', color: '#69F0AE' }}>旗を通ると、燃料がなくなってもそこから再開できるよ</p>
           <div className="instruction-icons" style={{display:'flex', gap:'20px', justifyContent:'center', margin:'10px 0'}}>
              <div style={{textAlign:'center'}}>
                 <div style={{width:'30px', height:'30px', background:'#4CAF50', borderRadius:'50%', margin:'0 auto', display:'flex', alignItems:'center', justifyContent:'center', color:'white'}}>{config.targetChar}</div>
@@ -561,15 +709,31 @@ const AirplaneGame = ({ config, onComplete, onAddScore }) => {
           onNext={() => startStage(nextStageStart({ index: stageIndex, score: stateRef.current.score }))}
         />
       )}
-      
-      <canvas 
+
+      {gameState === 'playing' && !paused && (
+        <button
+          type="button"
+          aria-label="一時停止"
+          onClick={() => setPaused(true)}
+          style={{ position: 'absolute', bottom: 8, right: 8, zIndex: 50, padding: '4px 10px', fontSize: '1.2rem', background: 'rgba(0,0,0,0.5)', color: '#fff', borderRadius: 8 }}
+        >⏸</button>
+      )}
+
+      {gameState === 'playing' && paused && (
+        <div className="game-instruction-overlay">
+          <h3>⏸ 一時停止</h3>
+          <p style={{ fontSize: '0.9em' }}>Esc / P キーでも、つづけられるよ</p>
+          <button className="start-btn" onClick={() => setPaused(false)}>つづける</button>
+        </div>
+      )}
+
+      <canvas
         ref={canvasRef}
         style={{ width: '100%', height: '100%', maxWidth: '800px', maxHeight: '600px', aspectRatio: '4/3', border: '2px solid #ddd', borderRadius: '8px', background: '#4FC3F7', touchAction: 'none' }}
-        onMouseDown={handleInputStart}
-        onMouseUp={handleInputEnd}
-        onMouseLeave={handleInputEnd}
-        onTouchStart={handleInputStart}
-        onTouchEnd={handleInputEnd}
+        onPointerDown={handleInputStart}
+        onPointerUp={handleInputEnd}
+        onPointerLeave={handleInputEnd}
+        onPointerCancel={handleInputEnd}
       />
     </div>
   );
