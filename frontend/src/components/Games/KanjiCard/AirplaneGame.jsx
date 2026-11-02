@@ -1,10 +1,15 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { playJumpSound, playOK1Sound, playNGSound, playHappy1Sound, playFinishSound } from '../../../utils/soundPlayer';
+import { STAGES, pickItemType } from './airplaneStages';
+import { isLastStage, stageTitle, stageProgress, nextStageStart, retryStageStart } from './stageFlow';
+import { StageIntro, StageClear } from './StageOverlays';
 
 const AirplaneGame = ({ config, onComplete, onAddScore }) => {
   const canvasRef = useRef(null);
-  const [gameState, setGameState] = useState('start'); // start, playing, won, lost
+  const [gameState, setGameState] = useState('start'); // start, intro, playing, stageClear, won, lost
   const requestRef = useRef();
+  const [stageIndex, setStageIndex] = useState(0);
+  const stageStartScoreRef = useRef(0); // そのステージを始めたときのスコア（リトライで戻す）
 
   // Constants
   const CANVAS_WIDTH = 800;
@@ -12,7 +17,6 @@ const AirplaneGame = ({ config, onComplete, onAddScore }) => {
   const GRAVITY = 0.4;
   const THRUST = -0.8;
   const MAX_SPEED = 8;
-  const SCROLL_SPEED = 4;
   const PLAYER_SIZE = 50;
 
   const stateRef = useRef({
@@ -26,10 +30,14 @@ const AirplaneGame = ({ config, onComplete, onAddScore }) => {
     isThrusting: false,
     combo: 0,
     invincible: 0,
-    levelLength: 3000 // Distance to fly to win
+    stage: STAGES[0],
+    stageIndex: 0,
+    stars: [],
+    levelLength: STAGES[0].levelLength // Distance to fly to win
   });
 
-  const initGame = () => {
+  const initGame = (index = 0, startScore = 0) => {
+    const stage = STAGES[index];
     // Generate initial clouds
     const clouds = [];
     for(let i=0; i<10; i++) {
@@ -41,47 +49,67 @@ const AirplaneGame = ({ config, onComplete, onAddScore }) => {
         });
     }
 
+    // 夜空の星（よぞらのときだけ使う）
+    const stars = [];
+    if (stage.theme.stars) {
+      for (let i = 0; i < 60; i++) {
+        stars.push({ x: Math.random() * CANVAS_WIDTH, y: Math.random() * CANVAS_HEIGHT, r: 0.5 + Math.random() * 1.5 });
+      }
+    }
+
     stateRef.current = {
       player: { x: 100, y: CANVAS_HEIGHT / 2, vy: 0, angle: 0 },
       items: [],
       particles: [],
       clouds: clouds,
-      score: 0,
+      score: startScore,
       fuel: 100,
       distance: 0,
       isThrusting: false,
       combo: 0,
       invincible: 0,
-      levelLength: 3000
+      stage,
+      stageIndex: index,
+      stars,
+      levelLength: stage.levelLength
     };
   };
 
+  // ステージを始める。名前を出すとき（最初・つぎへ）は intro、リトライはすぐ playing
+  const startStage = ({ index, startScore, withIntro }) => {
+    stageStartScoreRef.current = startScore;
+    setStageIndex(index);
+    initGame(index, startScore);
+    const canvas = canvasRef.current;
+    if (canvas) draw(canvas.getContext('2d'), stateRef.current);
+    setGameState(withIntro ? 'intro' : 'playing');
+  };
+
+  const handleIntroDone = useCallback(() => setGameState('playing'), []);
+
   const spawnItem = () => {
     const state = stateRef.current;
-    const typeRoll = Math.random();
+    const type = pickItemType({ weights: state.stage.weights, r: Math.random() });
     
     let item = {
         x: CANVAS_WIDTH + 50,
         y: 50 + Math.random() * (CANVAS_HEIGHT - 100),
         w: 50,
         h: 50,
-        vx: -SCROLL_SPEED
+        vx: -state.stage.scrollSpeed
     };
 
-    // 50% Good Kanji (Fuel + Score) - Increased from 40%
-    // 25% Bad Kanji (Damage)
-    // 15% Obstacle (Bird/Storm)
-    // 10% Coin (Bonus)
+    // 種類の割合はステージ設定（weights）。あおぞらは 正解50% / ハズレ25% / 障害物15% / コイン10%
 
-    if (typeRoll < 0.5) {
+    if (type === 'good') {
         item.type = 'good';
         item.char = config.targetChar || '○';
         item.color = '#4CAF50';
-    } else if (typeRoll < 0.75) {
+    } else if (type === 'bad') {
         item.type = 'bad';
         item.char = config.badChar || '×';
         item.color = '#F44336';
-    } else if (typeRoll < 0.9) {
+    } else if (type === 'obstacle') {
         item.type = 'obstacle';
         item.subType = Math.random() > 0.5 ? 'bird' : 'storm';
         item.w = 60;
@@ -134,14 +162,18 @@ const AirplaneGame = ({ config, onComplete, onAddScore }) => {
     }
 
     // 2. Game Progress
-    state.distance += SCROLL_SPEED / 10;
+    state.distance += state.stage.scrollSpeed / 10;
     state.fuel -= 0.02; // Reduced constant fuel drain from 0.05
 
     // Win Condition
     if (state.distance >= state.levelLength) {
-        setGameState('won');
-        onComplete(true);
         playFinishSound();
+        if (isLastStage(STAGES, state.stageIndex)) {
+            setGameState('won');
+            onComplete(true);
+        } else {
+            setGameState('stageClear');
+        }
         return;
     }
 
@@ -153,7 +185,7 @@ const AirplaneGame = ({ config, onComplete, onAddScore }) => {
     }
 
     // 3. Spawning
-    if (Math.random() < 0.02) {
+    if (Math.random() < state.stage.spawnRate) {
         spawnItem();
     }
     // Cloud spawning
@@ -261,13 +293,24 @@ const AirplaneGame = ({ config, onComplete, onAddScore }) => {
 
     // Sky Background
     const gradient = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
-    gradient.addColorStop(0, '#4FC3F7');
-    gradient.addColorStop(1, '#E1F5FE');
+    const theme = state.stage.theme;
+    gradient.addColorStop(0, theme.sky[0]);
+    gradient.addColorStop(1, theme.sky[1]);
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
+    // Stars
+    if (theme.stars) {
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        state.stars.forEach(st => {
+            ctx.beginPath();
+            ctx.arc(st.x, st.y, st.r, 0, Math.PI * 2);
+            ctx.fill();
+        });
+    }
+
     // Draw Clouds
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+    ctx.fillStyle = theme.cloud;
     state.clouds.forEach(c => {
         ctx.beginPath();
         ctx.arc(c.x, c.y, c.size, 0, Math.PI * 2);
@@ -316,7 +359,14 @@ const AirplaneGame = ({ config, onComplete, onAddScore }) => {
             ctx.arc(item.x + item.w/2, item.y + item.h/2, item.w/3, 0, Math.PI * 2);
             ctx.fill();
         } else if (item.type === 'obstacle') {
-            if (item.subType === 'bird') {
+            const skin = state.stage.obstacleSkin && state.stage.obstacleSkin[item.subType];
+            if (skin) {
+                // ステージの絵文字
+                ctx.font = '44px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(skin, item.x + item.w/2, item.y + item.h/2);
+            } else if (item.subType === 'bird') {
                 // Bird
                 ctx.fillStyle = '#5D4037';
                 ctx.beginPath();
@@ -420,6 +470,11 @@ const AirplaneGame = ({ config, onComplete, onAddScore }) => {
     ctx.fillRect(CANVAS_WIDTH/2 - 100, 20, 200, 10);
     ctx.fillStyle = '#FFC107';
     ctx.fillRect(CANVAS_WIDTH/2 - 100, 20, 200 * progress, 10);
+    // ステージ番号（1/3）
+    ctx.fillStyle = 'white';
+    ctx.font = '14px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(stageProgress(STAGES, state.stageIndex), CANVAS_WIDTH/2, 50);
     // Icon on progress bar
     ctx.fillStyle = '#FF5252';
     ctx.beginPath();
@@ -446,12 +501,16 @@ const AirplaneGame = ({ config, onComplete, onAddScore }) => {
     if (canvas) {
         canvas.width = CANVAS_WIDTH;
         canvas.height = CANVAS_HEIGHT;
-        initGame();
+        stageStartScoreRef.current = 0;
+        setStageIndex(0);
+        initGame(0, 0);
         draw(canvas.getContext('2d'), stateRef.current);
     }
     return () => cancelAnimationFrame(requestRef.current);
   }, [config]);
 
+  // ループは playing の間だけ動く。stageClear・intro・lost に入るとき、ここで必ず止まる
+  // （次の playing で1本だけ始まる。ステージを切り替えても二重にならない）
   useEffect(() => {
     if (gameState === 'playing') {
       requestRef.current = requestAnimationFrame(update);
@@ -475,7 +534,7 @@ const AirplaneGame = ({ config, onComplete, onAddScore }) => {
                 <small>ハズレ</small>
              </div>
           </div>
-          <button className="start-btn" onClick={() => setGameState('playing')}>フライト開始！</button>
+          <button className="start-btn" onClick={() => startStage({ index: 0, startScore: 0, withIntro: true })}>フライト開始！</button>
         </div>
       )}
 
@@ -484,11 +543,23 @@ const AirplaneGame = ({ config, onComplete, onAddScore }) => {
           <h2>墜落...</h2>
           <p>燃料がなくなっちゃった！</p>
           <p>Score: {stateRef.current.score}</p>
-          <button className="start-btn" onClick={() => {
-            initGame();
-            setGameState('playing');
-          }}>リトライ</button>
+          <button className="start-btn" onClick={() => startStage(retryStageStart({ index: stageIndex, startScore: stageStartScoreRef.current }))}>リトライ</button>
         </div>
+      )}
+
+      {gameState === 'intro' && (
+        <StageIntro
+          title={stageTitle(STAGES, stageIndex)}
+          message={`${STAGES[stageIndex].name}を飛んでいこう！`}
+          onDone={handleIntroDone}
+        />
+      )}
+
+      {gameState === 'stageClear' && (
+        <StageClear
+          score={stateRef.current.score}
+          onNext={() => startStage(nextStageStart({ index: stageIndex, score: stateRef.current.score }))}
+        />
       )}
       
       <canvas 
