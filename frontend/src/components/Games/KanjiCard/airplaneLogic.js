@@ -47,3 +47,20 @@ export const respawnAt = ({ distance }) => ({
   fuel: RESPAWN_FUEL,
   invincible: RESPAWN_INVINCIBLE,
 });
+
+// --- 点数 ---
+
+// コンボが続く長さ（フレーム数。3秒ぶん）。次のコンボが取れないと切れる
+export const COMBO_FRAMES = 180;
+
+// ハズレや障害物にぶつかったときに引かれる点
+const HIT_PENALTY = 50;
+
+// コンボ5つごとに、倍率が0.5上がる（ランナーと同じ）
+export const comboMultiplier = (combo) => 1 + Math.floor(combo / 5) * 0.5;
+
+// 基本の点に、コンボの倍率をかけた点（小数は切り捨て）
+export const comboScore = ({ base, combo }) => Math.floor(base * comboMultiplier(combo));
+
+// ぶつかったときに実際に引かれる点。いまの点より多くは引かない
+export const hitPenalty = ({ score }) => Math.min(HIT_PENALTY, score);

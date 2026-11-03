@@ -8,6 +8,10 @@ import {
   updateCheckpoints,
   lastReachedCheckpoint,
   respawnAt,
+  comboMultiplier,
+  comboScore,
+  hitPenalty,
+  COMBO_FRAMES,
 } from './airplaneLogic';
 import { STAGES } from './airplaneStages';
 
@@ -88,5 +92,43 @@ describe('respawnAt', () => {
   it('燃料は満タンではなく、すぐ切れない量', () => {
     expect(RESPAWN_FUEL).toBeGreaterThan(0);
     expect(RESPAWN_FUEL).toBeLessThan(100);
+  });
+});
+
+describe('comboMultiplier', () => {
+  it('コンボが5つ増えるごとに、倍率が0.5ずつ上がる（ランナーと同じ）', () => {
+    expect([0, 4, 5, 9, 10, 15].map(comboMultiplier)).toEqual([1, 1, 1.5, 1.5, 2, 2.5]);
+  });
+});
+
+describe('comboScore', () => {
+  it('コンボなしなら、基本の点のまま', () => {
+    expect(comboScore({ base: 100, combo: 0 })).toBe(100);
+  });
+
+  it('コンボ5で1.5倍になる', () => {
+    expect(comboScore({ base: 100, combo: 5 })).toBe(150);
+    expect(comboScore({ base: 50, combo: 5 })).toBe(75);
+  });
+
+  it('小数になるときは切り捨てる', () => {
+    expect(comboScore({ base: 25, combo: 5 })).toBe(37);
+  });
+});
+
+describe('hitPenalty', () => {
+  it('ぶつかると50点減る', () => {
+    expect(hitPenalty({ score: 300 })).toBe(50);
+  });
+
+  it('いまの点より多くは減らない（0点より下にならない）', () => {
+    expect(hitPenalty({ score: 30 })).toBe(30);
+    expect(hitPenalty({ score: 0 })).toBe(0);
+  });
+});
+
+describe('COMBO_FRAMES', () => {
+  it('コンボは3秒（180フレーム）で切れる（ランナーと同じ）', () => {
+    expect(COMBO_FRAMES).toBe(180);
   });
 });

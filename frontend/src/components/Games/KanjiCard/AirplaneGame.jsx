@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { playJumpSound, playOK1Sound, playNGSound, playHappy1Sound, playFinishSound } from '../../../utils/soundPlayer';
+import { playJumpSound, playOK1Sound, playNGSound, playHappy1Sound, playFinishSound, playCollisionSound } from '../../../utils/soundPlayer';
 import { STAGES, pickItemType } from './airplaneStages';
 import { isLastStage, stageTitle, stageProgress, nextStageStart, retryStageStart } from './stageFlow';
 import { StageIntro, StageClear } from './StageOverlays';
@@ -10,6 +10,10 @@ import {
   updateCheckpoints,
   lastReachedCheckpoint,
   respawnAt,
+  comboScore,
+  comboMultiplier,
+  hitPenalty,
+  COMBO_FRAMES,
 } from './airplaneLogic';
 
 const AirplaneGame = ({ config, onComplete, onAddScore }) => {
@@ -48,7 +52,10 @@ const AirplaneGame = ({ config, onComplete, onAddScore }) => {
     checkpoints: [],
     tick: 0, // 更新した回数（鳥のゆれ方に使う。一時停止中は進まない）
     noticeText: '',
-    noticeTimer: 0
+    noticeTimer: 0,
+    comboTimer: 0,
+    popups: [],
+    hitFlash: 0
   });
 
   const initGame = (index = 0, startScore = 0) => {
@@ -90,7 +97,10 @@ const AirplaneGame = ({ config, onComplete, onAddScore }) => {
       checkpoints: buildCheckpoints({ levelLength: stage.levelLength }),
       tick: 0,
       noticeText: '',
-      noticeTimer: 0
+      noticeTimer: 0,
+      comboTimer: 0,
+      popups: [],
+      hitFlash: 0
     };
   };
 
@@ -158,6 +168,7 @@ const AirplaneGame = ({ config, onComplete, onAddScore }) => {
     state.fuel = respawn.fuel;
     state.invincible = respawn.invincible;
     state.combo = 0;
+    state.comboTimer = 0;
     state.player.y = CANVAS_HEIGHT / 2;
     state.player.vy = 0;
     state.isThrusting = false;
@@ -176,6 +187,13 @@ const AirplaneGame = ({ config, onComplete, onAddScore }) => {
 
     state.tick++;
     if (state.noticeTimer > 0) state.noticeTimer--;
+    if (state.hitFlash > 0) state.hitFlash--;
+    if (state.comboTimer > 0) {
+        state.comboTimer--;
+        if (state.comboTimer <= 0) state.combo = 0; // 3秒取れないと、コンボが切れる
+    }
+    state.popups.forEach(p => { p.y -= 1; p.life--; });
+    state.popups = state.popups.filter(p => p.life > 0);
 
     // 0. Invincibility
     if (state.invincible > 0) state.invincible--;
@@ -309,33 +327,61 @@ const AirplaneGame = ({ config, onComplete, onAddScore }) => {
     if (running) requestRef.current = requestAnimationFrame(update);
   };
 
+  // 点を足す。コンボの倍率をかけ、取った場所に「+100」のように出す
+  const addScore = (base, x, y, color) => {
+    const state = stateRef.current;
+    const gained = comboScore({ base, combo: state.combo });
+    state.score += gained;
+    state.combo++;
+    state.comboTimer = COMBO_FRAMES;
+    onAddScore(gained);
+    addPopup(x, y, `+${gained}`, color);
+  };
+
+  // 点を引く。いまの点より多くは引かない。親の累計にも伝える
+  const losePoints = (x, y) => {
+    const state = stateRef.current;
+    const lost = hitPenalty({ score: state.score });
+    state.score -= lost;
+    if (lost > 0) {
+      onAddScore(-lost);
+      addPopup(x, y, `-${lost}`, '#FF5252');
+    }
+  };
+
+  // 画面に出す、ふわっと上がって消える文字
+  const addPopup = (x, y, text, color) => {
+    stateRef.current.popups.push({ x, y, text, color, life: 50 });
+  };
+
   const handleCollision = (item, state) => {
     if (item.type === 'good') {
         // Correct Kanji
         playHappy1Sound();
-        state.score += 100;
         state.fuel = Math.min(100, state.fuel + 20); // Increased recovery
-        state.combo++;
-        onAddScore(100);
+        addScore(100, item.x, item.y, '#69F0AE');
         createParticles(item.x, item.y, '#4CAF50', 10);
         return true; // remove item
     } else if (item.type === 'coin') {
         playOK1Sound();
-        state.score += 50;
-        onAddScore(50);
+        addScore(50, item.x, item.y, '#FFD700');
         createParticles(item.x, item.y, '#FFD700', 5);
         return true; // remove item
     } else {
         // Bad things (Bad Kanji, Obstacle)
         if (state.invincible <= 0) {
-            playNGSound();
-            state.score = Math.max(0, state.score - 50);
+            // ハズレの漢字は NG の音、鳥や嵐にぶつかったときは衝突の音
+            if (item.type === 'obstacle') playCollisionSound();
+            else playNGSound();
+            losePoints(item.x, item.y);
             state.fuel -= 10; // Reduced damage
             state.combo = 0;
+            state.comboTimer = 0;
+            state.hitFlash = 15; // 画面をすこし赤くして、ぶつかったことを知らせる
             state.player.vy = 5; // Knockback down
             state.invincible = 60; // 1 second invincibility
             createParticles(item.x, item.y, '#555', 8);
-            return true; // remove item only if hit (to prevent multi-hit?) 
+            return true; // remove item only if hit (to prevent multi-hit?)
             // Actually usually obstacles don't disappear in some games but in this case let's make them disappear to avoid multi-hit confusion
         }
         return false; // Don't remove if invincible (pass through)
@@ -546,7 +592,14 @@ const AirplaneGame = ({ config, onComplete, onAddScore }) => {
     ctx.fillStyle = 'white';
     ctx.font = '24px Arial';
     ctx.textAlign = 'right';
-    ctx.fillText(`Score: ${state.score}`, CANVAS_WIDTH - 20, 40);
+    ctx.fillText(`スコア: ${state.score}`, CANVAS_WIDTH - 20, 40);
+
+    // コンボ（2つ以上つづいたとき）。倍率はランナーと同じ
+    if (state.combo > 1) {
+        ctx.fillStyle = '#FFD700';
+        ctx.font = 'bold 22px Arial';
+        ctx.fillText(`${state.combo} COMBO!  x${comboMultiplier(state.combo).toFixed(1)}`, CANVAS_WIDTH - 20, 70);
+    }
 
     // Progress
     const progress = Math.min(1, state.distance / state.levelLength);
@@ -564,6 +617,25 @@ const AirplaneGame = ({ config, onComplete, onAddScore }) => {
     ctx.beginPath();
     ctx.arc(CANVAS_WIDTH/2 - 100 + 200 * progress, 25, 8, 0, Math.PI*2);
     ctx.fill();
+
+    // 点数の文字（+100、-50）。取った場所から、ふわっと上がって消える
+    ctx.font = 'bold 28px Arial';
+    ctx.textAlign = 'center';
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+    state.popups.forEach(p => {
+        ctx.globalAlpha = Math.min(1, p.life / 20);
+        ctx.fillStyle = p.color;
+        ctx.strokeText(p.text, p.x + 25, p.y);
+        ctx.fillText(p.text, p.x + 25, p.y);
+    });
+    ctx.globalAlpha = 1.0;
+
+    // ぶつかったとき、画面をすこし赤くする
+    if (state.hitFlash > 0) {
+        ctx.fillStyle = `rgba(255, 0, 0, ${0.3 * (state.hitFlash / 15)})`;
+        ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    }
 
     // お知らせ（チェックポイントなど）
     if (state.noticeTimer > 0) {
@@ -670,6 +742,11 @@ const AirplaneGame = ({ config, onComplete, onAddScore }) => {
         <div className="game-instruction-overlay">
           <h3>{config.title || '空の旅'}</h3>
           <p>{config.instruction || '画面を押して上昇！燃料（漢字）を集めて飛び続けよう！'}</p>
+          <div style={{ fontSize: '0.9em', lineHeight: 1.7, margin: '6px 0' }}>
+            <div>正解の漢字 <b style={{ color: '#69F0AE' }}>+100</b>{' / '}コイン <b style={{ color: '#FFD700' }}>+50</b></div>
+            <div>ハズレ・鳥・嵐にぶつかる <b style={{ color: '#FF5252' }}>-50</b>（燃料もへるよ）</div>
+            <div>つづけて取るとコンボ！ 5つごとに点が<b style={{ color: '#FFD700' }}>0.5倍</b>ふえる</div>
+          </div>
           <p style={{ fontSize: '0.9em' }}>スペース・↑キーでも上昇できるよ</p>
           <p style={{ fontSize: '0.9em', color: '#69F0AE' }}>旗を通ると、燃料がなくなってもそこから再開できるよ</p>
           <div className="instruction-icons" style={{display:'flex', gap:'20px', justifyContent:'center', margin:'10px 0'}}>
@@ -690,7 +767,7 @@ const AirplaneGame = ({ config, onComplete, onAddScore }) => {
         <div className="game-result-modal">
           <h2>墜落...</h2>
           <p>燃料がなくなっちゃった！</p>
-          <p>Score: {stateRef.current.score}</p>
+          <p>スコア: {stateRef.current.score}</p>
           <button className="start-btn" onClick={() => startStage(retryStageStart({ index: stageIndex, startScore: stageStartScoreRef.current }))}>リトライ</button>
         </div>
       )}
