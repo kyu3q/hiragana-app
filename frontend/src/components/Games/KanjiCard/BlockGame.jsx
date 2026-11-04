@@ -188,6 +188,7 @@ const BlockGame = ({ config, onComplete, onAddScore }) => {
             playNGSound();
             if (state.lives <= 0) {
                 setGameState('lost');
+                onComplete(false);
             } else {
                 state.paddleWidth = 120; // Reset paddle size
                 resetBall();
@@ -408,17 +409,6 @@ const BlockGame = ({ config, onComplete, onAddScore }) => {
         </div>
       )}
 
-      {gameState === 'lost' && (
-        <div className="game-result-modal">
-          <h2>ざんねん...</h2>
-          <p>もういちどチャレンジ！</p>
-          <button className="start-btn" onClick={() => {
-            initGame();
-            setGameState('playing');
-          }}>リトライ</button>
-        </div>
-      )}
-      
       <canvas 
         ref={canvasRef}
         style={{ width: '100%', height: '100%', maxWidth: '800px', maxHeight: '600px', aspectRatio: '4/3', border: '2px solid #ddd', borderRadius: '8px', background: 'white', touchAction: 'none' }}

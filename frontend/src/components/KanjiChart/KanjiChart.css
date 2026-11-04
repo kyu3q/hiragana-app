@@ -125,7 +125,7 @@
 
 .chart-page-tab {
   border-radius: 16px;
-  background: #ffecb3;
+  background: #e0e0e0;
   color: #795548;
   border: 2px solid #bcaaa4;
   width: 40px;
@@ -140,7 +140,8 @@
 }
 
 .chart-page-tab:hover {
-  background: #ffecb3;
+  background: #eeeeee;
+  border-color: #795548;
 }
 
 .chart-page-tab.active {

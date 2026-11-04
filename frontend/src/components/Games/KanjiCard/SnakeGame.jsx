@@ -6,7 +6,6 @@ const SnakeGame = ({ config, onComplete, onAddScore }) => {
   const canvasRef = useRef(null);
   const [gameState, setGameState] = useState('start');
   const [score, setScore] = useState(0);
-  const [gameOverReason, setGameOverReason] = useState('');
   const requestRef = useRef();
   const lastUpdateRef = useRef(0);
   const badItemTimerRef = useRef(0);
@@ -120,8 +119,8 @@ const SnakeGame = ({ config, onComplete, onAddScore }) => {
     stateRef.current.shake = 10;
     playNGSound();
     if (stateRef.current.lives <= 0) {
-        setGameOverReason('ライフがなくなっちゃった！');
         setGameState('lost');
+        onComplete(false);
     } else {
         resetSnake();
     }
@@ -146,8 +145,8 @@ const SnakeGame = ({ config, onComplete, onAddScore }) => {
         // Wall Collision
         if (head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS) {
             playNGSound();
-            setGameOverReason('壁にぶつかっちゃった！');
             setGameState('lost');
+            onComplete(false);
             return;
         }
 
@@ -155,8 +154,8 @@ const SnakeGame = ({ config, onComplete, onAddScore }) => {
         for (let segment of state.snake) {
             if (head.x === segment.x && head.y === segment.y) {
                 playNGSound();
-                setGameOverReason('自分にぶつかっちゃった！');
                 setGameState('lost');
+                onComplete(false);
                 return;
             }
         }
@@ -191,8 +190,8 @@ const SnakeGame = ({ config, onComplete, onAddScore }) => {
             state.flash = 12; // 画面を赤くする期間
             playNGSound();
             if (state.lives <= 0) {
-                setGameOverReason('ライフがなくなっちゃった！');
                 setGameState('lost');
+                onComplete(false);
                 return;
             }
         }
@@ -343,16 +342,12 @@ const SnakeGame = ({ config, onComplete, onAddScore }) => {
     ctx.restore();
     
     // Lives
-    ctx.font = "24px Arial";
+    ctx.font = "30px Arial";
     ctx.fillStyle = "#ff4757";
     ctx.textAlign = "left";
     let hearts = "";
     for(let i=0; i<state.lives; i++) hearts += "❤ ";
-    ctx.fillText(hearts, 20, 30);
-    
-    // Score
-    ctx.fillStyle = "#333";
-    ctx.fillText(`スコア: ${state.score} / 500`, 20, 60);
+    ctx.fillText(hearts, 20, 40);
 
   };
 
@@ -460,17 +455,6 @@ const SnakeGame = ({ config, onComplete, onAddScore }) => {
         <div className="game-instruction-overlay">
           <h3>一時停止</h3>
           <button className="start-btn" onClick={() => setGameState('playing')}>再開</button>
-        </div>
-      )}
-
-      {gameState === 'lost' && (
-        <div className="game-result-modal">
-          <h2>ゲームオーバー</h2>
-          <p>{gameOverReason || 'ライフがなくなっちゃった！'}</p>
-          <button className="start-btn" onClick={() => {
-            initGame();
-            setGameState('playing');
-          }}>リトライ</button>
         </div>
       )}
 

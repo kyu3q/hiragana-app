@@ -13,7 +13,7 @@ export const STAGES = [
     theme: {
       sky: ['#4FC3F7', '#E1F5FE'],
       mountain: { hue: 120, hueRange: 40, saturation: 30, lightness: 20, lightnessRange: 20 },
-      cloud: 'rgba(255, 255, 255, 0.7)',
+      cloud: 'rgba(255, 255, 255, 0.9)', // 見やすさのため、0.7 から濃くした（main の変更）
       ground: '#795548',
       groundTop: '#8BC34A',
       groundDecor: '#689F38',

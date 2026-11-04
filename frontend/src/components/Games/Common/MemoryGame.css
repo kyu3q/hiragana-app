@@ -60,6 +60,7 @@
   cursor: pointer;
   box-sizing: border-box;
   z-index: 1;
+  perspective: 1000px; /* 3D効果のための視点を追加 */
 }
 
 .card-inner {
@@ -69,13 +70,17 @@
   width: 100%;
   height: 100%;
   text-align: center;
-  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   transform-style: preserve-3d;
   box-sizing: border-box;
 }
 
 .card.flipped .card-inner {
   transform: rotateY(180deg);
+}
+
+.card.matched {
+  opacity: 0.7;
 }
 
 .card-front,
@@ -86,6 +91,7 @@
   width: 100%;
   height: 100%;
   backface-visibility: hidden;
+  -webkit-backface-visibility: hidden; /* Safari対応 */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -100,7 +106,7 @@
   color: white;
   font-family: 'M PLUS Rounded 1c', sans-serif;
   font-weight: 500;
-  transition: all 0.3s ease;
+  transition: background-color 0.3s ease;
 }
 
 .card-front.lion-turn {
@@ -114,11 +120,11 @@
 .card-back {
   background-color: white;
   transform: rotateY(180deg);
-  border: 1px solid #3498db;
+  border: 3px solid #3498db;
   color: #2c3e50;
   font-family: 'M PLUS Rounded 1c', sans-serif;
   font-weight: 500;
-  transition: all 0.3s ease;
+  transition: border-color 0.3s ease;
 }
 
 .card-back.lion-turn {
@@ -127,6 +133,12 @@
 
 .card-back.dog-turn {
   border-color: #5eb5fc;
+}
+
+.card-back img {
+  width: 90%;
+  height: 90%;
+  object-fit: contain;
 }
 
 .character-type-selector {

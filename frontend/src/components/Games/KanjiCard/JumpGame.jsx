@@ -35,7 +35,7 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
   const CANVAS_HEIGHT = 600;
   const GRAVITY = 0.6;
   const JUMP_STRENGTH = -13;
-  const MOVE_SPEED = 3.5;
+  const MOVE_SPEED = 2.5;
   const GROUND_Y = 500;
   const PLAYER_SIZE = 40;
   
@@ -103,8 +103,8 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
     while (currentX < levelLength) {
       const pattern = pickPattern({ weights: stage.weights, r: Math.random() });
       
-      // Determine Target Character vs Distractor
-      const isTarget = Math.random() < 0.5;
+      // Determine Target Character vs Distractor (70% correct, 30% wrong)
+      const isTarget = Math.random() < 0.8;
       let char = config.targetChar;
       
       if (!isTarget) {
@@ -281,7 +281,7 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
       // Combo Multiplier
       let multiplier = 1 + Math.floor(state.combo / 5) * 0.5; // Every 5 combo adds 0.5x
       const finalScore = Math.floor(amount * multiplier);
-      
+
       state.score += finalScore;
       state.combo++;
       state.comboTimer = 180; // Reset combo timer (3 seconds at 60fps)
@@ -309,7 +309,7 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
       state.invincible = 90;
       state.combo = 0; // Reset combo on damage
       playNGSound();
-      
+
       if (state.lives <= 0) {
           loseAllLives(reason);
       }
@@ -790,17 +790,19 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
     state.items.forEach(item => {
         if (!item.active) return;
         const bob = Math.sin(Date.now() / 300) * 5;
-        
+
+        // 正解は明るい黄色、間違いは明るいグレー
         ctx.fillStyle = item.type === 'target' ? '#FFF59D' : '#E0E0E0';
         ctx.beginPath();
-        ctx.arc(item.x + item.w/2, item.y + item.h/2 + bob, item.w/2 + 2, 0, Math.PI * 2);
+        const itemSize = item.w/2 + 2; // 同じサイズに統一
+        ctx.arc(item.x + item.w/2, item.y + item.h/2 + bob, itemSize, 0, Math.PI * 2);
         ctx.fill();
-        
+
         ctx.strokeStyle = item.type === 'target' ? '#FBC02D' : '#9E9E9E';
-        ctx.lineWidth = 3;
+        ctx.lineWidth = 3; // 同じ太さに統一
         ctx.stroke();
 
-        ctx.font = `bold ${item.w * 0.7}px "Zen Maru Gothic", serif`;
+        ctx.font = `bold ${item.w * 0.7}px "Zen Maru Gothic", serif`; // 同じフォントサイズに統一
         ctx.fillStyle = item.type === 'target' ? '#F57F17' : '#616161';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
@@ -881,25 +883,21 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
     ctx.font = "bold 24px Arial";
     ctx.shadowColor = "black";
     ctx.shadowBlur = 4;
-    ctx.fillStyle = "white";
-    
-    // Score
-    ctx.textAlign = "right";
-    ctx.fillText(`スコア: ${state.score}`, CANVAS_WIDTH - 20, 40);
-    
+
     // Combo
     if (state.combo > 1) {
         ctx.fillStyle = "#FFD700";
         ctx.font = "bold 28px Arial";
-        ctx.fillText(`${state.combo} COMBO!`, CANVAS_WIDTH - 20, 80);
+        ctx.textAlign = "right";
+        ctx.fillText(`${state.combo} COMBO!`, CANVAS_WIDTH - 20, 40);
         ctx.font = "20px Arial";
-        ctx.fillText(`x${(1 + Math.floor(state.combo/5)*0.5).toFixed(1)}`, CANVAS_WIDTH - 20, 105);
+        ctx.fillText(`x${(1 + Math.floor(state.combo/5)*0.5).toFixed(1)}`, CANVAS_WIDTH - 20, 65);
     }
-    
+
     // Lives
     ctx.textAlign = "left";
     ctx.fillStyle = "#ff4757";
-    ctx.font = "24px Arial";
+    ctx.font = "30px Arial";
     let hearts = "";
     for(let i=0; i<state.lives; i++) hearts += "❤ ";
     ctx.fillText(hearts, 20, 40);
@@ -923,17 +921,6 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
         ctx.fillStyle = "#69F0AE";
         ctx.fillText(state.noticeText, CANVAS_WIDTH / 2, 130);
     }
-
-    // Target display
-    ctx.shadowBlur = 0;
-    ctx.fillStyle = "rgba(0,0,0,0.5)";
-    ctx.fillRect(CANVAS_WIDTH/2 - 70, 10, 140, 50);
-    ctx.fillStyle = "white";
-    ctx.textAlign = "center";
-    ctx.font = "20px Arial";
-    ctx.fillText(`ターゲット`, CANVAS_WIDTH/2, 30);
-    ctx.font = "bold 28px 'Zen Maru Gothic'";
-    ctx.fillText(config.targetChar, CANVAS_WIDTH/2, 55);
 
     // いまのステージ
     ctx.font = "bold 16px Arial";
@@ -1016,19 +1003,19 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
         <div className="game-instruction-overlay">
           <h3>{config.title || '漢字ランナー'}</h3>
           <p>{config.instruction || '正しい漢字を集めてゴールを目指せ！'}</p>
-          
+
           <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'20px', margin:'20px 0', textAlign:'left', background:'rgba(255,255,255,0.1)', padding:'15px', borderRadius:'8px'}}>
              <div>
-                <span style={{fontSize:'24px'}}>🎯 {config.targetChar}</span> <br/>
-                <small>正解（コンボをつなげ！）</small>
+                <span style={{fontSize:'24px'}}>✨ {config.targetChar}</span> <br/>
+                <small style={{color:'#FFD700'}}>正解の漢字（明るい黄色）</small>
              </div>
              <div>
-                <span style={{fontSize:'24px'}}>❌ 漢字</span> <br/>
-                <small>間違い（ダメージ）</small>
+                <span style={{fontSize:'24px'}}>❌ 灰色</span> <br/>
+                <small style={{color:'#ff4757'}}>間違い漢字（ダメージ）</small>
              </div>
              <div>
                 <span style={{fontSize:'24px'}}>🧲</span> <br/>
-                <small>漢字をすいよせる</small>
+                <small>正しい漢字を引きよせる</small>
              </div>
              <div>
                 <span style={{fontSize:'24px'}}>🛡️</span> <br/>
@@ -1036,12 +1023,12 @@ const JumpGame = ({ config, onComplete, onAddScore }) => {
              </div>
              <div>
                 <span style={{fontSize:'24px'}}>❤</span> <br/>
-                <small>ライフ回復</small>
+                <small>ライフを1つ回復</small>
              </div>
           </div>
 
-          <p style={{fontSize: '0.9em'}}>画面タップでジャンプ（2回まで可能）</p>
-          <p style={{fontSize: '0.9em', color:'#FFD700'}}>敵を踏んづけて倒せるよ！</p>
+          <p style={{fontSize: '0.9em', marginTop: '10px'}}>📱 画面タップでジャンプ（2回までOK）</p>
+          <p style={{fontSize: '0.9em', color:'#FFD700', marginTop: '5px'}}>💡 敵を上から踏んで倒そう！</p>
           <p style={{fontSize: '0.9em', color:'#69F0AE'}}>🚩 はたを通ると、やられてもそこから再開できるよ</p>
           <p style={{fontSize: '0.9em'}}>4つのステージを、つづけて走りぬけよう！</p>
           <button className="start-btn" onClick={() => startStage(0, 0, true)}>スタート！</button>

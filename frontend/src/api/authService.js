@@ -42,18 +42,39 @@ export const login = async (email, password) => {
     // エラー発生時にローカルストレージをクリア
     localStorage.removeItem('token');
     localStorage.removeItem('userId');
-    
+
+    // メール未確認エラー（403）
+    if (error.response?.status === 403) {
+      const errorData = error.response.data;
+      if (errorData.needsVerification) {
+        throw new Error(errorData.error || 'メールアドレスが未確認です。確認メールをご確認ください。');
+      }
+    }
+
+    // 認証エラー（401）
     if (error.response?.status === 401) {
       throw new Error('メールアドレスまたはパスワードが正しくありません');
-    } else if (error.response?.status === 404) {
+    }
+
+    // ユーザーが見つからない（404）
+    if (error.response?.status === 404) {
       throw new Error('ユーザーが見つかりません');
+    }
+
+    // バックエンドからのエラーメッセージ（error または message フィールド）
+    if (error.response?.data?.error) {
+      throw new Error(error.response.data.error);
     } else if (error.response?.data?.message) {
       throw new Error(error.response.data.message);
-    } else if (error.message === 'Network Error') {
-      throw new Error('サーバーに接続できません。ネットワーク接続を確認してください。');
-    } else {
-      throw new Error('ログインに失敗しました。もう一度お試しください。');
     }
+
+    // ネットワークエラー
+    if (error.message === 'Network Error') {
+      throw new Error('サーバーに接続できません。ネットワーク接続を確認してください。');
+    }
+
+    // その他のエラー
+    throw new Error('ログインに失敗しました。もう一度お試しください。');
   }
 };
 

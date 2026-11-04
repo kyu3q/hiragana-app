@@ -54,9 +54,51 @@ npm run dev
 ### バックエンドのセットアップ
 
 #### 開発環境（H2 Database）
+
+##### 1. 環境変数の設定（メール認証機能を使用する場合）
+
+メール認証機能を使用するには、Gmailアプリパスワードの設定が必要です。
+
 ```bash
 cd backend
+
+# .envファイルを作成
+cp .env.example .env
+
+# .envファイルを編集して以下の値を設定
+# GMAIL_USERNAME=your-email@gmail.com
+# GMAIL_APP_PASSWORD=your-app-password-here（スペースなし16文字）
+# FRONTEND_URL=http://localhost:5173
+```
+
+**Gmailアプリパスワードの取得方法:**
+1. https://myaccount.google.com/apppasswords にアクセス
+2. 新しいアプリパスワードを生成（例: "Hiragana App"）
+3. 表示された16文字のパスワードをコピー（`abcd efgh ijkl mnop`形式）
+4. **重要**: スペースを除去して.envに設定（`abcdefghijklmnop`）
+
+##### 2. アプリケーションの起動
+
+**推奨**: run-dev.shスクリプトを使用（.envファイルを自動読み込み）
+```bash
+cd backend
+./run-dev.sh
+```
+
+**代替方法**: 直接Mavenで起動（環境変数の手動設定が必要）
+```bash
+cd backend
+export $(cat .env | grep -v '^#' | xargs)
 ./mvnw spring-boot:run
+```
+
+起動時に以下の診断情報が表示されます:
+```
+================================================================================
+📧 メール設定の診断情報
+================================================================================
+spring.mail.username: ✓ your-email@gmail.com
+spring.mail.password: ✓ 設定されています（16文字）
 ```
 
 #### 本番環境（PostgreSQL）

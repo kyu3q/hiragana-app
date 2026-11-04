@@ -141,6 +141,7 @@ const CatchGame = ({ config, onComplete, onAddScore }) => {
       if (stateRef.current.lives <= 0) {
           stateRef.current.isGameOver = true;
           setGameState('lost');
+          onComplete(false);
       }
   };
 
@@ -345,20 +346,18 @@ const CatchGame = ({ config, onComplete, onAddScore }) => {
     });
 
     // UI
-    ctx.font = "bold 24px Arial";
-    ctx.fillStyle = "#333";
+    ctx.font = "30px Arial";
+    ctx.fillStyle = "#ff4757";
     ctx.textAlign = "left";
-    ctx.fillText(`スコア: ${state.score} / 300`, 20, 40);
-    
+
     // Lives
     let hearts = "";
     for(let i=0; i<state.lives; i++) hearts += "❤ ";
-    ctx.fillStyle = "#ff4757";
-    ctx.fillText(hearts, 20, 70);
+    ctx.fillText(hearts, 20, 40);
 
     if (state.combo > 1) {
       ctx.fillStyle = "#FF9F43";
-      ctx.fillText(`${state.combo} コンボ!`, 20, 100);
+      ctx.fillText(`${state.combo} コンボ!`, 20, 70);
     }
     
     ctx.restore(); // Restore shake
@@ -424,17 +423,6 @@ const CatchGame = ({ config, onComplete, onAddScore }) => {
         </div>
       )}
 
-      {gameState === 'lost' && (
-        <div className="game-result-modal">
-          <h2>ざんねん...</h2>
-          <p>ライフがなくなっちゃった！</p>
-          <button className="start-btn" onClick={() => {
-            initGame();
-            setGameState('playing');
-          }}>リトライ</button>
-        </div>
-      )}
-      
       <canvas 
         ref={canvasRef}
         style={{ width: '100%', height: '100%', maxWidth: '800px', maxHeight: '600px', aspectRatio: '4/3', border: '2px solid #ddd', borderRadius: '8px', background: 'white', touchAction: 'none' }}
